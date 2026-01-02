@@ -1,10 +1,3 @@
---[[
-	Result type for API operations.
-	
-	Provides a typed way to represent success/failure outcomes without exceptions.
-	Similar to Rust's Result<T, E> type.
-]]
-
 export type Ok<T> = {
 	ok: true,
 	value: T,

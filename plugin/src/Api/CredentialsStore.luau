@@ -1,10 +1,3 @@
---[[
-	Store for persisting API credentials (auth token and client key).
-
-	Credentials are stored encrypted in plugin settings and are required
-	for all authenticated API calls.
-]]
-
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages

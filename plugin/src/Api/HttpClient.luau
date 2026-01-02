@@ -1,13 +1,3 @@
---[[
-	HTTP client module with retry logic and backoff support.
-
-	Provides a wrapper around HttpService for making API requests with:
-	- Automatic retry on transient failures
-	- Exponential backoff with jitter
-	- Respect for Retry-After headers
-	- Typed request/response handling
-]]
-
 local HttpService = game:GetService("HttpService")
 
 local Plugin = script:FindFirstAncestor("StudioRichPresence")

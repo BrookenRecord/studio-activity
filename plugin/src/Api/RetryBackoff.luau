@@ -1,13 +1,3 @@
---[[
-	Exponential backoff with jitter for retry logic.
-	
-	Implements a configurable retry strategy with:
-	- Exponential base delay growth
-	- Configurable jitter to prevent thundering herd
-	- Maximum delay cap
-	- Support for server-provided Retry-After headers
-]]
-
 export type BackoffConfig = {
 	--- Initial delay in seconds for the first retry
 	initialDelaySeconds: number,

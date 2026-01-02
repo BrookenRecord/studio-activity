@@ -10,7 +10,6 @@ local PluginLoader = require(Plugin.Bin.PluginLoader)
 local fireEventAsync = require(Plugin.Source.Telemetry.fireEventAsync)
 
 local PluginApp = require(script.Parent.PluginApp)
-local PluginStore = require(script.Parent.PluginStore)
 
 local e = React.createElement
 
@@ -21,14 +20,12 @@ local function stopwatch(callback: () -> ()): string
 end
 
 local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: PluginLoader.PluginLoaderContext)
-	local pluginStore = PluginStore.get()
-	pluginStore.setPlugin(plugin)
-
 	local widget = pluginLoaderContext.mainDockWidget
 	assert(widget ~= nil, "Main dock widget not found")
 
 	local root = ReactRoblox.createRoot(widget)
 	local app = e(ContextProviders, {
+		plugin = plugin,
 		overlayGui = widget :: GuiBase2d,
 	}, {
 		App = e(PluginApp, {

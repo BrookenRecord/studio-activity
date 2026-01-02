@@ -1,16 +1,3 @@
---[[
-	API client for Studio Rich Presence backend.
-
-	Provides typed methods for all API endpoints:
-	- Auth: AuthStart, AuthComplete
-	- Presence: UpdatePresence, ClearPresence
-	- Accounts: ListAccounts
-
-	All methods return Result types for explicit error handling.
-	Credentials are persisted automatically and methods will error
-	if called without valid credentials (except AuthStart).
-]]
-
 local HttpService = game:GetService("HttpService")
 
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
