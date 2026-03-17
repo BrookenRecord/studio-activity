@@ -1,10 +1,11 @@
 --[[
 	Codegen Command
-	
+
 	Runs all code generation tasks: compiles networking, generates project links,
 	and generates the sourcemap.
 ]]
 
+local fs = require("@lune/fs")
 local process = require("@lune/process")
 
 local color = require("../utils/color")
@@ -36,7 +37,7 @@ export type Options = {
 
 --[[
 	Runs all code generation tasks.
-	
+
 	@param options Configuration options
 	@return True if successful, false otherwise
 ]]
@@ -45,10 +46,14 @@ function codegen.run(options_: Options?): boolean
 	local quiet = if options.quiet ~= nil then options.quiet else false
 
 	if options.generateSourcemap then
+		if not fs.isDir("plugin/generated") then
+			fs.writeDir("plugin/generated")
+		end
+
 		-- Generate sourcemap
 		local sourcemapSuccess, sourcemapError = rojo.sourcemap({
 			projectFile = "plugin/default.project.jsonc",
-			output = "sourcemap.json",
+			output = "plugin/generated/sourcemap.json",
 			absolute = true,
 		})
 		if not sourcemapSuccess then

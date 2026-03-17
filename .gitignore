@@ -1,12 +1,8 @@
-Packages/
-DevPackages/
 coverage/
 
-node_modules/
+**/generated
 
 .DS_Store
 .env.luau
-sourcemap.json
-*.rbxl
-*.rbxl.lock
-globalTypes.d.luau
+cspell.json
+.env

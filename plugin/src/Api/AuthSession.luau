@@ -9,7 +9,6 @@ local Logger = require(Plugin.Source.Logger)
 
 local Api = Plugin.Source.Api
 local ApiClient = require(Api.Api)
-local CredentialsStore = require(Api.CredentialsStore)
 local Result = require(Api.Result)
 
 type ApiError = ApiClient.ApiError
@@ -22,7 +21,7 @@ type AuthSessionProps = {
 	apiClient: ApiClient.ApiClient,
 }
 
-local function createSseConnection(url: string)
+local function _createSseConnection(url: string)
 	local sseClient = HttpService:CreateWebStreamClient(Enum.WebStreamClientType.SSE, {
 		Url = url,
 	})

@@ -16,7 +16,7 @@ type Props = {
 	LayoutOrder: number?,
 }
 
-local function AddAccountFlow(props: Props)
+local function AddAccountFlow(_props: Props)
 	local nextOrder = createNextOrder()
 
 	return e(Dialog.Root, {

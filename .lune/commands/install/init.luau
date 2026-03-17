@@ -1,6 +1,6 @@
 --[[
 	Install Command
-	
+
 	Installs all packages: Wally packages, package types, and Foundation.
 ]]
 
@@ -32,8 +32,8 @@ install.arguments = {
 }
 
 local PROJECT_FILE = "plugin/default.project.jsonc"
-local SOURCEMAP_PATH = "sourcemap.json"
-local VERSION_PIN = "0.702.0.7020622"
+local SOURCEMAP_PATH = "plugin/generated/sourcemap.json"
+local VERSION_PIN = "0.712.0.7120913"
 local PACKAGE_DIRS = {
 	"Packages",
 	-- "DevPackages",
@@ -70,7 +70,7 @@ export type Options = {
 
 --[[
 	Installs all packages.
-	
+
 	@param options Configuration options
 	@return True if successful, false otherwise
 ]]

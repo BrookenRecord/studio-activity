@@ -1,6 +1,6 @@
 --[[
 	CI Command
-	
+
 	Runs static analysis checks: linting (Selene), formatting (StyLua),
 	and type checking (luau-lsp).
 ]]
@@ -43,7 +43,7 @@ local IGNORE_PATTERNS = { "plugin/Packages/**" }
 
 --[[
 	Runs a command and returns whether it succeeded.
-	
+
 	@param program The program to run
 	@param args The arguments to pass
 	@param description A description for the step
@@ -68,11 +68,11 @@ end
 
 --[[
 	Downloads the global Luau types file if it doesn't exist.
-	
+
 	@return True if successful, false otherwise
 ]]
 local function fetchGlobalTypes(): boolean
-	local typesFile = "globalTypes.d.luau"
+	local typesFile = "plugin/generated/globalTypes.d.luau"
 
 	if fs.isFile(typesFile) then
 		print(color.dim(`  Skipping download, {typesFile} already exists`))
@@ -98,7 +98,7 @@ end
 
 --[[
 	Runs all CI checks.
-	
+
 	@param options Configuration options
 	@return True if all checks pass, false otherwise
 ]]
@@ -153,11 +153,11 @@ function ci.run(options_: Options?): boolean
 	local luauArgs = {
 		"analyze",
 		"--sourcemap",
-		"sourcemap.json",
+		"plugin/generated/sourcemap.json",
 		"--platform",
 		"roblox",
 		"--definitions",
-		"globalTypes.d.luau",
+		"plugin/generated/globalTypes.d.luau",
 		"--settings",
 		".vscode/settings.json",
 	}
