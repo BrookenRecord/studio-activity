@@ -1,10 +1,10 @@
 --[[
 	Formats an elapsed time in seconds into a human-readable string.
-	
+
 	The format varies based on duration:
 	- Under 1 hour: "MM:SS" (e.g., "5:03", "45:59")
 	- 1 hour or more: "H:MM:SS" (e.g., "1:05:03", "12:45:59")
-	
+
 	Seconds and minutes (when hours are present) are always zero-padded to 2 digits.
 ]]
 

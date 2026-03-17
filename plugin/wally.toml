@@ -15,6 +15,7 @@ Log = "realthx1/luaulog@0.3.0"
 Sift = "csqrl/sift@0.0.8"
 sha256 = "dekkonot/sha256@1.0.1"
 t = "osyrisrblx/t@3.0.0"
+Signal = "stravant/goodsignal@0.3.1"
 
 # dev dependencies
 Jest = "jsdotlua/jest@3.10.0"

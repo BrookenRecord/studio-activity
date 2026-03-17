@@ -5,7 +5,7 @@ registry = "test"
 [[package]]
 name = "brhodes/studio-rich-presence"
 version = "0.1.0"
-dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Storyteller", "flipbook-labs/storyteller@1.5.0"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
+dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.5.0"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
 
 [[package]]
 name = "csqrl/sift"
@@ -330,4 +330,9 @@ dependencies = []
 [[package]]
 name = "roblox/roact"
 version = "1.4.4"
+dependencies = []
+
+[[package]]
+name = "stravant/goodsignal"
+version = "0.3.1"
 dependencies = []

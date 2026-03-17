@@ -1,0 +1,83 @@
+{
+  "languages": {
+    "Luau": {
+      "hard_tabs": true,
+      "tab_size": 4,
+      "formatter": {
+        "external": {
+          "command": "stylua",
+          "arguments": [
+            "-"
+          ]
+        }
+      }
+    }
+  },
+  "file_types": {
+    "Luau": [
+      "*.lua"
+    ],
+    "JSONC": [
+      ".luaurc"
+    ],
+    "TOML": [
+      "wally.lock",
+      "rotrieve.lock"
+    ]
+  },
+  "lsp": {
+    "luau-lsp": {
+      "settings": {
+        "luau-lsp": {
+          "sourcemap": {
+            "rojoProjectFile": "plugin/default.project.jsonc",
+            "generatorCommand": "rojo sourcemap plugin/default.project.jsonc --output sourcemap.json --absolute --include-non-scripts"
+          },
+          "completion": {
+            "enabled": true,
+            "imports": {
+              "enabled": true,
+              "separateGroupsWithLine": true,
+              "suggestRequires": true,
+              "suggestServices": true,
+              "requireStyle": "AlwaysAbsolute",
+              "ignoreGlobs": [
+                "plugin/Packages/_Index/**",
+              ]
+            }
+          },
+          "diagnostics": {
+            "includeDependents": true,
+            "workspace": false,
+            "strictDatamodelTypes": true
+          }
+        },
+        "roblox": {
+          "enabled": true,
+          "security_level": "plugin",
+          "download_api_documentation": true,
+          "download_definitions": true
+        }
+        // "fflags": {
+        // 	"enable_by_default": true,
+        // 	"enable_new_solver": true,
+        // 	"sync": true
+        // }
+      }
+    },
+    "json-language-server": {
+      "settings": {
+        "json": {
+          "schemas": [
+            {
+              "fileMatch": [
+                "*.project.jsonc"
+              ],
+              "url": "https://raw.githubusercontent.com/rojo-rbx/vscode-rojo/refs/heads/master/schemas/project.template.schema.json"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@
     },
     "React Luau Component": {
         "prefix": [
-            "luaucomponent"
+            "component"
         ],
         "scope": "luau",
         "description": "React Luau component with Props type",
