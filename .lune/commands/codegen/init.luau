@@ -9,6 +9,7 @@ local fs = require("@lune/fs")
 local process = require("@lune/process")
 
 local color = require("../utils/color")
+local injectBuildVars = require("../utils/inject-build-vars")
 local rojo = require("../lib/project/rojo")
 
 local codegen = {}
@@ -31,6 +32,7 @@ codegen.arguments = {
 
 export type Options = {
 	quiet: boolean?,
+	production: boolean?,
 	generateSourcemap: boolean?,
 	generateProtos: boolean?,
 }
@@ -44,6 +46,11 @@ export type Options = {
 function codegen.run(options_: Options?): boolean
 	local options: Options = options_ or {}
 	local quiet = if options.quiet ~= nil then options.quiet else false
+	local production = if options.production ~= nil then options.production else false
+
+	injectBuildVars({
+		production = production,
+	})
 
 	if options.generateSourcemap then
 		if not fs.isDir("plugin/generated") then

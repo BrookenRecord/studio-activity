@@ -2,5 +2,7 @@ Packages/
 ServerPackages/
 DevPackages/
 
+BuildVars.json
+
 *.rbxl
 *.rbxl.lock

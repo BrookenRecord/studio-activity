@@ -1,6 +1,6 @@
 --[[
 	Dev Command
-	
+
 	Starts a development session. Runs codegen, builds the project,
 	starts Rojo serve, and optionally opens in Studio.
 ]]
@@ -27,7 +27,7 @@ export type Options = {}
 
 --[[
 	Starts a development session.
-	
+
 	@param options Configuration options
 ]]
 function dev.run(_options: Options)
