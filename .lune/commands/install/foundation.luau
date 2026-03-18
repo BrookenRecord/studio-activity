@@ -1,6 +1,6 @@
 --[[
 	Foundation Package Installation
-	
+
 	Installs Foundation packages from an upstream packages directory.
 	Prunes non-exported packages and patches React references.
 ]]
@@ -18,6 +18,8 @@ local EXPORTED_PACKAGES = {
 	"Signals",
 	"SignalsReact",
 	"ReactUtils",
+	"Dash",
+	"QRCode",
 }
 
 type PackageDependencies = { [string]: true }
@@ -116,7 +118,7 @@ end
 
 --[[
 	Installs Foundation packages from an upstream packages directory.
-	
+
 	@param upstreamPath The path to the upstream packages directory
 	@param dest The destination directory for the Foundation packages
 	@param quiet Whether to suppress output

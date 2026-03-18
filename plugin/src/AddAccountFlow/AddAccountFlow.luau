@@ -5,7 +5,10 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
-local Dialog = Foundation.Dialog
+local StartPage = require(script.Parent.StartPage.StartPage)
+local Title = require(script.Parent.Title)
+
+local Sheet = Foundation.Sheet
 local DialogSize = Foundation.Enums.DialogSize
 
 local createNextOrder = ReactUtils.createNextOrder
@@ -19,20 +22,25 @@ type Props = {
 local function AddAccountFlow(_props: Props)
 	local nextOrder = createNextOrder()
 
-	return e(Dialog.Root, {
-		size = DialogSize.Medium,
+	return e(Sheet.Root, {
+		isOpen = true,
+		preferCenterSheet = true,
+		-- centerSheetHeight = 0.8,
+		size = DialogSize.Large,
 		disablePortal = false,
 		hasBackdrop = true,
 		onClose = function() end,
 	}, {
-		Title = e(Dialog.Title, {
-			text = "Link Discord Account",
+		Header = e(Sheet.Header, {
+			hasCloseAffordance = true,
+		}, {
+			Title = e(Title, {
+				LayoutOrder = nextOrder(),
+			}),
 		}),
 
-		Content = e(Dialog.Content, nil, {
-			Message = React.createElement(Foundation.Text, {
-				tag = "auto-xy padding-top-medium",
-				Text = "Are you sure you want to discard your changes?",
+		Content = e(Sheet.Content, nil, {
+			StartPage = e(StartPage, {
 				LayoutOrder = nextOrder(),
 			}),
 		}),
