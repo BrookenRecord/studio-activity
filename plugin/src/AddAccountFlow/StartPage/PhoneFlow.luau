@@ -5,7 +5,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
-local QRCodeDisplay = require(Plugin.Source.QRCodeDisplay)
+local QRCode = require(Plugin.Source.QRCode)
 
 local View = Foundation.View
 local Text = Foundation.Text
@@ -32,10 +32,10 @@ local function PhoneFlow(props: Props)
 			backgroundStyle = tokens.LightMode.Surface.Surface_100,
 			LayoutOrder = nextOrder(),
 		}, {
-			QRCode = e(QRCodeDisplay.QRCodeDisplay, {
+			QRCode = e(QRCode.QRCodeDisplay, {
 				text = "https://discord.com/activate?user_code=3YEF7HKG",
 				size = tokens.Size.Size_2000,
-				errorCorrection = QRCodeDisplay.ErrorCorrection.Medium,
+				errorCorrection = QRCode.ErrorCorrection.Medium,
 			}),
 		}),
 
