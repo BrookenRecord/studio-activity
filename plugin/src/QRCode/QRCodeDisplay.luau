@@ -21,29 +21,15 @@ export type Props = {
 	size: number,
 	color: Color3?,
 	transparency: number?,
-	rotation: number?,
 	LayoutOrder: number?,
 }
 
 local DEFAULT_COLOR = Color3.fromRGB(0, 0, 0)
 
---[[
-	When the QR code is rotated inside its bounding box, it needs to shrink
-	so the corners don't clip. A rotated square of side `s` has a bounding
-	box of `s * (sinθ + cosθ)`, so:  s = boundingBox / (sinθ + cosθ).
-]]
-local function computeRotatedSize(boundingBox: number, rotation: number?): number
-	if not rotation or rotation % 90 == 0 then
-		return boundingBox
-	end
-	local radians = math.rad(rotation)
-	return math.round(boundingBox / (math.sin(radians) + math.cos(radians)))
-end
-
 local function QRCodeDisplay(props: Props)
 	local color = props.color or DEFAULT_COLOR
 	local transparency = props.transparency or 0
-	local imageSize = computeRotatedSize(props.size, props.rotation)
+	local imageSize = props.size
 
 	local matrix = useQRCodeMatrix(props.text, props.errorCorrection)
 	local imageRef = React.useRef(nil :: EditableImage?)
@@ -87,7 +73,6 @@ local function QRCodeDisplay(props: Props)
 			BackgroundTransparency = 1,
 			ImageContent = content,
 			Position = UDim2.fromScale(0.5, 0.5),
-			Rotation = props.rotation,
 			Size = UDim2.fromOffset(imageSize, imageSize),
 		}),
 	})
