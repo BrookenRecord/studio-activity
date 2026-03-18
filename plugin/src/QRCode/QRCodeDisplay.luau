@@ -7,6 +7,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 
 local ErrorCorrection = require(script.Parent.ErrorCorrection)
+local getResolutionScale = require(Plugin.Source.Common.getResolutionScale)
 local renderMatrixToImage = require(script.Parent.renderMatrixToImage)
 local useQRCodeMatrix = require(script.Parent.useQRCodeMatrix)
 
@@ -47,7 +48,7 @@ local function QRCodeDisplay(props: Props)
 	local matrix = useQRCodeMatrix(props.text, props.errorCorrection)
 	local imageRef = React.useRef(nil :: EditableImage?)
 	local content, setContent = React.useState(nil :: Content?)
-	local renderSize = imageSize * 2
+	local renderSize = imageSize * getResolutionScale()
 
 	React.useEffect(function()
 		local image = imageRef.current
