@@ -1,7 +1,7 @@
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
-local Signals = require(Packages.Signals)
+local Charm = require(Packages.Charm)
 local t = require(Packages.t)
 
 local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
@@ -22,7 +22,7 @@ local validate = t.interface({
 })
 
 return {
-	get = Signals.createComputed(function(_scope)
+	get = Charm.computed(function()
 		return createPluginSettingsStore("PresenceApiCredentials", defaultValue, validate)
 	end),
 }

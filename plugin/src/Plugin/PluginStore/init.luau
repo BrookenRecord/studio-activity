@@ -1,10 +1,10 @@
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
-local Signals = require(Packages.Signals)
+local Charm = require(Packages.Charm)
 
 local createPluginStore = require(script.createPluginStore)
 
 return {
-	get = Signals.createComputed(createPluginStore),
+	get = Charm.computed(createPluginStore),
 }

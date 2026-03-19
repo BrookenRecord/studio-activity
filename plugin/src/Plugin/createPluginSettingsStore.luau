@@ -3,19 +3,19 @@ local HttpService = game:GetService("HttpService")
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
-local Signals = require(Packages.Signals)
+local Charm = require(Packages.Charm)
 
 local Logger = require(Plugin.Source.Logger)
 local PluginStore = require(script.Parent.PluginStore)
 
 export type PluginSettingsStore<T> = {
-	getStorage: Signals.getter<T>,
-	setStorage: Signals.setter<T>,
+	getStorage: () -> T,
+	setStorage: (T | (T) -> T) -> (),
 
 	isSettingDefault: (settingName: string) -> boolean,
 
-	getIsLoading: Signals.getter<boolean>,
-	getErr: Signals.getter<string?>,
+	getIsLoading: () -> boolean,
+	getErr: () -> string?,
 
 	dispose: () -> (),
 }
@@ -32,9 +32,9 @@ local function createPluginSettingsStore<T>(
 	defaultValue: T,
 	validate: (value: any) -> (boolean, string)
 ): PluginSettingsStore<T>
-	local getStorage, setStorage = Signals.createSignal(defaultValue)
-	local getIsLoading, setIsLoading = Signals.createSignal(true)
-	local getErr, setErr = Signals.createSignal(nil :: string?)
+	local getStorage, setStorage = Charm.signal(defaultValue)
+	local getIsLoading, setIsLoading = Charm.signal(true)
+	local getErr, setErr = Charm.signal(nil :: string?)
 
 	local function readPluginSettingsAsync(plugin: Plugin): T?
 		Logger:Info(`reading plugin settings for {storageKey} from disk...`)
@@ -92,12 +92,12 @@ local function createPluginSettingsStore<T>(
 	end
 
 	local prevStorage: T?
-	local dispose = Signals.createEffect(function(scope)
-		local storage = getStorage(scope)
-		local plugin = PluginStore.get(scope).getPlugin(scope)
+	local dispose = Charm.effect(function()
+		local storage = getStorage()
+		local plugin = PluginStore.get().getPlugin()
 
 		if plugin then
-			if getIsLoading(false) then
+			if getIsLoading() then
 				task.spawn(function()
 					local data = readPluginSettingsAsync(plugin)
 					if data then
@@ -119,7 +119,7 @@ local function createPluginSettingsStore<T>(
 	end)
 
 	local function isSettingDefault(settingName: string): boolean
-		local storage = getStorage(false)
+		local storage = getStorage()
 		if typeof(defaultValue) ~= "table" or typeof(storage) ~= "table" then
 			return true
 		end

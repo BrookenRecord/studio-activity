@@ -3,9 +3,9 @@ local Plugin = script:FindFirstAncestor("StudioRichPresence")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 local Sift = require(Packages.Sift)
-local SignalsReact = require(Packages.SignalsReact)
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
@@ -17,7 +17,7 @@ local Checkbox = Foundation.Checkbox
 local ButtonVariant = Foundation.Enums.ButtonVariant
 
 local createNextOrder = ReactUtils.createNextOrder
-local useSignalState = SignalsReact.useSignalState
+local useSignalState = ReactCharm.useSignalState
 local useCallback = React.useCallback
 local useState = React.useState
 

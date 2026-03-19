@@ -1,12 +1,12 @@
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
-local SignalsReact = require(Packages.SignalsReact)
+local ReactCharm = require(Packages.ReactCharm)
 
 local PluginStore = require(Plugin.Source.Plugin.PluginStore)
 
 local function usePlugin(): Plugin
-	local pluginStore = SignalsReact.useSignalState(PluginStore.get)
+	local pluginStore = ReactCharm.useSignalState(PluginStore.get)
 	local plugin = pluginStore.getPlugin()
 	if plugin == nil then
 		error("Plugin not found")

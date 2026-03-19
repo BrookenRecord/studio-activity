@@ -15,10 +15,7 @@ local EXPORTED_PACKAGES = {
 	"FoundationImages",
 	"BuilderIcons",
 	-- Some extra nice-to-haves
-	"Signals",
-	"SignalsReact",
 	"ReactUtils",
-	"Dash",
 	"QRCode",
 }
 
