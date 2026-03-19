@@ -35,6 +35,8 @@ local Plugin = script:FindFirstAncestor("StudioRichPresence")
 local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 
+local AccountStore = require(script.Parent.Parent.AccountStore)
+
 local signal = Charm.signal
 local batch = Charm.batch
 
@@ -57,14 +59,6 @@ export type SessionInfo = {
 	verificationUrlComplete: string,
 	expiresIn: number,
 	interval: number,
-}
-
-export type TokenResult = {
-	accessToken: string,
-	refreshToken: string?,
-	expiresAt: number,
-	scope: string,
-	tokenType: string,
 }
 
 export type Config = {
@@ -127,8 +121,9 @@ local function create(config: Config)
 	-- Reactive state
 	local status, setStatus = signal("idle" :: Status)
 	local sessionInfo, setSessionInfo = signal(nil :: SessionInfo?)
-	local tokenResult, setTokenResult = signal(nil :: TokenResult?)
 	local errorMessage, setErrorMessage = signal(nil :: string?)
+
+	local accountStore = AccountStore.get()
 
 	-- Active thread tracking for cancellation
 	local activeThread: thread? = nil
@@ -148,7 +143,6 @@ local function create(config: Config)
 		batch(function()
 			setStatus("idle")
 			setSessionInfo(nil)
-			setTokenResult(nil)
 			setErrorMessage(nil)
 		end)
 	end
@@ -226,16 +220,16 @@ local function create(config: Config)
 
 			-- Token granted
 			if pollOk and pollStatus == 200 and type(pollBody) == "table" then
-				batch(function()
-					setStatus("authorized")
-					setTokenResult({
-						accessToken = pollBody.access_token,
-						refreshToken = pollBody.refresh_token,
-						expiresAt = os.time() + (pollBody.expires_in or 604800),
-						scope = pollBody.scope,
-						tokenType = pollBody.token_type,
-					})
-				end)
+				setStatus("authorized")
+
+				-- Add the authorized user to the account store
+				-- TODO: Expose better error handling on this API
+				accountStore.addUserAsync({
+					accessToken = pollBody.access_token,
+					refreshToken = pollBody.refresh_token,
+					expiresAt = os.time() + (pollBody.expires_in or 604800),
+				})
+
 				return
 			end
 
@@ -317,7 +311,6 @@ local function create(config: Config)
 		-- Signals (read-only from outside)
 		status = status,
 		sessionInfo = sessionInfo,
-		tokenResult = tokenResult,
 		error = errorMessage,
 
 		-- Actions

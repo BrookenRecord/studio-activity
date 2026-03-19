@@ -5,7 +5,7 @@ local Plugin = script:FindFirstAncestor("StudioRichPresence")
 local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 
-local Logger = require(Plugin.Source.Logger)
+-- local Logger = require(Plugin.Source.Logger)
 local PluginStore = require(script.Parent.PluginStore)
 
 export type PluginSettingsStore<T> = {
@@ -37,21 +37,21 @@ local function createPluginSettingsStore<T>(
 	local getErr, setErr = Charm.signal(nil :: string?)
 
 	local function readPluginSettingsAsync(plugin: Plugin): T?
-		Logger:Info(`reading plugin settings for {storageKey} from disk...`)
+		-- Logger:Info(`reading plugin settings for {storageKey} from disk...`)
 
 		local data = plugin:GetSetting(storageKey)
 
-		Logger:Debug(`read raw plugin settings for {storageKey}:`, data)
+		-- Logger:Debug(`read raw plugin settings for {storageKey}:`, data)
 
 		if typeof(data) == "string" then
-			Logger:Info(`deserializing plugin settings for {storageKey} to object...`)
+			-- Logger:Info(`deserializing plugin settings for {storageKey} to object...`)
 
 			local success, result = pcall(function()
 				return HttpService:JSONDecode(data)
 			end)
 
 			if not success then
-				Logger:Warn(`failed to load plugin settings for {storageKey}:`, result)
+				-- Logger:Warn(`failed to load plugin settings for {storageKey}:`, result)
 				setErr(result)
 				return nil
 			end
@@ -59,35 +59,35 @@ local function createPluginSettingsStore<T>(
 			local isValid, message = validate(result)
 
 			if not isValid then
-				Logger:Warn(`plugin settings are malformed for {storageKey}:`, message)
+				-- Logger:Warn(`plugin settings are malformed for {storageKey}:`, message)
 				setErr(message)
 				return nil
 			end
 
-			Logger:Info(`got plugin settings for {storageKey}:`, result)
+			-- Logger:Info(`got plugin settings for {storageKey}:`, result)
 
 			return result
 		end
 
-		Logger:Info("no plugin settings to read")
+		-- Logger:Info("no plugin settings to read")
 
 		return nil
 	end
 
 	local function writePluginSettingsAsync(plugin: Plugin, storage: T)
-		Logger:Info("writing plugin settings to disk...")
+		-- Logger:Info("writing plugin settings to disk...")
 		local data = HttpService:JSONEncode(storage)
 
 		if data then
-			local success, err = pcall(function()
+			local _success, _err = pcall(function()
 				plugin:SetSetting(storageKey, data)
 			end)
 
-			if success then
-				Logger:Info(`wrote plugin settings to disk: {data}`)
-			else
-				Logger:Warn(`failed to write plugin settings to disk: {err}`)
-			end
+			-- if success then
+			-- 	Logger:Info(`wrote plugin settings to disk: {data}`)
+			-- else
+			-- 	Logger:Warn(`failed to write plugin settings to disk: {err}`)
+			-- end
 		end
 	end
 
@@ -103,7 +103,7 @@ local function createPluginSettingsStore<T>(
 					if data then
 						setStorage(data)
 					end
-					Logger:Debug("finished loading plugin settings")
+					-- Logger:Debug("finished loading plugin settings")
 					setIsLoading(false)
 				end)
 			end

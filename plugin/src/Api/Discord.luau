@@ -475,7 +475,7 @@ local function new(config: Config)
 		EditableImage or writing to a file.
 
 		Does not require an access token; the CDN is public.
-]]
+	]]
 	local function getUserAvatarAsync(user: User): Result.Result<AvatarImage, AvatarProblem>
 		local CDN_BASE = "https://cdn.discordapp.com"
 		local url: string

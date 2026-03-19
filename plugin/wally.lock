@@ -5,7 +5,7 @@ registry = "test"
 [[package]]
 name = "brhodes/studio-rich-presence"
 version = "0.1.0"
-dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.5.0"], ["png", "sircfenner/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
+dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.5.0"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
 
 [[package]]
 name = "csqrl/sift"
@@ -45,6 +45,11 @@ dependencies = [["Fusion", "elttob/fusion@0.2.0"], ["Fusion3", "elttob/fusion@0.
 [[package]]
 name = "grilme99/charm"
 version = "0.11.0-rc.3"
+dependencies = []
+
+[[package]]
+name = "grilme99/png-luau"
+version = "0.2.1"
 dependencies = []
 
 [[package]]
@@ -340,11 +345,6 @@ dependencies = []
 [[package]]
 name = "roblox/roact"
 version = "1.4.4"
-dependencies = []
-
-[[package]]
-name = "sircfenner/png-luau"
-version = "0.2.1"
 dependencies = []
 
 [[package]]
