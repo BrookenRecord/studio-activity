@@ -226,7 +226,6 @@ local function create(config: Config)
 
 			-- Token granted
 			if pollOk and pollStatus == 200 and type(pollBody) == "table" then
-				print("done!", pollBody) --
 				batch(function()
 					setStatus("authorized")
 					setTokenResult({
