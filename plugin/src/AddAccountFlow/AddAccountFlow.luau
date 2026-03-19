@@ -6,7 +6,7 @@ local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
 local AuthContext = require(script.Parent.AuthContext)
-local StartPage = require(script.Parent.StartPage.StartPage)
+local Content = require(script.Parent.Content)
 local Title = require(script.Parent.Title)
 
 local Sheet = Foundation.Sheet
@@ -44,11 +44,7 @@ local function AddAccountFlow(_props: Props)
 				}),
 			}),
 
-			Content = e(Sheet.Content, nil, {
-				StartPage = e(StartPage, {
-					LayoutOrder = nextOrder(),
-				}),
-			}),
+			Content = e(Sheet.Content, nil, e(Content)),
 		}),
 	})
 end

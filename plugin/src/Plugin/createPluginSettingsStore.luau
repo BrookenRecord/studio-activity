@@ -91,32 +91,41 @@ local function createPluginSettingsStore<T>(
 		end
 	end
 
+	-- Load settings from disk when plugin becomes available
+	local disposeLoad = Charm.effect(function()
+		local isLoading = getIsLoading()
+		local plugin = PluginStore.get().getPlugin()
+
+		if plugin and isLoading then
+			task.spawn(function()
+				local data = readPluginSettingsAsync(plugin)
+				if data then
+					setStorage(data)
+				end
+				setIsLoading(false)
+			end)
+		end
+	end)
+
+	-- Write settings to disk when storage changes
 	local prevStorage: T?
-	local dispose = Charm.effect(function()
+	local disposeWrite = Charm.effect(function()
 		local storage = getStorage()
 		local plugin = PluginStore.get().getPlugin()
 
-		if plugin then
-			if getIsLoading() then
-				task.spawn(function()
-					local data = readPluginSettingsAsync(plugin)
-					if data then
-						setStorage(data)
-					end
-					-- Logger:Debug("finished loading plugin settings")
-					setIsLoading(false)
-				end)
-			end
-
-			if storage ~= prevStorage then
-				task.spawn(function()
-					writePluginSettingsAsync(plugin, storage)
-				end)
-			end
+		if plugin and storage ~= prevStorage then
+			task.spawn(function()
+				writePluginSettingsAsync(plugin, storage)
+			end)
 		end
 
 		prevStorage = storage
 	end)
+
+	local function dispose()
+		disposeLoad()
+		disposeWrite()
+	end
 
 	local function isSettingDefault(settingName: string): boolean
 		local storage = getStorage()

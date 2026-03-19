@@ -35,6 +35,8 @@ local function PhoneFlow(props: Props)
 	local errorText = useSignalState(auth.deviceCodeFlow.error)
 	local sessionInfo = useSignalState(auth.deviceCodeFlow.sessionInfo)
 
+	local showQrCode = status == "polling" or status == "authorized"
+
 	return e(View, {
 		tag = "size-full-0 auto-y row gap-large align-y-center",
 		LayoutOrder = props.LayoutOrder,
@@ -53,10 +55,10 @@ local function PhoneFlow(props: Props)
 				size = IconSize.Large,
 			}),
 
-			QRCode = (status == "polling" and sessionInfo) and e(QRCode.QRCodeDisplay, {
+			QRCode = (sessionInfo and showQrCode) and e(QRCode.QRCodeDisplay, {
 				text = sessionInfo.verificationUrlComplete,
 				size = tokens.Size.Size_2000,
-				errorCorrection = QRCode.ErrorCorrection.Medium,
+				errorCorrection = QRCode.ErrorCorrection.Low,
 			}),
 		}),
 
