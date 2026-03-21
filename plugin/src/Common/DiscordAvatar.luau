@@ -17,6 +17,7 @@ local useState = React.useState
 
 type Props = {
 	avatar: AvatarImage,
+	size: number,
 	LayoutOrder: number?,
 }
 
@@ -48,16 +49,18 @@ local function DiscordAvatar(props: Props)
 		end
 	end, { props.avatar })
 
-	local imageSize = 200
-
 	return e(View, {
-		Size = UDim2.fromOffset(imageSize, imageSize),
+		Size = UDim2.fromOffset(props.size, props.size),
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		Image = e("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			ImageContent = imageContent,
+		}, {
+			UICorner = e("UICorner", {
+				CornerRadius = UDim.new(1, 0),
+			}),
 		}),
 	})
 end

@@ -1,4 +1,4 @@
 Key,Context,Example,Source,en-us
-Plugin.Name,,,Studio Rich Presence,Studio Rich Presence
-Plugin.Description,,,Configure Rich Presence settings.,Configure Rich Presence settings.
-Plugin.ToolbarName,,,Rich Presence,Rich Presence
+Plugin.Name,,,Studio Presence,Studio Presence
+Plugin.Description,,,Configure Discord Activity settings.,Configure Discord Activity settings.
+Plugin.ToolbarName,,,Studio Presence,Studio Presence

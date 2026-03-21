@@ -23,9 +23,10 @@ local defaultValue: AuthStore = {
 }
 
 local validate = t.interface({
-	accounts = t.strictArray(t.strictInterface({
+	accounts = t.map(t.string, t.strictInterface({
 		accessToken = t.string,
 		refreshToken = t.string,
+		expiresAt = t.number,
 	})),
 })
 

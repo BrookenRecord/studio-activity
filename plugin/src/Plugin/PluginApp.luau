@@ -1,14 +1,12 @@
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
-local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 
+local MainScreen = require(Plugin.Source.MainScreen)
 local PluginLoader = require(Plugin.Bin.PluginLoader)
 local PluginWidget = require(script.Parent.PluginWidget)
 local TelemetryOptOutDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
-
-local View = Foundation.View
 
 local e = React.createElement
 local useCallback = React.useCallback
@@ -61,10 +59,7 @@ local function PluginApp(props: Props)
 		onEnabledChanged = onWidgetEnabledChanged,
 	}, {
 		TelemetryOptOutDialog = React.createElement(TelemetryOptOutDialog),
-
-		Background = e(View, {
-			tag = "size-full bg-surface-100",
-		}, {}),
+		MainScreen = e(MainScreen),
 	})
 end
 

@@ -5,11 +5,10 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local PluginWordmark = require(Plugin.Source.Common.PluginWordmark)
+
 local View = Foundation.View
 local Text = Foundation.Text
-local Icon = Foundation.Icon
-local IconSize = Foundation.Enums.IconSize
-local IconName = Foundation.Enums.IconName
 local useTokens = Foundation.Hooks.useTokens
 
 local createNextOrder = ReactUtils.createNextOrder
@@ -28,29 +27,8 @@ local function Title(props: Props)
 		tag = "size-full-0 auto-y row gap-small padding-y-small align-y-center",
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		LogoBlock = e(View, {
-			tag = "auto-xy row gap-xsmall align-y-center",
+		LogoBlock = e(PluginWordmark, {
 			LayoutOrder = nextOrder(),
-		}, {
-			Discord = e(Icon, {
-				name = IconName.Discord,
-				size = IconSize.Large,
-				style = tokens.Color.Content.Emphasis,
-				LayoutOrder = nextOrder(),
-			}),
-
-			ArrowIcon = e(Icon, {
-				name = IconName.DualArrowsHorizontal,
-				size = IconSize.Medium,
-				LayoutOrder = nextOrder(),
-			}),
-
-			Studio = e(Icon, {
-				name = IconName.Studio,
-				size = IconSize.Large,
-				style = tokens.Color.Content.Emphasis,
-				LayoutOrder = nextOrder(),
-			}),
 		}),
 
 		Divider = e(View, {

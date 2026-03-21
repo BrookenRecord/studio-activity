@@ -26,7 +26,7 @@ local function ActivityPreview(props: Props)
 	local nextOrder = createNextOrder()
 
 	return e(View, {
-		tag = "size-full-0 auto-y bg-surface-300 col padding-small gap-medium radius-small stroke-default stroke-standard",
+		tag = "size-full-0 auto-y bg-surface-300 col padding-small gap-medium radius-small stroke-emphasis stroke-thick",
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		Title = e(Text, {
