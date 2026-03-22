@@ -3,6 +3,7 @@ local Plugin = script:FindFirstAncestor("StudioRichPresence")
 local Packages = Plugin.Packages
 local React = require(Packages.React)
 
+local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local MainScreen = require(Plugin.Source.MainScreen)
 local PluginLoader = require(Plugin.Bin.PluginLoader)
 local PluginWidget = require(script.Parent.PluginWidget)
@@ -59,6 +60,7 @@ local function PluginApp(props: Props)
 		onEnabledChanged = onWidgetEnabledChanged,
 	}, {
 		TelemetryOptOutDialog = React.createElement(TelemetryOptOutDialog),
+		-- AddAccountFlow = e(AddAccountFlow),
 		MainScreen = e(MainScreen),
 	})
 end

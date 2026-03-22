@@ -1,3 +1,5 @@
+local HttpService = game:GetService("HttpService")
+
 local Plugin = script:FindFirstAncestor("StudioRichPresence")
 
 local Packages = Plugin.Packages
@@ -12,14 +14,19 @@ type ApiUser = DiscordApi.User
 type AvatarImage = DiscordApi.AvatarImage
 
 local AuthStore = require(script.Parent.Parent.AuthStore)
+local PluginStore = require(Plugin.Source.Plugin.PluginStore)
+
+local DETAILS_CACHE_KEY = "PresenceUserDetailsCache"
 
 export type LocalUser =
 	| {
 		status: "loading",
+		cachedDetails: ApiUser?,
 	}
 	| {
 		status: "error",
 		problemType: string,
+		cachedDetails: ApiUser?,
 	}
 	| {
 		status: "ready",
@@ -41,6 +48,50 @@ export type AccountStore = {
 	removeUser: (id: string) -> (),
 	destroy: () -> (),
 }
+
+-- Returns the user details from any LocalUser variant, preferring
+-- fresh details over cached ones.
+local function getUserDetails(user: LocalUser): ApiUser?
+	if user.status == "ready" then
+		return user.details
+	end
+	return user.cachedDetails
+end
+
+-- Read user details previously persisted to plugin settings.
+local function readDetailsDiskCache(): { [string]: ApiUser }
+	local pluginStore = peek(PluginStore.get)
+	local plugin = peek(pluginStore.getPlugin)
+	if not plugin then
+		return {}
+	end
+
+	local raw = plugin:GetSetting(DETAILS_CACHE_KEY)
+	if typeof(raw) ~= "string" then
+		return {}
+	end
+
+	local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
+	if not ok or typeof(decoded) ~= "table" then
+		return {}
+	end
+
+	return decoded
+end
+
+-- Persist user details to plugin settings so they survive restarts.
+local function writeDetailsDiskCache(cache: { [string]: ApiUser })
+	local pluginStore = peek(PluginStore.get)
+	local plugin = peek(pluginStore.getPlugin)
+	if not plugin then
+		return
+	end
+
+	local ok, encoded = pcall(HttpService.JSONEncode, HttpService, cache)
+	if ok then
+		pcall(plugin.SetSetting, plugin, DETAILS_CACHE_KEY, encoded)
+	end
+end
 
 local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 	local auth = AuthStore.get()
@@ -76,6 +127,8 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		end
 
 		userDetailsThread = task.spawn(function()
+			local diskCache = readDetailsDiskCache()
+
 			-- Pre-fill: preserve already-resolved users, set everything else
 			-- to loading. Built from scratch so removed accounts are pruned.
 			local working: { [string]: LocalUser } = {}
@@ -85,11 +138,14 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 				if existing and existing.status == "ready" then
 					working[id] = existing
 				else
-					working[id] = { status = "loading" }
+					working[id] = { status = "loading", cachedDetails = diskCache[id] }
 				end
 			end
 
 			setCachedUsers(table.clone(working))
+
+			local diskCacheUpdated = false
+			local newDiskCache = table.clone(diskCache)
 
 			-- Fetch any users not already cached
 			for id, account in authAccounts do
@@ -103,15 +159,31 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 						status = "ready",
 						details = result.value,
 					}
+					newDiskCache[id] = result.value
+					diskCacheUpdated = true
 				else
 					working[id] = {
 						status = "error",
 						problemType = result.error.type :: string,
+						cachedDetails = diskCache[id],
 					}
 				end
 			end
 
+			-- Prune removed accounts from disk cache
+			for id in newDiskCache do
+				if not authAccounts[id] then
+					newDiskCache[id] = nil
+					diskCacheUpdated = true
+				end
+			end
+
 			setCachedUsers(table.clone(working))
+
+			if diskCacheUpdated then
+				writeDetailsDiskCache(newDiskCache)
+			end
+
 			print("updated cached users", working)
 			userDetailsThread = nil
 		end)
@@ -123,6 +195,10 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		Same pattern: read the signal synchronously to register the
 		dependency, then spawn async work. Compares avatar hashes so
 		a changed avatar triggers a re-download.
+
+		Avatars are also resolved for loading/error users that have
+		cachedDetails, since the avatar CDN is public and does not
+		require authentication.
 	]]
 	local avatarThread: thread?
 	local disposeAvatarEffect = effect(function()
@@ -139,12 +215,13 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			-- that still exist and whose avatar hash hasn't changed.
 			local working: { [string]: CachedAvatar } = {}
 			for id, user in cachedUsers do
-				if user.status ~= "ready" then
+				local details = getUserDetails(user)
+				if not details then
 					continue
 				end
 
 				local existing = previousAvatars[id]
-				if existing and existing.avatarHash == user.details.avatar then
+				if existing and existing.avatarHash == details.avatar then
 					-- Avatar unchanged, keep the cached image
 					working[id] = existing
 				end
@@ -152,7 +229,8 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 
 			-- Download missing or invalidated avatars
 			for id, user in cachedUsers do
-				if user.status ~= "ready" then
+				local details = getUserDetails(user)
+				if not details then
 					continue
 				end
 
@@ -160,11 +238,11 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 					continue
 				end
 
-				local result = discord.getUserAvatarAsync(user.details)
+				local result = discord.getUserAvatarAsync(details)
 				if result.ok then
 					working[id] = {
 						image = result.value,
-						avatarHash = user.details.avatar,
+						avatarHash = details.avatar,
 					}
 				end
 

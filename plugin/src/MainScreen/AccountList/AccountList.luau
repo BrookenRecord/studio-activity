@@ -13,32 +13,37 @@ local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
 
+local STATUS_ORDER = { ready = 1, error = 2, loading = 3 }
+
 local userChildrenComputed = Charm.computed(function()
 	local accountStore = AccountStore.get()
 	local users = accountStore.cachedUsers()
 
-	-- Sort users alphabetically
-	local sortedUsers = {}
-	for _, user in users do
-		if user.status ~= "ready" then
-			-- TODO: Handle error and loading cases gracefully
-			continue
-		end
-
-		table.insert(sortedUsers, user)
+	local sortedEntries = {}
+	for id, user in users do
+		table.insert(sortedEntries, { id = id, user = user })
 	end
 
-	table.sort(sortedUsers, function(a, b)
-		return a.details.globalName < b.details.globalName
+	table.sort(sortedEntries, function(a, b)
+		local aOrder = STATUS_ORDER[a.user.status] or 4
+		local bOrder = STATUS_ORDER[b.user.status] or 4
+		if aOrder ~= bOrder then
+			return aOrder < bOrder
+		end
+		if a.user.status == "ready" and b.user.status == "ready" then
+			return (a.user.details.globalName or "") < (b.user.details.globalName or "")
+		end
+		return a.id < b.id
 	end)
 
 	local children: { React.ReactNode } = {}
-	for index, user in sortedUsers do
+	for index, entry in sortedEntries do
 		table.insert(
 			children,
 			e(AccountEntry, {
-				key = user.details.id,
-				user = user.details,
+				key = entry.id,
+				accountId = entry.id,
+				localUser = entry.user,
 				LayoutOrder = index,
 			})
 		)
