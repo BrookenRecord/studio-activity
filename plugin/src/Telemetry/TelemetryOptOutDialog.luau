@@ -21,13 +21,15 @@ local useSignalState = ReactCharm.useSignalState
 local useCallback = React.useCallback
 local useState = React.useState
 
-local function TelemetryOptOutDialog(): React.Node?
+type Props = {
+	onClose: (result: any?) -> (),
+}
+
+local function TelemetryOptOutDialog(props: Props)
 	local nextOrder = createNextOrder()
 
 	local userSettingsStore = useSignalState(UserSettingsStore.get)
 	local localStorageStore = useSignalState(LocalStorageStore.get)
-	local storage = useSignalState(localStorageStore.getStorage)
-	local isStorageLoading = useSignalState(localStorageStore.getIsLoading)
 
 	local isOptedIn, setIsOptedIn = useState(true)
 
@@ -55,13 +57,9 @@ local function TelemetryOptOutDialog(): React.Node?
 				})
 			end
 		end)
-	end, { localStorageStore.setStorage :: any, userSettingsStore.setStorage, isOptedIn })
 
-	-- We check `isStorageLoading` to prevent the dialog from briefly flashing
-	-- on screen
-	if isStorageLoading or storage.wasUserPromptedForTelemetry then
-		return nil
-	end
+		props.onClose()
+	end, { localStorageStore.setStorage :: any, userSettingsStore.setStorage, isOptedIn, props.onClose })
 
 	return React.createElement(Dialog.Root, {
 		disablePortal = false,

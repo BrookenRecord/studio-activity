@@ -3,11 +3,10 @@ local Plugin = script:FindFirstAncestor("StudioRichPresence")
 local Packages = Plugin.Packages
 local React = require(Packages.React)
 
-local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local MainScreen = require(Plugin.Source.MainScreen)
-local PluginLoader = require(Plugin.Bin.PluginLoader)
+local ModalRenderer = require(Plugin.Source.Modal.ModalRenderer)
 local PluginWidget = require(script.Parent.PluginWidget)
-local TelemetryOptOutDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
+local createPluginLoader = require(Plugin.Bin.createPluginLoader)
 
 local e = React.createElement
 local useCallback = React.useCallback
@@ -15,7 +14,7 @@ local useState = React.useState
 local useEffect = React.useEffect
 
 type Props = {
-	pluginLoaderContext: PluginLoader.PluginLoaderContext,
+	pluginLoaderContext: createPluginLoader.PluginLoaderContext,
 }
 
 local function PluginApp(props: Props)
@@ -40,14 +39,9 @@ local function PluginApp(props: Props)
 	end, {})
 
 	useEffect(function()
-		local connection
-		task.delay(0, function()
-			connection = props.pluginLoaderContext.mainButtonClickedSignal:Connect(toggleEnabled)
-		end)
+		local connection = props.pluginLoaderContext.mainButtonClickedSignal.Connect(toggleEnabled)
 		return function()
-			if connection then
-				connection:Disconnect()
-			end
+			connection.Disconnect()
 		end
 	end, { props.pluginLoaderContext })
 
@@ -59,8 +53,7 @@ local function PluginApp(props: Props)
 		onWidgetRestored = onRestore,
 		onEnabledChanged = onWidgetEnabledChanged,
 	}, {
-		TelemetryOptOutDialog = React.createElement(TelemetryOptOutDialog),
-		-- AddAccountFlow = e(AddAccountFlow),
+		ModalRenderer = e(ModalRenderer),
 		MainScreen = e(MainScreen),
 	})
 end

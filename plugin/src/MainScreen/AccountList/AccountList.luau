@@ -54,7 +54,7 @@ local userChildrenComputed = Charm.computed(function()
 		table.insert(
 			children,
 			e(LinkAccountEntry, {
-				key = "LinkAccount,",
+				key = "LinkAccount",
 				LayoutOrder = 3,
 			})
 		)

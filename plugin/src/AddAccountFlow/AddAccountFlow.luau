@@ -17,34 +17,37 @@ local createNextOrder = ReactUtils.createNextOrder
 local e = React.createElement
 
 type Props = {
-	LayoutOrder: number?,
+	isOpen: boolean,
+	onClose: (result: any?) -> (),
 }
 
-local function AddAccountFlow(_props: Props)
+local function AddAccountFlow(props: Props)
 	local nextOrder = createNextOrder()
 
-	return e(ReactUtils.ContextStack, {
-		providers = {
-			e(AuthContext.Provider, {}),
-		},
+	return e(Sheet.Root, {
+		isOpen = props.isOpen,
+		preferCenterSheet = true,
+		size = DialogSize.Large,
+		disablePortal = false,
+		hasBackdrop = true,
+		onClose = props.onClose,
 	}, {
-		Sheet = e(Sheet.Root, {
-			isOpen = true,
-			preferCenterSheet = true,
-			size = DialogSize.Large,
-			disablePortal = false,
-			hasBackdrop = true,
-			onClose = function() end,
+		Header = e(Sheet.Header, {
+			hasCloseAffordance = true,
 		}, {
-			Header = e(Sheet.Header, {
-				hasCloseAffordance = true,
-			}, {
-				Title = e(Title, {
-					LayoutOrder = nextOrder(),
-				}),
+			Title = e(Title, {
+				LayoutOrder = nextOrder(),
 			}),
+		}),
 
-			Content = e(Sheet.Content, nil, e(Content)),
+		Content = props.isOpen and e(Sheet.Content, nil, {
+			Context = e(ReactUtils.ContextStack, {
+				providers = {
+					e(AuthContext.Provider, {}),
+				},
+			}, {
+				InnerContent = e(Content),
+			}),
 		}),
 	})
 end

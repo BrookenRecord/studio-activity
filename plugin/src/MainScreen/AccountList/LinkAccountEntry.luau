@@ -5,6 +5,8 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
+
 local View = Foundation.View
 local Text = Foundation.Text
 local Icon = Foundation.Icon
@@ -26,7 +28,10 @@ local function LinkAccountEntry(props: Props)
 
 	return e(View, {
 		tag = "size-full-1400 row gap-medium padding-x-medium align-y-center radius-small",
-		onActivated = function() end,
+		onActivated = function()
+			local modalStore = ModalStore.get()
+			modalStore.open("addAccount")
+		end,
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		IconBlock = e(View, {

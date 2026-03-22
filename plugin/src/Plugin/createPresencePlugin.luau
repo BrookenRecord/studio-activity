@@ -6,7 +6,7 @@ local ReactRoblox = require(Packages.ReactRoblox)
 
 local ContextProviders = require(Plugin.Source.Common.ContextProviders)
 local Logger = require(Plugin.Source.Logger)
-local PluginLoader = require(Plugin.Bin.PluginLoader)
+local createPluginLoader = require(Plugin.Bin.createPluginLoader)
 local fireEventAsync = require(Plugin.Source.Telemetry.fireEventAsync)
 
 local PluginApp = require(script.Parent.PluginApp)
@@ -19,7 +19,7 @@ local function stopwatch(callback: () -> ()): string
 	return ("%.2fms"):format((os.clock() - start) * 1000)
 end
 
-local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: PluginLoader.PluginLoaderContext)
+local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext)
 	local widget = pluginLoaderContext.mainDockWidget
 	assert(widget ~= nil, "Main dock widget not found")
 
