@@ -68,11 +68,7 @@ local function AccountEntry(props: Props)
 	local isError = user.status == "error"
 
 	return e(View, {
-		tag = {
-			["size-full-1400 row gap-medium padding-x-medium align-y-center radius-small"] = true,
-			["bg-shift-200"] = not isDisabled,
-			["bg-shift-100"] = isDisabled,
-		},
+		tag = "bg-shift-200 size-full-1400 row gap-medium padding-x-medium align-y-center radius-small",
 		onActivated = if not isDisabled then toggleActive else nil,
 		stroke = if user.status == "error"
 			then {

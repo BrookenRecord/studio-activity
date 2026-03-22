@@ -7,6 +7,7 @@ local ReactCharm = require(Packages.ReactCharm)
 
 local AccountEntry = require(script.Parent.AccountEntry)
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
+local LinkAccountEntry = require(script.Parent.LinkAccountEntry)
 local Section = require(script.Parent.Parent.Section)
 
 local useSignalState = ReactCharm.useSignalState
@@ -45,6 +46,16 @@ local userChildrenComputed = Charm.computed(function()
 				accountId = entry.id,
 				localUser = entry.user,
 				LayoutOrder = index,
+			})
+		)
+	end
+
+	if #children < 3 then
+		table.insert(
+			children,
+			e(LinkAccountEntry, {
+				key = "LinkAccount,",
+				LayoutOrder = 3,
 			})
 		)
 	end
