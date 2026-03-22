@@ -1,5 +1,5 @@
 local AssetService = game:GetService("AssetService")
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)

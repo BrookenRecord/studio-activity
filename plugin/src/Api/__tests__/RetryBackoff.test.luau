@@ -1,4 +1,4 @@
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Api = Plugin.Source.Api
 local Packages = Plugin.Packages

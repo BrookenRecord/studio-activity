@@ -1,4 +1,4 @@
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local sha256 = require(Packages.sha256)

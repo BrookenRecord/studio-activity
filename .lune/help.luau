@@ -1,9 +1,9 @@
 --[[
 	Help Command
-	
+
 	Displays a list of all available commands and their descriptions.
 	Dynamically discovers commands from the commands/ directory.
-	
+
 	Note: Run this command from inside the .lune directory:
 	  cd .lune && lune run help
 ]]
@@ -27,7 +27,7 @@ end
 
 --[[
 	Discovers all commands from the commands/ directory.
-	
+
 	@return A list of command metadata sorted alphabetically
 ]]
 local function discoverCommands(): { { name: string, description: string, usage: string } }
@@ -59,7 +59,7 @@ end
 local function printGeneralHelp()
 	local commands = discoverCommands()
 
-	print(color.bold("Studio Rich Presence CLI"))
+	print(color.bold("Studio Activity CLI"))
 	print()
 	print("A collection of development tools for building, testing, and managing the project.")
 	print()

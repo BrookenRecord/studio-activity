@@ -1,15 +1,15 @@
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
 export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> ()
 
 local function setup(plugin: Plugin, main: PluginMain)
-	plugin.Name = "StudioRichPresence"
+	plugin.Name = "StudioActivity"
 
 	local pluginLoaderContext = createPluginLoader({
 		plugin = plugin,
-		pluginName = "StudioRichPresence",
+		pluginName = "StudioActivity",
 		translationResourceTable = Plugin.Resources.LocalizedStrings,
 		getToolbarName = function(localize): string
 			return localize("Plugin", "ToolbarName")
@@ -26,8 +26,8 @@ local function setup(plugin: Plugin, main: PluginMain)
 			clickableWhenViewportHidden = true,
 		},
 		dockWidgetInfo = {
-			id = "StudioRichPresence",
-			name = "StudioRichPresence",
+			id = "StudioActivity",
+			name = "StudioActivity",
 			dockWidgetPluginGuiInfo = DockWidgetPluginGuiInfo.new(
 				Enum.InitialDockState.Right, --initialDockState,
 				false, --initialEnabled,

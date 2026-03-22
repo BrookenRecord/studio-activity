@@ -1,6 +1,6 @@
 local HttpService = game:GetService("HttpService")
 
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local React = require(Packages.React)

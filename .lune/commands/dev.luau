@@ -45,7 +45,7 @@ function dev.run(_options: Options)
 	task.spawn(function()
 		local buildResult = rojo.build({
 			projectFile = "plugin/default.project.jsonc",
-			plugin = "StudioRichPresence.rbxm",
+			plugin = "StudioActivity.rbxm",
 			watch = true,
 			stdio = "inherit",
 		})

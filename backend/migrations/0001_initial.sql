@@ -1,5 +1,5 @@
 -- Migration: 0001_initial
--- Description: Initial schema for Studio Rich Presence API
+-- Description: Initial schema for Studio Activity API
 -- Created: 2024-12-28
 
 -- Users table: Each plugin installation is a unique user
@@ -17,7 +17,7 @@ CREATE TABLE users (
 CREATE INDEX idx_users_last_activity ON users(last_activity_at);
 
 -- Index for pending token cleanup
-CREATE INDEX idx_users_pending_expires ON users(pending_token_expires) 
+CREATE INDEX idx_users_pending_expires ON users(pending_token_expires)
   WHERE pending_token_expires IS NOT NULL;
 
 
@@ -31,7 +31,7 @@ CREATE TABLE discord_accounts (
   token_expires_at INTEGER NOT NULL,      -- Unix timestamp when access token expires
   created_at INTEGER NOT NULL,            -- Unix timestamp
   updated_at INTEGER NOT NULL,            -- Unix timestamp
-  
+
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -51,10 +51,9 @@ CREATE TABLE auth_sessions (
   error_message TEXT,                     -- Error message if state = 'failed'
   expires_at INTEGER NOT NULL,            -- Unix timestamp when session expires (5 min)
   created_at INTEGER NOT NULL,            -- Unix timestamp
-  
+
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Index for cleanup job (find expired sessions)
 CREATE INDEX idx_auth_sessions_expires ON auth_sessions(expires_at);
-

@@ -1,4 +1,4 @@
-local Plugin = script:FindFirstAncestor("StudioRichPresence")
+local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
