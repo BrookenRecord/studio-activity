@@ -26,7 +26,7 @@ local function ContextProviders(props: Props)
 	local themeName: useThemeName.ThemeName = useThemeName()
 
 	useEffect(function()
-		PluginStore.get(false).setPlugin(props.plugin)
+		PluginStore.get().setPlugin(props.plugin)
 	end, { props.plugin })
 
 	return e(ReactUtils.ContextStack, {

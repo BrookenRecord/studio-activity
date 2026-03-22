@@ -28,6 +28,7 @@ local function Title(props: Props)
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		LogoBlock = e(PluginWordmark, {
+			size = "small",
 			LayoutOrder = nextOrder(),
 		}),
 

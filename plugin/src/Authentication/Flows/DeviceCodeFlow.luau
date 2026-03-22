@@ -89,7 +89,7 @@ local function postForm(httpService: HttpService, url: string, params: { [string
 			Method = "POST",
 			Headers = {
 				["Content-Type"] = "application/x-www-form-urlencoded",
-			},
+			} :: any,
 			-- Gzip is not supported by discord
 			Compress = Enum.HttpCompression.None,
 			Body = body,

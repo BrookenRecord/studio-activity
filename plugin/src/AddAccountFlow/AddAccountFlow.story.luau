@@ -10,7 +10,10 @@ local e = React.createElement
 
 local story: Storyteller.Story<any> = {
 	story = function()
-		return e(AddAccountFlow, {})
+		return e(AddAccountFlow, {
+			isOpen = true,
+			onClose = function() end,
+		})
 	end,
 }
 

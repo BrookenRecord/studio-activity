@@ -8,8 +8,8 @@ local getAnonymizedUserId = require(script.Parent.getAnonymizedUserId)
 type TelemetryEvent = Types.TelemetryEvent
 
 local function fireEventAsync(event: TelemetryEvent)
-	local userSettingsStore = UserSettingsStore.get(false)
-	local userSettings = userSettingsStore.getStorage(false)
+	local userSettingsStore = UserSettingsStore.get()
+	local userSettings = userSettingsStore.getStorage()
 
 	if not userSettings.collectAnonymousUsageData then
 		return

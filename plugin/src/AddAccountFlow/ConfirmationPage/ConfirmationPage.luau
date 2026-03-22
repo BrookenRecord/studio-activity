@@ -7,7 +7,6 @@ local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
-local AuthContext = require(script.Parent.Parent.AuthContext)
 local DiscordAvatar = require(Plugin.Source.Common.DiscordAvatar)
 
 local View = Foundation.View
@@ -23,7 +22,6 @@ type Props = {
 
 local function ConfirmationPage(props: Props): React.ReactNode
 	local nextOrder = createNextOrder()
-	local auth = AuthContext.useAuth()
 
 	local accountStore = AccountStore.get()
 	local images = ReactCharm.useSignalState(accountStore.cachedUserImages)
@@ -56,6 +54,8 @@ local function ConfirmationPage(props: Props): React.ReactNode
 
 		Avatar = e(DiscordAvatar, {
 			avatar = firstImage,
+			isDimmed = false,
+			size = 60,
 			LayoutOrder = nextOrder(),
 		}),
 	})

@@ -260,7 +260,7 @@ function ApiClientClass.new(config: ApiConfig): ApiClient
 			},
 			maxRetries = config.maxRetries,
 		}),
-		_credentialsStore = CredentialsStore.get(false),
+		_credentialsStore = CredentialsStore.get(),
 	}
 
 	return setmetatable(internal :: any, ApiClientClass) :: ApiClient
@@ -271,7 +271,7 @@ end
 ]]
 function ApiClientClass.HasCredentials(self: ApiClient): boolean
 	local impl = self :: ApiClientImpl
-	local creds = impl._credentialsStore.getStorage(false)
+	local creds = impl._credentialsStore.getStorage()
 	local hasCredentials = creds.authToken ~= nil and creds.clientKey ~= nil
 	Logger:Debug("HasCredentials check", { hasCredentials = hasCredentials })
 	return hasCredentials
@@ -282,7 +282,7 @@ end
 ]]
 function ApiClientClass.GetCredentials(self: ApiClient): Credentials
 	local impl = self :: ApiClientImpl
-	return impl._credentialsStore.getStorage(false)
+	return impl._credentialsStore.getStorage()
 end
 
 --[[
@@ -302,7 +302,7 @@ end
 	Throws an error if no credentials are stored.
 ]]
 local function requireCredentials(impl: ApiClientImpl): (string, string)
-	local creds = impl._credentialsStore.getStorage(false)
+	local creds = impl._credentialsStore.getStorage()
 	if creds.authToken == nil or creds.clientKey == nil then
 		Logger:Error("No credentials stored - operation requires authentication")
 		error("No credentials stored. Call AuthComplete first to link a Discord account.")
@@ -323,7 +323,7 @@ function ApiClientClass.AuthStart(self: ApiClient): Result.Result<AuthStartRespo
 
 	-- Build request body - use existing credentials if available
 	local bodyData: { [string]: any } = {}
-	local creds = impl._credentialsStore.getStorage(false)
+	local creds = impl._credentialsStore.getStorage()
 	local hasExistingCredentials = creds.authToken ~= nil and creds.clientKey ~= nil
 
 	if hasExistingCredentials then
