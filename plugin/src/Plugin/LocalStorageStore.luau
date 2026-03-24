@@ -6,16 +6,22 @@ local t = require(Packages.t)
 
 local createPluginSettingsStore = require(script.Parent.createPluginSettingsStore)
 
+local DiscordApi = require(Plugin.Source.Api.Discord)
+type ApiUser = DiscordApi.User
+
 export type LocalStorageStore = {
 	wasUserPromptedForTelemetry: boolean,
+	userDetailsCache: { [string]: ApiUser }?,
 }
 
 local defaultValue: LocalStorageStore = {
 	wasUserPromptedForTelemetry = false,
+	userDetailsCache = {},
 }
 
 local validate = t.interface({
 	wasUserPromptedForTelemetry = t.boolean,
+	userDetailsCache = t.optional(t.table),
 })
 
 return {

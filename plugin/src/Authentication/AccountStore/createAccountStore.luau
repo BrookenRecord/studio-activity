@@ -1,5 +1,3 @@
-local HttpService = game:GetService("HttpService")
-
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
@@ -14,9 +12,7 @@ type ApiUser = DiscordApi.User
 type AvatarImage = DiscordApi.AvatarImage
 
 local AuthStore = require(script.Parent.Parent.AuthStore)
-local PluginStore = require(Plugin.Source.Plugin.PluginStore)
-
-local DETAILS_CACHE_KEY = "PresenceUserDetailsCache"
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 
 export type LocalUser =
 	| {
@@ -58,39 +54,21 @@ local function getUserDetails(user: LocalUser): ApiUser?
 	return user.cachedDetails
 end
 
--- Read user details previously persisted to plugin settings.
+-- Read user details previously persisted to local storage.
 local function readDetailsDiskCache(): { [string]: ApiUser }
-	local pluginStore = peek(PluginStore.get)
-	local plugin = peek(pluginStore.getPlugin)
-	if not plugin then
-		return {}
-	end
-
-	local raw = plugin:GetSetting(DETAILS_CACHE_KEY)
-	if typeof(raw) ~= "string" then
-		return {}
-	end
-
-	local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
-	if not ok or typeof(decoded) ~= "table" then
-		return {}
-	end
-
-	return decoded
+	local store = peek(LocalStorageStore.get)
+	local storage = peek(store.getStorage)
+	return storage.userDetailsCache or {}
 end
 
--- Persist user details to plugin settings so they survive restarts.
+-- Persist user details to local storage so they survive restarts.
 local function writeDetailsDiskCache(cache: { [string]: ApiUser })
-	local pluginStore = peek(PluginStore.get)
-	local plugin = peek(pluginStore.getPlugin)
-	if not plugin then
-		return
-	end
-
-	local ok, encoded = pcall(HttpService.JSONEncode, HttpService, cache)
-	if ok then
-		pcall(plugin.SetSetting, plugin, DETAILS_CACHE_KEY, encoded)
-	end
+	local store = peek(LocalStorageStore.get)
+	store.setStorage(function(prev)
+		local new = table.clone(prev)
+		new.userDetailsCache = cache
+		return new
+	end)
 end
 
 local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
