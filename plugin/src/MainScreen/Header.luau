@@ -3,9 +3,11 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
 local PluginWordmark = require(Plugin.Source.Common.PluginWordmark)
+local PresenceManager = require(Plugin.Source.PresenceManager)
 
 local View = Foundation.View
 local Text = Foundation.Text
@@ -15,8 +17,10 @@ local InputPlacement = Foundation.Enums.InputPlacement
 local useTokens = Foundation.Hooks.useTokens
 
 local createNextOrder = ReactUtils.createNextOrder
+local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
+local useCallback = React.useCallback
 
 type Props = {
 	LayoutOrder: number?,
@@ -25,6 +29,15 @@ type Props = {
 local function Header(props: Props)
 	local nextOrder = createNextOrder()
 	local tokens = useTokens()
+
+	local presenceManager = PresenceManager.get()
+	local isActive = useSignalState(presenceManager.getIsActive)
+
+	local toggleActive = useCallback(function()
+		presenceManager.setIsActive(function(prev)
+			return not prev
+		end)
+	end, { presenceManager })
 
 	return e(View, {
 		tag = "size-full-0 auto-y col padding-y-medium gap-medium",
@@ -46,11 +59,9 @@ local function Header(props: Props)
 			}),
 
 			ActiveToggle = e(Toggle, {
-				label = "Active",
-				isChecked = true,
-				onActivated = function()
-					print("Toggle switch activated")
-				end,
+				label = if isActive then "Active" else "Inactive",
+				isChecked = isActive,
+				onActivated = toggleActive,
 				size = InputSize.Small,
 				placement = InputPlacement.End,
 				LayoutOrder = nextOrder(),

@@ -40,7 +40,7 @@ export type PresenceManager = {
 	getIsActive: () -> boolean,
 
 	setActivity: (ActivityConfig?) -> (),
-	setIsActive: (boolean) -> (),
+	setIsActive: (boolean | (boolean) -> boolean) -> (),
 
 	destroy: () -> (),
 }
@@ -79,60 +79,6 @@ local function serializeActivity(activity: ActivityConfig): ApiActivity
 	return apiActivity
 end
 
---[[
-	Retry an async callback with exponential backoff.
-	Returns immediately on success or on non-retryable errors (unauthorized).
-	Retries on network, unexpected, and application_not_cached errors.
-]]
-local function retryAsync<T, E>(
-	callback: () -> { ok: true, value: T } | { ok: false, error: E },
-	context: string
-): { ok: true, value: T } | { ok: false, error: E }
-	local backoffConfig = RetryBackoff.defaultConfig()
-	local backoffState = RetryBackoff.createState()
-
-	for attempt = 1, MAX_RETRIES do
-		local result = callback()
-
-		if result.ok then
-			return result
-		end
-
-		local err = result.error :: any
-		local errorType: string = err.type
-
-		-- Don't retry unauthorized errors — needs auth refresh from external system
-		if errorType == "unauthorized" then
-			Logger:Warn(`{context}: unauthorized (attempt {attempt}/{MAX_RETRIES})`)
-			return result
-		end
-
-		-- On last attempt, don't wait — just return the error
-		if attempt == MAX_RETRIES then
-			Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
-			return result
-		end
-
-		-- Calculate delay with backoff, respecting server-provided retryAfter
-		local serverRetryAfter: number? = nil
-		if errorType == "application_not_cached" then
-			local retryAfterMs: number? = err.retryAfter
-			if retryAfterMs then
-				serverRetryAfter = retryAfterMs / 1000
-			end
-		end
-
-		local delay = RetryBackoff.nextAttempt(backoffConfig, backoffState, serverRetryAfter)
-		Logger:Warn(
-			`{context}: {errorType}, retrying in {string.format("%.1f", delay)}s (attempt {attempt}/{MAX_RETRIES})`
-		)
-		task.wait(delay)
-	end
-
-	-- Unreachable, but satisfies the type checker
-	return callback()
-end
-
 local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceManager
 	local auth = AuthStore.get()
 
@@ -141,6 +87,90 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 
 	-- In-memory session tokens: accountId → sessionToken
 	local sessionTokens: { [string]: string } = {}
+
+	-- Tracks when we're next allowed to make Discord API calls.
+	-- 0 means no cooldown is active. Value is os.clock()-based (monotonic).
+	local apiCooldownUntil: number = 0
+
+	local function waitForCooldownAsync()
+		local remaining = apiCooldownUntil - os.clock()
+		if remaining > 0 then
+			Logger:Info(`PresenceManager: waiting {string.format("%.1f", remaining)}s for API cooldown`)
+			task.wait(remaining)
+		end
+	end
+
+	local function updateCooldown(retryAfterSeconds: number)
+		local newUntil = os.clock() + retryAfterSeconds
+		apiCooldownUntil = math.max(apiCooldownUntil, newUntil)
+	end
+
+	--[[
+		Retry an async callback with exponential backoff.
+		Returns immediately on success or on non-retryable errors (unauthorized).
+		Retries on network, unexpected, and application_not_cached errors.
+		Rate-limited errors update the global cooldown and retry after it elapses.
+	]]
+	local function retryAsync<T, E>(
+		callback: () -> { ok: true, value: T } | { ok: false, error: E },
+		context: string
+	): { ok: true, value: T } | { ok: false, error: E }
+		local backoffConfig = RetryBackoff.defaultConfig()
+		local backoffState = RetryBackoff.createState()
+
+		for attempt = 1, MAX_RETRIES do
+			waitForCooldownAsync()
+
+			local result = callback()
+
+			if result.ok then
+				return result
+			end
+
+			local err = result.error :: any
+			local errorType: string = err.type
+
+			-- Don't retry unauthorized errors — needs auth refresh from external system
+			if errorType == "unauthorized" then
+				Logger:Warn(`{context}: unauthorized (attempt {attempt}/{MAX_RETRIES})`)
+				return result
+			end
+
+			-- On last attempt, don't wait — just return the error
+			if attempt == MAX_RETRIES then
+				Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
+				return result
+			end
+
+			-- Rate limited: update global cooldown, next iteration waits via waitForCooldownAsync
+			if errorType == "rate_limited" then
+				local retryAfter: number = err.retryAfter or 5
+				updateCooldown(retryAfter)
+				Logger:Warn(
+					`{context}: rate limited (retry_after={string.format("%.1f", retryAfter)}s), attempt {attempt}/{MAX_RETRIES}`
+				)
+				continue
+			end
+
+			-- Calculate delay with backoff, respecting server-provided retryAfter
+			local serverRetryAfter: number? = nil
+			if errorType == "application_not_cached" then
+				local retryAfterMs: number? = err.retryAfter
+				if retryAfterMs then
+					serverRetryAfter = retryAfterMs / 1000
+				end
+			end
+
+			local delay = RetryBackoff.nextAttempt(backoffConfig, backoffState, serverRetryAfter)
+			Logger:Warn(
+				`{context}: {errorType}, retrying in {string.format("%.1f", delay)}s (attempt {attempt}/{MAX_RETRIES})`
+			)
+			task.wait(delay)
+		end
+
+		-- Unreachable, but satisfies the type checker
+		return callback()
+	end
 
 	--[[
 		Delete a single session with retry. Clears the session token immediately

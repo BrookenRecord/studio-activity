@@ -55,6 +55,9 @@ export type UnauthorizedProblem = { type: "unauthorized" }
 -- Headless session create (202 means app isn't cached yet)
 export type ApplicationNotCachedProblem = { type: "application_not_cached", retryAfter: number }
 
+-- Any rate-limited endpoint (429). retryAfter is in seconds (float).
+export type RateLimitedProblem = { type: "rate_limited", retryAfter: number }
+
 -- Composite problem types per endpoint
 export type DeviceCodeProblem = NetworkProblem | InvalidScopeProblem | UnexpectedProblem
 
@@ -68,11 +71,12 @@ export type DeviceCodeExchangeProblem =
 
 export type RefreshProblem = InvalidGrantProblem | NetworkProblem | UnexpectedProblem
 
-export type AuthenticatedProblem = UnauthorizedProblem | NetworkProblem | UnexpectedProblem
+export type AuthenticatedProblem = UnauthorizedProblem | RateLimitedProblem | NetworkProblem | UnexpectedProblem
 
 export type HeadlessSessionCreateProblem =
 	| UnauthorizedProblem
 	| ApplicationNotCachedProblem
+	| RateLimitedProblem
 	| NetworkProblem
 	| UnexpectedProblem
 
@@ -450,7 +454,7 @@ local function new(config: Config)
 			return Result.err<<UnauthorizedProblem>>({ type = "unauthorized" })
 		end
 
-		if res.ok and type(res.value.body) == "table" then
+		if res.value.ok and type(res.value.body) == "table" then
 			local body = res.value.body
 			return Result.ok<<User>>({
 				id = body.id,
@@ -554,6 +558,13 @@ local function new(config: Config)
 			return Result.err<<UnauthorizedProblem>>({ type = "unauthorized" })
 		end
 
+		if res.value.statusCode == 429 and type(res.value.body) == "table" then
+			return Result.err<<RateLimitedProblem>>({
+				type = "rate_limited",
+				retryAfter = res.value.body.retry_after or 5,
+			})
+		end
+
 		-- Application not yet cached — caller should retry
 		if res.value.statusCode == 202 and type(res.value.body) == "table" then
 			return Result.err<<ApplicationNotCachedProblem>>({
@@ -562,7 +573,7 @@ local function new(config: Config)
 			})
 		end
 
-		if res.ok and type(res.value.body) == "table" then
+		if res.value.ok and type(res.value.body) == "table" then
 			local body = res.value.body
 			return Result.ok<<HeadlessSession>>({
 				sessionToken = body.token,
@@ -601,7 +612,14 @@ local function new(config: Config)
 			return Result.err<<UnauthorizedProblem>>({ type = "unauthorized" })
 		end
 
-		if res.ok and type(res.value.body) == "table" then
+		if res.value.statusCode == 429 and type(res.value.body) == "table" then
+			return Result.err<<RateLimitedProblem>>({
+				type = "rate_limited",
+				retryAfter = res.value.body.retry_after or 5,
+			})
+		end
+
+		if res.value.ok and type(res.value.body) == "table" then
 			local body = res.value.body
 			return Result.ok<<HeadlessSession>>({
 				sessionToken = body.token,
@@ -633,8 +651,15 @@ local function new(config: Config)
 			return Result.err<<UnauthorizedProblem>>({ type = "unauthorized" })
 		end
 
+		if res.value.statusCode == 429 and type(res.value.body) == "table" then
+			return Result.err<<RateLimitedProblem>>({
+				type = "rate_limited",
+				retryAfter = res.value.body.retry_after or 5,
+			})
+		end
+
 		-- 204 No Content is the expected success
-		if res.value.statusCode == 204 or res.ok then
+		if res.value.ok then
 			return Result.ok(nil)
 		end
 
