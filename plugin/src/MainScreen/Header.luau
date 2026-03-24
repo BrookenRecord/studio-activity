@@ -40,11 +40,12 @@ local function Header(props: Props)
 	end, { presenceManager })
 
 	return e(View, {
-		tag = "size-full-0 auto-y col padding-y-medium gap-medium",
+		tag = "size-full-0 auto-y bg-surface-100 col gap-medium",
 		LayoutOrder = props.LayoutOrder,
+		ZIndex = 2,
 	}, {
 		LayoutBlock = e(View, {
-			tag = "size-full-0 auto-y row align-y-center padding-x-large gap-medium",
+			tag = "size-full-0 auto-y row align-y-center padding-x-large padding-top-medium gap-medium",
 			LayoutOrder = nextOrder(),
 		}, {
 			Wordmark = e(PluginWordmark, {

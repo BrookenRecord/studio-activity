@@ -14,7 +14,6 @@ export type PlaceContext = {
 
 local defaultContext: PlaceContext = {
 	placeId = nil,
-	placeName = "brooke was here muhahaha",
 	universeId = nil,
 	creatorName = "poop!",
 }

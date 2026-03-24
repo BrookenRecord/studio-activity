@@ -3,6 +3,7 @@ export type BuildVars = {
 		version: string,
 		channel: string,
 		hash: string,
+		isDev: boolean,
 	},
 
 	api: {

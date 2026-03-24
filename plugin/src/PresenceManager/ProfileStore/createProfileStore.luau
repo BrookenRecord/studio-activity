@@ -44,6 +44,7 @@ export type ProfileStore = {
 	removeCustomProfile: (id: string) -> (),
 
 	destroy: () -> (),
+	_settingsStore: createPluginSettingsStore.PluginSettingsStore<ProfileStoreData>,
 }
 
 type ProfileStoreData = {
@@ -269,6 +270,7 @@ local function createProfileStore(): ProfileStore
 		removeCustomProfile = removeCustomProfile,
 
 		destroy = destroy,
+		_settingsStore = settingsStore,
 	}
 end
 

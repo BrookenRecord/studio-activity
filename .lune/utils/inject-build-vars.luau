@@ -1,6 +1,7 @@
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
+local exec = require("../lib/process/exec")
 local env = require("./env")
 
 local BuildVarsModule = require("../../plugin/src/BuildVars/Types")
@@ -18,11 +19,14 @@ local function injectBuildVars(config: Config)
 	local clientId =
 		assert(env.loadEnvVar("DISCORD_CLIENT_ID"), "No `DISCORD_CLIENT_ID` provided in environment variables")
 
+	local gitHash = exec.run("git", { "rev-parse", "--short", "HEAD" }, { quiet = true })
+
 	local vars: BuildVars = {
 		build = {
 			version = "0.0.1",
 			channel = "live",
-			hash = "blah",
+			hash = gitHash,
+			isDev = true,
 		},
 
 		api = {
