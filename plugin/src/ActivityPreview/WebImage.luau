@@ -1,4 +1,5 @@
 local AssetService = game:GetService("AssetService")
+
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
@@ -7,40 +8,42 @@ local React = require(Packages.React)
 local png = require(Packages.png)
 
 local Logger = require(Plugin.Source.Logger)
-
-local DiscordApi = require(Plugin.Source.Api.Discord)
-type AvatarImage = DiscordApi.AvatarImage
+local useWebImage = require(script.Parent.useWebImage)
 
 local View = Foundation.View
 local Icon = Foundation.Icon
 local IconName = Foundation.Enums.IconName
 local IconSize = Foundation.Enums.IconSize
+local useTokens = Foundation.Hooks.useTokens
 
 local e = React.createElement
-local useEffect = React.useEffect
 local useState = React.useState
+local useEffect = React.useEffect
 
 type Props = {
-	avatar: AvatarImage,
-	size: number,
-	isDimmed: boolean,
+	url: string,
+	size: "big" | "small",
 	LayoutOrder: number?,
 }
 
-local function DiscordAvatar(props: Props)
+local function WebImage(props: Props)
+	local tokens = useTokens()
+
 	local imageContent, setImageContent = useState<<Content?>>(nil)
 	local hasError, setHasError = useState(false)
+	local imageData = useWebImage(props.url)
+
+	local isBig = props.size == "big"
 
 	useEffect(function()
-		if props.avatar.contentType ~= "image/png" then
+		if imageData == nil then
 			setHasError(true)
 			return
 		end
 
 		local editableImage
 		local success, err = pcall(function()
-			local pixelBuf = buffer.fromstring(props.avatar.data)
-			local decoded = png.decode(pixelBuf)
+			local decoded = png.decode(imageData)
 
 			local size = Vector2.new(decoded.width, decoded.height)
 			editableImage = AssetService:CreateEditableImage({
@@ -56,7 +59,7 @@ local function DiscordAvatar(props: Props)
 
 		if not success then
 			setHasError(true)
-			Logger:Warn("Error while rendering Discord avatar", {
+			Logger:Warn("Error while rendering web image", {
 				error = err,
 			})
 		end
@@ -69,29 +72,31 @@ local function DiscordAvatar(props: Props)
 			end
 			setImageContent(nil)
 		end
-	end, { props.avatar })
+	end, { imageData })
 
 	return e(View, {
-		tag = "bg-surface-100 radius-circle row align-y-center align-x-center",
-		Size = UDim2.fromOffset(props.size, props.size),
+		tag = {
+			["size-full bg-shift-100 row align-y-center align-x-center"] = true,
+			["radius-small"] = isBig,
+			["radius-circle"] = not isBig,
+		},
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		ErrorIcon = hasError and e(Icon, {
 			name = IconName.SquareFaceEmoji,
-			size = IconSize.Medium,
+			size = if isBig then IconSize.Medium else IconSize.XSmall,
 		}),
 
 		Image = (not hasError) and e("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
-			ImageTransparency = if props.isDimmed then 0.6 else 0,
 			ImageContent = imageContent,
 		}, {
 			UICorner = e("UICorner", {
-				CornerRadius = UDim.new(1, 0),
+				CornerRadius = if isBig then UDim.new(0, tokens.Radius.Small) else UDim.new(1, 0),
 			}),
 		}),
 	})
 end
 
-return React.memo(DiscordAvatar)
+return WebImage

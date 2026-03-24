@@ -32,13 +32,13 @@ local function ActivityDetails(props: Props)
 			LayoutOrder = nextOrder(),
 		}),
 
-		Details = e(Text, {
+		Details = props.activity.details and e(Text, {
 			tag = "auto-xy text-body-small content-default",
 			Text = props.activity.details,
 			LayoutOrder = nextOrder(),
 		}),
 
-		State = e(Text, {
+		State = props.activity.state and e(Text, {
 			tag = "auto-xy text-body-small content-default",
 			Text = props.activity.state,
 			LayoutOrder = nextOrder(),

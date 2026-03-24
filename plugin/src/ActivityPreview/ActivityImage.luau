@@ -5,18 +5,14 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 
 local Types = require(script.Parent.Types)
-local useRefProperty = require(Plugin.Source.Common.useRefProperty)
+local WebImage = require(script.Parent.WebImage)
 
 local View = Foundation.View
-local Image = Foundation.Image
-local Skeleton = Foundation.Skeleton
 local Tooltip = Foundation.Tooltip
-local Radius = Foundation.Enums.Radius
 local PopoverSide = Foundation.Enums.PopoverSide
 local PopoverAlign = Foundation.Enums.PopoverAlign
 
 local e = React.createElement
-local useRef = React.useRef
 
 type Props = {
 	assets: Types.ActivityAssets?,
@@ -29,21 +25,17 @@ local function ActivityImage(props: Props)
 	local smallImage = props.assets and props.assets.smallImage
 	local smallText = props.assets and props.assets.smallText
 
-	local imageRef = useRef(nil)
-	local isLoaded = useRefProperty(imageRef, "IsLoaded", false)
-
 	local largeBlock = e(View, {
 		tag = "size-full",
 	}, {
-		Image = e(Image, {
-			tag = "size-full radius-small",
-			Image = largeImage,
-		}),
+		-- Image = e(Image, {
+		-- 	tag = "size-full radius-small",
+		-- 	Image = largeImage,
+		-- }),
 
-		LoadingSkeleton = (not isLoaded) and e(Skeleton, {
-			Size = UDim2.fromScale(1, 1),
-			ZIndex = 2,
-			radius = Radius.Small,
+		Image = e(WebImage, {
+			url = "https://cdn.discordapp.com/app-assets/709530901058420776/1455660026638369003.png",
+			size = "big",
 		}),
 	})
 

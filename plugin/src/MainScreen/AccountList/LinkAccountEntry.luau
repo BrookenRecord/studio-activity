@@ -52,4 +52,4 @@ local function LinkAccountEntry(props: Props)
 	})
 end
 
-return LinkAccountEntry
+return React.memo(LinkAccountEntry)

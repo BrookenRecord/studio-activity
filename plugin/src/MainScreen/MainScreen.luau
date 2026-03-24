@@ -6,6 +6,7 @@ local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
 local AccountList = require(script.Parent.AccountList)
+local Header = require(script.Parent.Header)
 local PreviewBlock = require(script.Parent.PreviewBlock)
 
 local View = Foundation.View
@@ -20,6 +21,10 @@ local function MainScreen()
 	return e(View, {
 		tag = "size-full bg-surface-100 col",
 	}, {
+		Header = e(Header, {
+			LayoutOrder = nextOrder(),
+		}),
+
 		PreviewBlock = e(PreviewBlock, {
 			LayoutOrder = nextOrder(),
 		}),
@@ -30,4 +35,4 @@ local function MainScreen()
 	})
 end
 
-return MainScreen
+return React.memo(MainScreen)

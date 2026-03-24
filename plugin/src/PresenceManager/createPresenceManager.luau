@@ -1,0 +1,355 @@
+local Plugin = script:FindFirstAncestor("StudioActivity")
+
+local Packages = Plugin.Packages
+local Charm = require(Packages.Charm)
+
+local DiscordApi = require(Plugin.Source.Api.Discord)
+type ApiActivity = DiscordApi.Activity
+
+local AuthStore = require(Plugin.Source.Authentication.AuthStore)
+local BuildVars = require(Plugin.Source.BuildVars)
+local Logger = require(Plugin.Source.Logger)
+local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
+
+local signal = Charm.signal
+local effect = Charm.effect
+local peek = Charm.peek
+
+local HEARTBEAT_INTERVAL = 900 -- 15 minutes in seconds
+local MAX_RETRIES = 3
+
+export type ActivityConfigAssets = {
+	largeImage: string?,
+	largeText: string?,
+	smallImage: string?,
+	smallText: string?,
+}
+
+export type ActivityConfig = {
+	name: string,
+	details: string?,
+	detailsUrl: string?,
+	state: string?,
+	stateUrl: string?,
+	startedAt: number?,
+	assets: ActivityConfigAssets?,
+}
+
+export type PresenceManager = {
+	getActivity: () -> ActivityConfig?,
+	getIsActive: () -> boolean,
+
+	setActivity: (ActivityConfig?) -> (),
+	setIsActive: (boolean) -> (),
+
+	destroy: () -> (),
+}
+
+--- Convert ActivityConfig into the API format (mostly changing to snake_case.)
+local function serializeActivity(activity: ActivityConfig): ApiActivity
+	local apiActivity: ApiActivity = {
+		type = 0, -- PLAYING
+		name = activity.name,
+
+		details = activity.details,
+		details_url = activity.detailsUrl,
+
+		state = activity.state,
+		state_url = activity.stateUrl,
+
+		application_id = BuildVars.discord.clientId,
+		platform = "desktop",
+	}
+
+	if activity.startedAt then
+		apiActivity.timestamps = {
+			start = tostring(activity.startedAt),
+		}
+	end
+
+	if activity.assets then
+		apiActivity.assets = {
+			large_image = activity.assets.largeImage,
+			large_text = activity.assets.largeText,
+			small_image = activity.assets.smallImage,
+			small_text = activity.assets.smallText,
+		}
+	end
+
+	return apiActivity
+end
+
+--[[
+	Retry an async callback with exponential backoff.
+	Returns immediately on success or on non-retryable errors (unauthorized).
+	Retries on network, unexpected, and application_not_cached errors.
+]]
+local function retryAsync<T, E>(
+	callback: () -> { ok: true, value: T } | { ok: false, error: E },
+	context: string
+): { ok: true, value: T } | { ok: false, error: E }
+	local backoffConfig = RetryBackoff.defaultConfig()
+	local backoffState = RetryBackoff.createState()
+
+	for attempt = 1, MAX_RETRIES do
+		local result = callback()
+
+		if result.ok then
+			return result
+		end
+
+		local err = result.error :: any
+		local errorType: string = err.type
+
+		-- Don't retry unauthorized errors — needs auth refresh from external system
+		if errorType == "unauthorized" then
+			Logger:Warn(`{context}: unauthorized (attempt {attempt}/{MAX_RETRIES})`)
+			return result
+		end
+
+		-- On last attempt, don't wait — just return the error
+		if attempt == MAX_RETRIES then
+			Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
+			return result
+		end
+
+		-- Calculate delay with backoff, respecting server-provided retryAfter
+		local serverRetryAfter: number? = nil
+		if errorType == "application_not_cached" then
+			local retryAfterMs: number? = err.retryAfter
+			if retryAfterMs then
+				serverRetryAfter = retryAfterMs / 1000
+			end
+		end
+
+		local delay = RetryBackoff.nextAttempt(backoffConfig, backoffState, serverRetryAfter)
+		Logger:Warn(
+			`{context}: {errorType}, retrying in {string.format("%.1f", delay)}s (attempt {attempt}/{MAX_RETRIES})`
+		)
+		task.wait(delay)
+	end
+
+	-- Unreachable, but satisfies the type checker
+	return callback()
+end
+
+local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceManager
+	local auth = AuthStore.get()
+
+	local getActivity, setActivity = signal(nil :: ActivityConfig?)
+	local getIsActive, setIsActive = signal(true)
+
+	-- In-memory session tokens: accountId → sessionToken
+	local sessionTokens: { [string]: string } = {}
+
+	--[[
+		Delete a single session with retry. Clears the session token immediately
+		so it's cleaned up even if the API call ultimately fails.
+	]]
+	local function deleteSessionAsync(accountId: string, accessToken: string, sessionToken: string)
+		sessionTokens[accountId] = nil
+
+		retryAsync(function()
+			return discord.deleteHeadlessSessionAsync(accessToken, sessionToken)
+		end, `PresenceManager: delete session for account {accountId}`)
+	end
+
+	--[[
+		Delete all active sessions and clear the token table.
+	]]
+	local function deleteAllSessionsAsync(accounts: { [string]: AuthStore.Account })
+		-- Snapshot before clearing so we can still iterate
+		local toDelete = table.clone(sessionTokens)
+		table.clear(sessionTokens)
+
+		for id, token in toDelete do
+			local account = accounts[id]
+			if account then
+				deleteSessionAsync(id, account.accessToken, token)
+			end
+		end
+	end
+
+	--[[
+		Synchronize headless sessions with the current desired state.
+		Creates, updates, or deletes sessions as needed.
+	]]
+	local function syncSessionsAsync(
+		accounts: { [string]: AuthStore.Account },
+		activity: ActivityConfig?,
+		isActive: boolean
+	)
+		Logger:Info("Syncing presence sessions", {
+			activity = activity,
+		})
+
+		-- If inactive or no activity, tear down all sessions
+		if not isActive or activity == nil then
+			deleteAllSessionsAsync(accounts)
+			return
+		end
+
+		local serialized = serializeActivity(activity)
+		local activeAccountIds: { [string]: true } = {}
+
+		for id, account in accounts do
+			activeAccountIds[id] = true
+			local existingToken = sessionTokens[id]
+
+			if existingToken then
+				-- Update existing session (heartbeat with new activity data)
+				local result = retryAsync(function()
+					return discord.updateHeadlessSessionAsync(account.accessToken, existingToken, serialized)
+				end, `PresenceManager: update session for account {id}`)
+
+				if result.ok then
+					sessionTokens[id] = result.value.sessionToken
+				else
+					-- Session may have expired or token is bad — try creating a new one
+					sessionTokens[id] = nil
+
+					local err = result.error
+					if err.type == "unauthorized" then
+						Logger:Warn(
+							`PresenceManager: auth token may be expired for account {id}, skipping session create`
+						)
+					else
+						Logger:Warn(
+							`PresenceManager: update failed for account {id} ({err.type}), attempting new session`
+						)
+
+						local createResult = retryAsync(function()
+							return discord.createHeadlessSessionAsync(account.accessToken, serialized)
+						end, `PresenceManager: create session for account {id}`)
+
+						if createResult.ok then
+							sessionTokens[id] = createResult.value.sessionToken
+						end
+					end
+				end
+			else
+				-- Create new session
+				local result = retryAsync(function()
+					return discord.createHeadlessSessionAsync(account.accessToken, serialized)
+				end, `PresenceManager: create session for account {id}`)
+
+				if result.ok then
+					sessionTokens[id] = result.value.sessionToken
+				end
+			end
+		end
+
+		-- Prune sessions for accounts that were removed.
+		-- The account is no longer in auth so we can't make API calls to delete —
+		-- the session will expire on its own after 20 minutes.
+		for id in sessionTokens do
+			if not activeAccountIds[id] then
+				Logger:Warn(`PresenceManager: account {id} removed, session will expire naturally`)
+				sessionTokens[id] = nil
+			end
+		end
+	end
+
+	--[[
+		Session management effect.
+		Reacts to changes in auth accounts, activity config, and active state.
+		Cancels any in-flight sync when dependencies change.
+	]]
+	local sessionThread: thread?
+	local disposeSessionEffect = effect(function()
+		-- Read signals synchronously to register Charm dependencies
+		local authAccounts = auth.getStorage().accounts
+		local activity = getActivity()
+		local isActive = getIsActive()
+
+		-- Cancel any in-flight sync from a previous run
+		if sessionThread then
+			pcall(task.cancel, sessionThread)
+		end
+
+		sessionThread = task.spawn(function()
+			syncSessionsAsync(authAccounts, activity, isActive)
+			sessionThread = nil
+		end)
+	end)
+
+	--[[
+		Heartbeat loop. Runs independently of the reactive effect on a fixed
+		interval to keep sessions alive. Uses peek() to avoid registering
+		Charm dependencies.
+	]]
+	local heartbeatThread: thread? = task.spawn(function()
+		while true do
+			task.wait(HEARTBEAT_INTERVAL)
+
+			local isActive = peek(getIsActive)
+			local activity = peek(getActivity)
+			if not isActive or activity == nil then
+				continue
+			end
+
+			local serialized = serializeActivity(activity)
+			local authAccounts = peek(auth.getStorage).accounts
+
+			-- Snapshot tokens so we iterate a stable set
+			local snapshot = table.clone(sessionTokens)
+
+			for id, token in snapshot do
+				local account = authAccounts[id]
+				if not account then
+					continue
+				end
+
+				local result = retryAsync(function()
+					return discord.updateHeadlessSessionAsync(account.accessToken, token, serialized)
+				end, `PresenceManager: heartbeat for account {id}`)
+
+				if result.ok then
+					sessionTokens[id] = result.value.sessionToken
+				else
+					local err = result.error
+					if err.type == "unauthorized" then
+						Logger:Warn(`PresenceManager: auth token expired for account {id}, removing session`)
+						sessionTokens[id] = nil
+					end
+					-- On other errors, keep the token and retry next heartbeat
+				end
+			end
+		end
+	end)
+
+	local function destroy()
+		disposeSessionEffect()
+
+		if sessionThread then
+			pcall(task.cancel, sessionThread)
+			sessionThread = nil
+		end
+		if heartbeatThread then
+			pcall(task.cancel, heartbeatThread :: thread)
+			heartbeatThread = nil
+		end
+
+		-- Fire-and-forget delete all active sessions
+		local authAccounts = peek(auth.getStorage).accounts
+		for id, token in sessionTokens do
+			local account = authAccounts[id]
+			if account then
+				task.spawn(deleteSessionAsync, id, account.accessToken, token)
+			end
+		end
+		table.clear(sessionTokens)
+	end
+
+	return {
+		getActivity = getActivity,
+		getIsActive = getIsActive,
+
+		setActivity = setActivity,
+		setIsActive = setIsActive,
+
+		destroy = destroy,
+	}
+end
+
+return createPresenceManager

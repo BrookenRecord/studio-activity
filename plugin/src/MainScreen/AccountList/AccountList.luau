@@ -77,4 +77,4 @@ local function AccountList(props: Props)
 	}, userChildren)
 end
 
-return AccountList
+return React.memo(AccountList)

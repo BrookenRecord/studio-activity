@@ -65,6 +65,7 @@ local function Section(props: Props)
 				LayoutOrder = nextOrder(),
 				-- Some of the contents are heavy to re-render, so just make the
 				-- container invisible instead of unmounting.
+				-- TODO: Move to React Activity once available.
 				Visible = isExpanded,
 			}, props.children),
 		}),
@@ -77,4 +78,4 @@ local function Section(props: Props)
 	})
 end
 
-return Section
+return React.memo(Section)

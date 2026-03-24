@@ -114,10 +114,12 @@ export type AvatarImage = {
 export type Activity = {
 	type: number,
 	name: string,
-	application_id: string,
+	application_id: string?,
 	platform: string?,
 	details: string?,
+	details_url: string?,
 	state: string?,
+	state_url: string?,
 	timestamps: { start: string?, ["end"]: string? }?,
 	assets: { large_image: string?, large_text: string?, small_image: string?, small_text: string? }?,
 	party: { id: string?, size: { number }? }?,

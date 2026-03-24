@@ -5,7 +5,12 @@ registry = "test"
 [[package]]
 name = "brhodes/studio-rich-presence"
 version = "0.1.0"
-dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.5.0"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
+dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.8.1"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
+
+[[package]]
+name = "corecii/greentea"
+version = "0.4.11"
+dependencies = []
 
 [[package]]
 name = "csqrl/sift"
@@ -39,8 +44,8 @@ dependencies = [["Janitor", "howmanysmall/janitor@1.18.3"], ["Jest", "jsdotlua/j
 
 [[package]]
 name = "flipbook-labs/storyteller"
-version = "1.5.0"
-dependencies = [["Fusion", "elttob/fusion@0.2.0"], ["Fusion3", "elttob/fusion@0.3.0"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["ModuleLoader", "flipbook-labs/module-loader@0.7.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Roact", "roblox/roact@1.4.4"], ["RoactCompat", "jsdotlua/roact-compat@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["t", "osyrisrblx/t@3.1.1"]]
+version = "1.8.1"
+dependencies = [["Charm", "littensy/charm@0.11.0-rc.4"], ["Fusion", "elttob/fusion@0.2.0"], ["Fusion3", "elttob/fusion@0.3.0"], ["GreenTea", "corecii/greentea@0.4.11"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["ModuleLoader", "flipbook-labs/module-loader@0.7.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "littensy/react-charm@0.4.0-rc.3"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Roact", "roblox/roact@1.4.4"], ["RoactCompat", "jsdotlua/roact-compat@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["UILabs", "pepeeltoro41/ui-labs@2.4.2"], ["t", "osyrisrblx/t@3.1.1"]]
 
 [[package]]
 name = "grilme99/charm"
@@ -333,8 +338,23 @@ version = "1.2.7"
 dependencies = [["collections", "jsdotlua/collections@1.2.7"]]
 
 [[package]]
+name = "littensy/charm"
+version = "0.11.0-rc.4"
+dependencies = []
+
+[[package]]
+name = "littensy/react-charm"
+version = "0.4.0-rc.3"
+dependencies = [["Charm", "littensy/charm@0.11.0-rc.4"], ["React", "jsdotlua/react@17.2.1"]]
+
+[[package]]
 name = "osyrisrblx/t"
 version = "3.1.1"
+dependencies = []
+
+[[package]]
+name = "pepeeltoro41/ui-labs"
+version = "2.4.2"
 dependencies = []
 
 [[package]]

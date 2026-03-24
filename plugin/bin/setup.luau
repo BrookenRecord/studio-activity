@@ -1,11 +1,42 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
+local Packages = Plugin.Packages
+local Charm = require(Packages.Charm)
+
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
 export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> ()
 
 local function setup(plugin: Plugin, main: PluginMain)
 	plugin.Name = "StudioActivity"
+
+	-- Set plugin instance early so settings stores can load auth from disk
+	local PluginStore = require(Plugin.Source.Plugin.PluginStore)
+	PluginStore.get().setPlugin(plugin)
+
+	-- Start presence manager immediately, before user interacts with the plugin.
+	-- This triggers: AuthStore loads from disk → PresenceManager reads accounts
+	-- → creates headless sessions so linked users see presence right away.
+	local PresenceManager = require(Plugin.Source.PresenceManager)
+	local presenceManager = PresenceManager.get()
+
+	-- Initialize ProfileStore early so it loads the active profile from disk
+	-- and begins resolving it against PlaceContext.
+	local ProfileStore = require(Plugin.Source.PresenceManager.ProfileStore)
+	local profileStore = ProfileStore.get()
+
+	-- Wire resolved activity from ProfileStore into PresenceManager
+	local disposeProfileEffect = Charm.effect(function()
+		presenceManager.setActivity(profileStore.getResolvedActivity())
+	end)
+
+	profileStore.setActiveProfile("default")
+
+	plugin.Unloading:Connect(function()
+		disposeProfileEffect()
+		profileStore.destroy()
+		presenceManager.destroy()
+	end)
 
 	local pluginLoaderContext = createPluginLoader({
 		plugin = plugin,
