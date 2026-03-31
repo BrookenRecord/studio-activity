@@ -1,0 +1,178 @@
+diff --git a/jest-environment/src/init.lua b/jest-environment/src/init.lua
+index 9785b01..dfc5a33 100644
+--- a/jest-environment/src/init.lua
++++ b/jest-environment/src/init.lua
+@@ -5,7 +5,7 @@
+  * This source code is licensed under the MIT license found in the
+  * LICENSE file in the root directory of this source tree.
+  ]]
+-local LuauPolyfill = require(script.Parent:WaitForChild('luau-polyfill'))
++local LuauPolyfill = require(script.Parent:WaitForChild("luau-polyfill"))
+ type Array<T> = LuauPolyfill.Array<T>
+ type Object = LuauPolyfill.Object
+ type Promise<T> = LuauPolyfill.Promise<T>
+@@ -21,14 +21,14 @@ type void = nil
+ type Context = Object
+ -- ROBLOX deviation END
+ 
+-local FakeTimersModule = require(script.Parent:WaitForChild('jest-fake-timers'))-- ROBLOX deviation START: no Legacy/Modern timers
++local FakeTimersModule = require(script.Parent:WaitForChild("jest-fake-timers")) -- ROBLOX deviation START: no Legacy/Modern timers
+ -- type LegacyFakeTimers<TimerRef> = FakeTimersModule.LegacyFakeTimers<TimerRef>
+ -- type ModernFakeTimers = FakeTimersModule.ModernFakeTimers
+ 
+ type FakeTimers = FakeTimersModule.FakeTimers
+ -- ROBLOX deviation END
+ 
+-local typesModule = require(script.Parent:WaitForChild('jest-types'))-- ROBLOX deviation START: Import types with namespace
++local typesModule = require(script.Parent:WaitForChild("jest-types")) -- ROBLOX deviation START: Import types with namespace
+ 
+ type Circus_EventHandler = typesModule.Circus_EventHandler
+ type Config_Path = typesModule.Config_Path
+@@ -36,7 +36,7 @@ type Config_ProjectConfig = typesModule.Config_ProjectConfig
+ type Global_Global = typesModule.Global_Global
+ -- ROBLOX deviation END
+ 
+-local jestMockModule = require(script.Parent:WaitForChild('jest-mock'))-- ROBLOX deviation START: can't export globals from jest mock
++local jestMockModule = require(script.Parent:WaitForChild("jest-mock")) -- ROBLOX deviation START: can't export globals from jest mock
+ 
+ type JestFuncFn = jestMockModule.JestFuncFn
+ type JestFuncMocked = jestMockModule.JestFuncMocked
+@@ -46,13 +46,13 @@ type JestFuncSpyOn = jestMockModule.JestFuncSpyOn
+ type ModuleMocker = jestMockModule.ModuleMocker
+ 
+ -- ROBLOX deviation: mocking globals
+-local jestMockGenvModule = require(script.Parent:WaitForChild('jest-mock-genv'))
++local jestMockGenvModule = require(script.Parent:WaitForChild("jest-mock-genv"))
+ 
+ export type EnvironmentContext = {
+ 	console: Console,
+ 	-- docblockPragmas: Record<string, string | Array<string>>,
+ 	-- ROBLOX deviation: accept ModuleScript instead of string
+-	testPath: ModuleScript
++	testPath: ModuleScript | string,
+ }
+ 
+ -- Different Order than https://nodejs.org/api/modules.html#modules_the_module_wrapper , however needs to be in the form [jest-transform]ScriptTransformer accepts
+@@ -63,8 +63,8 @@ export type ModuleWrapper = (
+ 	require: Object, --[[ ROBLOX TODO: Unhandled node for type: TSIndexedAccessType ]] --[[ Module['require'] ]]
+ 	__dirname: string,
+ 	__filename: string, --[[ ROBLOX TODO: Unhandled node for type: TSIndexedAccessType ]] --[[ Module['filename'] ]]
+-	jest: Jest?,...
+-any --[[ ROBLOX CHECK: check correct type of elements. Upstream type: <Array<Global.Global[keyof Global.Global]>> ]]
++	jest: Jest?,
++	...any --[[ ROBLOX CHECK: check correct type of elements. Upstream type: <Array<Global.Global[keyof Global.Global]>> ]]
+ ) -> any
+ 
+ export type JestEnvironment<Timer = any> = {
+@@ -80,7 +80,7 @@ export type JestEnvironment<Timer = any> = {
+ 	setup: (self: JestEnvironment<Timer>) -> Promise<void>,
+ 	teardown: (self: JestEnvironment<Timer>) -> Promise<void>,
+ 	handleTestEvent: Circus_EventHandler?,
+-	exportConditions: (() -> Array<string>)?
++	exportConditions: (() -> Array<string>)?,
+ }
+ 
+ export type Module = NodeModule
+@@ -117,7 +117,7 @@ export type Jest = {
+ 	* dependencies.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	deepUnmock: (moduleName: ModuleScript) -> Jest,
++	deepUnmock: (moduleName: ModuleScript | string) -> Jest,
+ 	--[[*
+ 	* Disables automatic mocking in the module loader.
+ 	*
+@@ -131,14 +131,14 @@ export type Jest = {
+ 	* this behavior.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	doMock: (moduleName: ModuleScript, moduleFactory: (() -> any)?) -> Jest,
++	doMock: (moduleName: ModuleScript | string, moduleFactory: (() -> any)?) -> Jest,
+ 	--[[*
+ 	* Indicates that the module system should never return a mocked version
+ 	* of the specified module from require() (e.g. that it should always return
+ 	* the real module).
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	dontMock: (moduleName: ModuleScript) -> Jest,
++	dontMock: (moduleName: ModuleScript | string) -> Jest,
+ 	--[[*
+ 	* Enables automatic mocking in the module loader.
+ 	]]
+@@ -165,7 +165,7 @@ export type Jest = {
+ 	* @deprecated Use `jest.createMockFromModule()` instead
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	genMockFromModule: (moduleName: ModuleScript) -> any,
++	genMockFromModule: (moduleName: ModuleScript | string) -> any,
+ 	--[[*
+ 	* Given the name of a module, use the automatic mocking system to generate a
+ 	* mocked version of the module for you.
+@@ -174,7 +174,7 @@ export type Jest = {
+ 	* automatic mock's behavior.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	createMockFromModule: (moduleName: ModuleScript) -> any,
++	createMockFromModule: (moduleName: ModuleScript | string) -> any,
+ 	--[[*
+ 	* Determines if the given function is a mocked function.
+ 	]]
+@@ -183,14 +183,14 @@ export type Jest = {
+ 	* Mocks a module with an auto-mocked version when it is being required.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	mock: (moduleName: ModuleScript, moduleFactory: (() -> any)?, options: { virtual: boolean? }?) -> Jest,
++	mock: (moduleName: ModuleScript | string, moduleFactory: (() -> any)?, options: { virtual: boolean? }?) -> Jest,
+ 	--[[*
+ 	* Mocks a module with the provided module factory when it is being imported.
+ 	]]
+ 	-- ROBLOX TODO: add default generic. <T = any>
+ 	unstable_mockModule: <T>(
+ 		-- ROBLOX deviation: using ModuleScript instead of string
+-		moduleName: ModuleScript,
++		moduleName: ModuleScript | string,
+ 		moduleFactory: () -> Promise<T> | T,
+ 		options: { virtual: boolean? }?
+ 	) -> Jest,
+@@ -214,13 +214,13 @@ export type Jest = {
+ 	 ```
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	requireActual: (moduleName: ModuleScript) -> any,
++	requireActual: (moduleName: ModuleScript | string) -> any,
+ 	--[[*
+ 	* Returns a mock module instead of the actual module, bypassing all checks
+ 	* on whether the module should be required normally or not.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	requireMock: (moduleName: ModuleScript) -> any,
++	requireMock: (moduleName: ModuleScript | string) -> any,
+ 	--[[*
+ 	* Resets the state of all mocks.
+ 	* Equivalent to calling .mockReset() on every mocked function.
+@@ -288,7 +288,7 @@ export type Jest = {
+ 	* exported module object.
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	setMock: (moduleName: ModuleScript, moduleExports: any) -> Jest,
++	setMock: (moduleName: ModuleScript | string, moduleExports: any) -> Jest,
+ 	--[[*
+ 	* Set the default timeout interval for tests and before/after hooks in
+ 	* milliseconds.
+@@ -312,7 +312,7 @@ export type Jest = {
+ 	* real module).
+ 	]]
+ 	-- ROBLOX deviation: using ModuleScript instead of string
+-	unmock: (moduleName: ModuleScript) -> Jest,
++	unmock: (moduleName: ModuleScript | string) -> Jest,
+ 	--[[*
+ 	* Instructs Jest to use fake versions of the standard timer functions.
+ 	]]
+@@ -358,6 +358,6 @@ export type Jest = {
+ 	*
+ 	*  > Note: This function is only available when using Lolex as fake timers implementation
+ 	]]
+-	setSystemTime: (now: (number | DateTime)?) -> ()
++	setSystemTime: (now: (number | DateTime)?) -> (),
+ }
+ return {}

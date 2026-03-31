@@ -1,0 +1,352 @@
+diff --git a/jest-runtime/src/init.lua b/jest-runtime/src/init.lua
+index 35b6de2..4766736 100644
+--- a/jest-runtime/src/init.lua
++++ b/jest-runtime/src/init.lua
+@@ -9,7 +9,7 @@
+ -- ROBLOX deviation START: skipped
+ -- type void = nil --[[ ROBLOX FIXME: adding `void` type alias to make it easier to use Luau `void` equivalent when supported ]]
+ -- ROBLOX deviation END
+-local LuauPolyfill = require(script.Parent:WaitForChild('luau-polyfill'))-- ROBLOX deviation START: skipped
++local LuauPolyfill = require(script.Parent:WaitForChild("luau-polyfill")) -- ROBLOX deviation START: skipped
+ -- local Array = LuauPolyfill.Array
+ -- ROBLOX deviation END
+ 
+@@ -84,7 +84,7 @@ type Omit<T, K> = T --[[ ROBLOX TODO: TS 'Omit' built-in type is not available i
+ -- local TransformationOptions = jestTransformModule.TransformationOptions
+ -- local handlePotentialSyntaxError = jestTransformModule.handlePotentialSyntaxError
+ -- local shouldInstrument = jestTransformModule.shouldInstrument
+-local jestTypesModule = require(script.Parent:WaitForChild('jest-types'))-- type Config = jestTypesModule.Config
++local jestTypesModule = require(script.Parent:WaitForChild("jest-types")) -- type Config = jestTypesModule.Config
+ -- type Config_Path = jestTypesModule.Config_Path
+ 
+ type Config_ProjectConfig = jestTypesModule.Config_ProjectConfig
+@@ -97,7 +97,7 @@ type Config_ProjectConfig = jestTypesModule.Config_ProjectConfig
+ -- local formatStackTrace = jestMessageUtilModule.formatStackTrace
+ -- local separateMessageFromStack = jestMessageUtilModule.separateMessageFromStack
+ -- ROBLOX deviation END
+-local jestMockModule = require(script.Parent:WaitForChild('jest-mock'))-- ROBLOX deviation: not implemented yet
++local jestMockModule = require(script.Parent:WaitForChild("jest-mock")) -- ROBLOX deviation: not implemented yet
+ -- type MockFunctionMetadata = jestMockModule.MockFunctionMetadata
+ -- ROBLOX deviation END
+ 
+@@ -106,7 +106,7 @@ type ModuleMocker = jestMockModule.ModuleMocker
+ local ModuleMocker = jestMockModule.ModuleMocker
+ -- ROBLOX deviation END
+ -- ROBLOX deviation START: mocking globals
+-local jestMockGenvModule = require(script.Parent:WaitForChild('jest-mock-genv'))
++local jestMockGenvModule = require(script.Parent:WaitForChild("jest-mock-genv"))
+ local GlobalMocker = jestMockGenvModule.GlobalMocker
+ type GlobalMocker = jestMockGenvModule.GlobalMocker
+ -- ROBLOX deviation START: skipped
+@@ -123,7 +123,7 @@ type GlobalMocker = jestMockGenvModule.GlobalMocker
+ -- local decodePossibleOutsideJestVmPath = helpersModule.decodePossibleOutsideJestVmPath
+ -- local findSiblingsWithFileExtension = helpersModule.findSiblingsWithFileExtension
+ -- ROBLOX deviation END
+-local typesModule = require(script:WaitForChild('types'))
++local typesModule = require(script:WaitForChild("types"))
+ export type Context = typesModule.Context
+ -- ROBLOX deviation START: skipped
+ -- local typesModule = require("./types")
+@@ -135,13 +135,15 @@ type ResolveModuleConfig = any
+ 
+ -- ROBLOX deviation START: additional dependencies
+ local TypeError = Error
+-local _typesModule = require(script:WaitForChild('_types'))
++local _typesModule = require(script:WaitForChild("_types"))
+ export type Jest = _typesModule.Jest
+ type MockFactory = _typesModule.MockFactory
+ 
+-local jestExpectModule = require(script.Parent:WaitForChild('expect'))
++local resolveInstancePath = require(script.resolveInstancePath)
++
++local jestExpectModule = require(script.Parent:WaitForChild("expect"))
+ type Expect = jestExpectModule.Expect
+-local JestFakeTimers = require(script.Parent:WaitForChild('jest-fake-timers'))
++local JestFakeTimers = require(script.Parent:WaitForChild("jest-fake-timers"))
+ type FakeTimers = JestFakeTimers.FakeTimers
+ -- ROBLOX deviation END
+ -- local esmIsAvailable = typeof(SourceTextModule) == "function"
+@@ -155,15 +157,14 @@ type JestGlobals = {
+ 	expectExtended: any,
+ 	jestSnapshot: {
+ 		toMatchSnapshot: (...any) -> any,
+-		toThrowErrorMatchingSnapshot: (...any) -> any	
+-}
++		toThrowErrorMatchingSnapshot: (...any) -> any,
++	},
+ }
+ -- ROBLOX deviation END
+ type JestGlobalsWithJest = JestGlobals & {
+ 	-- ROBLOX deviation START: use Jest type
+ 	-- jest: typeof(__unhandledIdentifier__ --[[ ROBLOX TODO: Unhandled node for type: TSQualifiedName ]] --[[ JestGlobals.jest ]]),
+-	jest: Jest	-- ROBLOX deviation END
+-
++	jest: Jest, -- ROBLOX deviation END
+ }
+ -- ROBLOX deviation START: skipped
+ -- type HasteMapOptions = {
+@@ -195,7 +196,7 @@ type Module = {
+ 	exports: any,
+ 	filename: ModuleScript,
+ 	id: ModuleScript,
+-	loaded: boolean
++	loaded: boolean,
+ }
+ type InitialModule = Omit<Module, "require" | "parent" | "paths">
+ -- ROBLOX deviation END
+@@ -328,7 +329,7 @@ export type Runtime = { -- unstable as it should be replaced by https://github.c
+ 	resetAllMocks: (self: Runtime) -> (),
+ 	clearAllMocks: (self: Runtime) -> (),
+ 	teardown: (self: Runtime) -> (),
+-	setGlobalsForRuntime: (self: Runtime, globals: JestGlobals) -> ()
++	setGlobalsForRuntime: (self: Runtime, globals: JestGlobals) -> (),
+ }
+ type Runtime_private = { --
+ 	-- *** PUBLIC ***
+@@ -395,8 +396,8 @@ type Runtime_private = { --
+ 	]]
+ 	-- _environment: JestEnvironment,
+ 	_environment: {
+-		fakeTimersModern: FakeTimers	
+-},
++		fakeTimersModern: FakeTimers,
++	},
+ 	-- ROBLOX deviation END
+ 	-- ROBLOX deviation START: using ModuleScript instead of string
+ 	-- _explicitShouldMock: Map<string, boolean>,
+@@ -599,10 +600,9 @@ type Runtime_private = { --
+ 	-- getGlobalsForCjs: (self: Runtime_private, from: Config_Path) -> JestGlobalsWithJest,
+ 	-- getGlobalsForEsm: (self: Runtime_private, from: Config_Path, context: VMContext) -> Promise<VMModule>,
+ 	-- ROBLOX deviation END
+-	getGlobalsFromEnvironment: (self: Runtime_private) -> JestGlobals	-- ROBLOX deviation START: skipped
++	getGlobalsFromEnvironment: (self: Runtime_private) -> JestGlobals, -- ROBLOX deviation START: skipped
+ 	-- readFile: (self: Runtime_private, filename: Config_Path) -> string,
+ 	-- ROBLOX deviation END
+-
+ }
+ type Runtime_statics = {
+ 	-- ROBLOX deviation: no arguments for constructor
+@@ -615,12 +615,11 @@ type Runtime_statics = {
+ 	-- 	coverageOptions: ShouldInstrumentOptions,
+ 	-- 	testPath: Config_Path
+ 	-- ) -> Runtime,
+-	new: (loadedModuleFns: Map<ModuleScript, any>?) -> Runtime	-- ROBLOX deviation END
+-
++	new: (loadedModuleFns: Map<ModuleScript, any>?) -> Runtime, -- ROBLOX deviation END
+ }
+ 
+ local Runtime = {} :: Runtime & Runtime_statics
+-local Runtime_private = Runtime :: Runtime_private & Runtime_statics;
++local Runtime_private = Runtime :: Runtime_private & Runtime_statics
+ (Runtime :: any).__index = Runtime
+ -- ROBLOX deviation START: skipped
+ -- Runtime.shouldInstrument = shouldInstrument
+@@ -1984,6 +1983,13 @@ function Runtime_private:_execModule(
+ 	-- local isInternal = false -- if options ~= nil and options.isInternalModule then options.isInternalModule else false
+ 	local isInternal = if options ~= nil and options.isInternalModule then options.isInternalModule else false
+ 
++	local dmScript = if loadModuleEnabled then defaultEnvironment.script else modulePath
++
++	local nativeRequire = defaultEnvironment.require
++	if nativeRequire and not self._nativeRequire then
++		self._nativeRequire = nativeRequire
++	end
++
+ 	-- This is the 'least mocked' environment that scripts will be able to see.
+ 	-- The final function environment inherits from this sandbox.
+ 	-- This is separate so that, in the future, `globalEnv` could expose these
+@@ -1994,21 +2000,25 @@ function Runtime_private:_execModule(
+ 			Adding `script` directly into a table so that it is accessible to the debugger
+ 			It seems to be a similar issue to code inside of __index function not being debuggable
+ 		]]
+-		script = if loadModuleEnabled then defaultEnvironment.script else modulePath,
++		script = dmScript,
+ 		require = if isInternal
+ 			then function(scriptInstance: ModuleScript | string)
+ 				if typeof(scriptInstance) == "string" then
+-					-- Disabling this at the surface level of the API until we have
+-					-- deeper support in Jest.
+-					error("Require-by-string is not enabled for use inside Jest at this time.")
++					local resolved = resolveInstancePath(dmScript, scriptInstance)
++					if resolved == nil then
++						return nativeRequire(scriptInstance)
++					end
++					scriptInstance = resolved
+ 				end
+ 				return self:requireInternalModule(scriptInstance)
+ 			end
+ 			else function(scriptInstance: ModuleScript | string)
+ 				if typeof(scriptInstance) == "string" then
+-					-- Disabling this at the surface level of the API until we have
+-					-- deeper support in Jest.
+-					error("Require-by-string is not enabled for use inside Jest at this time.")
++					local resolved = resolveInstancePath(dmScript, scriptInstance)
++					if resolved == nil then
++						return nativeRequire(scriptInstance)
++					end
++					scriptInstance = resolved
+ 				end
+ 				return self:requireModuleOrMock(scriptInstance)
+ 			end,
+@@ -2062,7 +2072,7 @@ function Runtime_private:_execModule(
+ 	if moduleResult.n ~= 1 and noModuleReturnRequired ~= true then
+ 		error(
+ 			string.format(
+-'[Module Error]: %s did not return a valid result\n\tModuleScripts must return exactly one value',
++				"[Module Error]: %s did not return a valid result\n\tModuleScripts must return exactly one value",
+ 				tostring(modulePath)
+ 			)
+ 		)
+@@ -2444,7 +2454,15 @@ function Runtime_private:_createJestObjectFor(from: ModuleScript): Jest
+ 	-- end
+ 	-- ROBLOX deviation END
+ 	-- ROBLOX deviation START: using ModuleScript instead of string
+-	local function unmock(moduleName: ModuleScript)
++	local function unmock(moduleName: ModuleScript | string)
++		if typeof(moduleName) == "string" then
++			local callerScript = getfenv(2).script or from
++			local resolved = resolveInstancePath(callerScript, moduleName)
++			if resolved == nil then
++				error(`cannot unmock non-Instance path "{moduleName}"`)
++			end
++			moduleName = resolved
++		end
+ 		-- ROBLOX deviation END
+ 		-- ROBLOX deviation START: using module script instead of string moduleName
+ 		-- local moduleID =
+@@ -2466,7 +2484,15 @@ function Runtime_private:_createJestObjectFor(from: ModuleScript): Jest
+ 	-- ROBLOX deviation START: using ModuleScript instead of string
+ 	-- local mock: typeof((({} :: any) :: Jest).mock)
+ 	-- function mock(moduleName, mockFactory, options)
+-	local function mock(moduleName: ModuleScript, mockFactory, options)
++	local function mock(moduleName: ModuleScript | string, mockFactory, options)
++		if typeof(moduleName) == "string" then
++			local callerScript = getfenv(2).script or from
++			local resolved = resolveInstancePath(callerScript, moduleName)
++			if resolved == nil then
++				error(`cannot mock non-Instance path "{moduleName}"`)
++			end
++			moduleName = resolved
++		end
+ 		-- ROBLOX deviation END
+ 		if mockFactory ~= nil then
+ 			return setMockFactory(moduleName, mockFactory, options)
+@@ -2658,9 +2684,12 @@ function Runtime_private:_createJestObjectFor(from: ModuleScript): Jest
+ 		-- requireActual = self.requireActual:bind(self, from),
+ 		requireActual = function(moduleName: ModuleScript | string)
+ 			if typeof(moduleName) == "string" then
+-				-- Disabling this at the surface level of the API until we have
+-				-- deeper support in Jest.
+-				error("Require-by-string is not enabled for use inside Jest at this time.")
++				local callerScript = getfenv(2).script or from
++				local resolved = resolveInstancePath(callerScript, moduleName)
++				if resolved == nil then
++					return self._nativeRequire(moduleName)
++				end
++				moduleName = resolved
+ 			end
+ 			return self:requireActual(from, moduleName)
+ 		end,
+@@ -2825,13 +2854,12 @@ function Runtime_private:getGlobalsFromEnvironment(): JestGlobals
+ 	end
+ 
+ 	-- ROBLOX deviation START: additional extracted variables
+-	local jestSnapshot = require(script.Parent:WaitForChild('jest-snapshot'))	-- local jestSnapshot = self:requireModuleOrMock(Packages.JestSnapshot)
+-	
+-local jestExpect = require(script.Parent:WaitForChild('expect'))	-- local jestExpect = self:requireModuleOrMock(Packages.Expect)
++	local jestSnapshot = require(script.Parent:WaitForChild("jest-snapshot")) -- local jestSnapshot = self:requireModuleOrMock(Packages.JestSnapshot)
++
++	local jestExpect = require(script.Parent:WaitForChild("expect")) -- local jestExpect = self:requireModuleOrMock(Packages.Expect)
+ 	-- ROBLOX deviation END
+ 
+-	
+-return {
++	return {
+ 		-- ROBLOX deviation START: skipped for now
+ 		-- afterAll = self._environment.global.afterAll,
+ 		-- afterEach = self._environment.global.afterEach,
+diff --git a/jest-runtime/src/resolveInstancePath.lua b/jest-runtime/src/resolveInstancePath.lua
+new file mode 100644
+index 0000000..41d851c
+--- /dev/null
++++ b/jest-runtime/src/resolveInstancePath.lua
+@@ -0,0 +1,79 @@
++local PATH_SEPARATOR = "/"
++
++local PASSTHROUGH_PREFIXES = { "@std", "@rbx" }
++
++local function resolveInstancePath(relativeTo: Instance, instancePath: string): Instance?
++	local parts = instancePath:split(PATH_SEPARATOR)
++	local firstPart = parts[1]
++	for _, prefix in PASSTHROUGH_PREFIXES do
++		if firstPart == prefix then
++			return nil
++		end
++	end
++
++	local prevPathPart: string?
++	local current = relativeTo
++
++	for _, pathPart in parts do
++		-- Splitting can produce empty strings (e.g. "./" → {".", ""} or
++		-- "Foo//Bar" → {"Foo", "", "Bar"}). Skip them after the first part.
++		if pathPart == "" and prevPathPart ~= nil then
++			continue
++		end
++
++		if not prevPathPart and pathPart == "" then
++			error("paths beginning with '/' are not supported in sandboxed string requires")
++		end
++
++		-- First part of the path needs special handling for aliases and
++		-- ascending through parents
++		if current == relativeTo then
++			if pathPart == "@game" then
++				current = game
++				prevPathPart = pathPart
++				continue
++			elseif pathPart == "@self" then
++				prevPathPart = pathPart
++				continue
++			elseif pathPart == "." then
++				if not current.Parent then
++					error(`could not resolve path (no parent for {current})`)
++				end
++				current = current.Parent
++				prevPathPart = pathPart
++				continue
++			elseif pathPart == ".." then
++				-- Paths beginning with `../` need to go up two parents, then
++				-- any subsequent use of `..` will only move up one parent.
++				if not (current.Parent and current.Parent.Parent) then
++					error(`could not resolve path part "{pathPart}" relative to {current}`)
++				end
++				current = current.Parent.Parent
++				prevPathPart = pathPart
++				continue
++			end
++		end
++
++		if pathPart == ".." then
++			if prevPathPart and prevPathPart ~= pathPart then
++				error("paths including '..' after the beginning are not supported in sandboxed string requires")
++			end
++			if not current.Parent then
++				error(`could not resolve path part "{pathPart}" relative to {current}`)
++			end
++			current = current.Parent
++		else
++			local candidate = current:FindFirstChild(pathPart)
++			if not candidate then
++				error(`could not resolve an Instance named "{pathPart}" relative to {current}`)
++			end
++			current = candidate
++		end
++
++		prevPathPart = pathPart
++	end
++
++	return current
++end
++
++return resolveInstancePath

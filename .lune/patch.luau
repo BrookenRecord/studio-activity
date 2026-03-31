@@ -1,13 +1,13 @@
 --[[
-	CI Entry Point
+	Patch Entry Point
 
-	Runs static analysis checks for continuous integration.
+	Creates or updates a patch for a Wally package.
 ]]
 
 local process = require("@lune/process")
 
 local cli = require("./lib/cli/parser")
-local command = require("./commands/ci")
+local command = require("./commands/patch")
 
 local function main()
 	local parser = cli.parser()
@@ -21,7 +21,7 @@ local function main()
 	parser:parse(process.args)
 
 	command.run({
-		fix = parser:has("fix"),
+		packagePath = parser:get("package-path") :: string,
 	})
 end
 

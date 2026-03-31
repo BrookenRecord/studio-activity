@@ -15,7 +15,6 @@ export type PlaceContext = {
 local defaultContext: PlaceContext = {
 	placeId = nil,
 	universeId = nil,
-	creatorName = "poop!",
 }
 
 local getPlaceContext, setPlaceContext = signal(defaultContext)

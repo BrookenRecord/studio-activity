@@ -9,6 +9,7 @@ local stdio = require("@lune/stdio")
 
 local color = require("../utils/color")
 local exec = require("../lib/process/exec")
+local applyPatches = require("./install/patches")
 local installFoundation = require("./install/foundation")
 local rojo = require("../lib/project/rojo")
 
@@ -117,6 +118,23 @@ function install.run(options_: Options?): boolean
 
 	if not quiet then
 		print(color.bold(color.white("Successfully installed Wally packages!")))
+	end
+
+	-- Apply patches to Wally packages
+	if not quiet then
+		print(color.dim("Applying package patches..."))
+	end
+
+	local patchResult = applyPatches(quiet)
+	if not patchResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to apply package patches")))
+		end
+		return false
+	end
+
+	if not quiet then
+		print(color.bold(color.white("Successfully applied package patches!")))
 	end
 
 	-- Install Roblox packages to the OS temp directory and then extract Foundation
