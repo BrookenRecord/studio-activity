@@ -28,13 +28,8 @@ local function ActivityImage(props: Props)
 	local largeBlock = e(View, {
 		tag = "size-full",
 	}, {
-		-- Image = e(Image, {
-		-- 	tag = "size-full radius-small",
-		-- 	Image = largeImage,
-		-- }),
-
 		Image = e(WebImage, {
-			url = "https://cdn.discordapp.com/app-assets/709530901058420776/1455660026638369003.png",
+			url = largeImage or "https://cdn.discordapp.com/app-assets/709530901058420776/1455660026638369003.png",
 			size = "big",
 		}),
 	})

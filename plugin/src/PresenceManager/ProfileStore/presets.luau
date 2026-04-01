@@ -3,8 +3,8 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
-local PlaceContext = require(Plugin.Source.PresenceManager.PlaceContext)
-type PlaceContext = PlaceContext.PlaceContext
+local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
+type PlaceContext = PlaceContextStore.PlaceContext
 
 export type PresetProfile = {
 	name: string,
@@ -15,21 +15,16 @@ local presets: { [string]: PresetProfile } = {
 	default = {
 		name = "Default",
 		buildActivityAsync = function(context: PlaceContext): ActivityConfig
-			local details: string? = nil
-			local detailsUrl: string? = nil
-
-			if context.placeName then
-				details = context.placeName
-			end
-
-			if context.placeId then
-				detailsUrl = `https://www.roblox.com/games/{context.placeId}`
-			end
+			assert(context.placeType == "online")
 
 			return {
 				name = "Roblox Studio",
-				details = details,
-				detailsUrl = detailsUrl,
+				details = "Editing in Studio",
+				state = context.onlinePlaceDetails.placeName,
+				stateUrl = context.onlinePlaceDetails.placeLink,
+				assets = {
+					largeImage = context.onlinePlaceDetails.iconWebUrl,
+				},
 			}
 		end,
 	},

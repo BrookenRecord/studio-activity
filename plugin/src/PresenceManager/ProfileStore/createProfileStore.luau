@@ -7,8 +7,8 @@ local t = require(Packages.t)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
-local PlaceContext = require(Plugin.Source.PresenceManager.PlaceContext)
-type PlaceContext = PlaceContext.PlaceContext
+local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
+type PlaceContext = PlaceContextStore.PlaceContext
 
 local Logger = require(Plugin.Source.Logger)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
@@ -178,14 +178,20 @@ local function createProfileStore(): ProfileStore
 	local buildThread: thread?
 
 	local disposeBuildEffect = effect(function()
-		local profile = getActiveProfile()
-		local context = PlaceContext.getPlaceContext()
-
 		-- Cancel any in-flight build from a previous run
 		if buildThread then
 			pcall(task.cancel, buildThread)
 		end
 
+		local placeContextStore = PlaceContextStore.get()
+		local context = placeContextStore.getContext()
+
+		if context == nil then
+			setResolvedActivity(nil)
+			return
+		end
+
+		local profile = getActiveProfile()
 		if not profile then
 			setResolvedActivity(nil)
 			return

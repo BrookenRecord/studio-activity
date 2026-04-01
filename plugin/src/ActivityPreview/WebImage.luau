@@ -7,6 +7,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local png = require(Packages.png)
 
+local Flags = require(Plugin.Source.Flags)
 local Logger = require(Plugin.Source.Logger)
 local useWebImage = require(script.Parent.useWebImage)
 
@@ -52,9 +53,23 @@ local function WebImage(props: Props)
 
 			editableImage:WritePixelsBuffer(Vector2.zero, size, decoded.pixels)
 
+			local editableImageContent = Content.fromObject(editableImage)
+			if Flags.isDataModelContentApiAvailable then
+				-- TODO: Remove the type cast when this API has proper types
+				local result, content = (AssetService :: any):CreateDataModelContentAsync(editableImageContent)
+				if result == Enum.CreateContentResult.Success then
+					setImageContent(content)
+					editableImage:Destroy()
+					editableImage = nil :: any
+				else
+					setImageContent(editableImageContent)
+				end
+			else
+				setImageContent(editableImageContent)
+			end
+
 			-- TODO: Migrate to the static content API once available. Should save
 			-- a bit of memory.
-			setImageContent(Content.fromObject(editableImage))
 		end)
 
 		if not success then

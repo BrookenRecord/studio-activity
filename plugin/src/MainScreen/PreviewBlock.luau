@@ -3,6 +3,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
 local ActivityPreview = require(Plugin.Source.ActivityPreview)
@@ -11,6 +12,7 @@ local ProfileStore = require(Plugin.Source.PresenceManager.ProfileStore)
 local View = Foundation.View
 
 local createNextOrder = ReactUtils.createNextOrder
+local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
 
@@ -22,7 +24,7 @@ local function PreviewBlock(props: Props)
 	local nextOrder = createNextOrder()
 
 	local profileStore = ProfileStore.get()
-	local currentActivity = profileStore.getResolvedActivity()
+	local currentActivity = useSignalState(profileStore.getResolvedActivity)
 
 	return e(View, {
 		tag = "size-full-0 auto-y col align-x-center",
