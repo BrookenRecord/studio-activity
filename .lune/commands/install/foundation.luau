@@ -2,83 +2,12 @@
 	Foundation Package Installation
 
 	Installs Foundation packages from an upstream packages directory.
-	Prunes non-exported packages and patches React references.
+	Patches React references to point to the Wally-installed React package.
 ]]
 
 local fs = require("@lune/fs")
-local serde = require("@lune/serde")
 
 local exec = require("../../lib/process/exec")
-
-local EXPORTED_PACKAGES = {
-	"Foundation",
-	"FoundationImages",
-	"BuilderIcons",
-	-- Some extra nice-to-haves
-	"ReactUtils",
-	"QRCode",
-}
-
-type PackageDependencies = { [string]: true }
-
-local function _getFoundationDependencies(packagesPath: string): PackageDependencies
-	local lock = serde.decode("toml", fs.readFile(`{packagesPath}/_Index/Foundation/lock.toml`))
-	local deps: PackageDependencies = {}
-
-	if lock and lock.dependencies then
-		for _, dependencyString in lock.dependencies do
-			local parts = dependencyString:split(" ")
-			local packageSourceName = parts[2]
-			deps[packageSourceName] = true
-		end
-	end
-
-	return deps
-end
-
-local function pruneExportedPackages(packagesPath: string, quiet: boolean?)
-	for _, filename in fs.readDir(packagesPath) do
-		if filename == "_Index" then
-			continue
-		end
-
-		local filePath = `{packagesPath}/{filename}`
-
-		local isExported = false
-		for _, exportedPackageName in EXPORTED_PACKAGES do
-			if filename:match(exportedPackageName) then
-				isExported = true
-			end
-		end
-
-		if not isExported then
-			exec.run("rm", { "-rf", filePath }, { quiet = quiet })
-		end
-	end
-end
-
-local function _prunePackageIndex(packagesPath: string, dependencies: PackageDependencies)
-	local pathsToPrune: { string } = {}
-
-	local packagesIndexPath = `{packagesPath}/_Index`
-
-	for _, filename in fs.readDir(packagesIndexPath) do
-		if filename == "Foundation" then
-			continue
-		end
-
-		local filePath = `{packagesIndexPath}/{filename}`
-
-		local fileNameParts = filename:split(".")
-		local basename = fileNameParts[1]
-
-		if not dependencies[basename] then
-			table.insert(pathsToPrune, filePath)
-		end
-	end
-
-	exec.run("rm", { "-rf", table.unpack(pathsToPrune) })
-end
 
 local TEMP_DIR = "tmp"
 
@@ -135,7 +64,6 @@ local function installFoundation(upstreamPath: string, dest: string, quiet: bool
 			quiet = quiet,
 		})
 
-		pruneExportedPackages(packagesPath, quiet)
 		patchReact(packagesPath, quiet)
 
 		exec.run("cp", { "-R", `{packagesPath}/*`, dest }, {

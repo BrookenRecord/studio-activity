@@ -9,6 +9,7 @@ local ReactUtils = require(Packages.ReactUtils)
 
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
 local DiscordAvatar = require(Plugin.Source.Common.DiscordAvatar)
+local PresenceManager = require(Plugin.Source.PresenceManager)
 local useAccountStatus = require(script.Parent.useAccountStatus)
 
 local createAccountStore = require(Plugin.Source.Authentication.AccountStore.createAccountStore)
@@ -30,7 +31,7 @@ local createNextOrder = ReactUtils.createNextOrder
 local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
-local useState = React.useState
+local useCallback = React.useCallback
 
 type Props = {
 	accountId: string,
@@ -43,13 +44,13 @@ local function AccountEntry(props: Props)
 	local tokens = useTokens()
 	local user = props.localUser
 
-	-- Hooks must be called unconditionally
-	local isActive, setActive = useState(true)
-	local function toggleActive()
-		setActive(function(prev)
-			return not prev
-		end)
-	end
+	local presenceManager = PresenceManager.get()
+	local disabledIds = useSignalState(presenceManager.getDisabledAccountIds)
+	local isActive = not disabledIds[props.accountId]
+
+	local toggleActive = useCallback(function()
+		presenceManager.setAccountActive(props.accountId, not isActive)
+	end, { presenceManager :: any, props.accountId, isActive })
 
 	local accountStore = AccountStore.get()
 	local avatarImage = useSignalState(Charm.computed(function()

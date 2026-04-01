@@ -7,9 +7,9 @@
 local process = require("@lune/process")
 local stdio = require("@lune/stdio")
 
+local applyPatches = require("./install/patches")
 local color = require("../utils/color")
 local exec = require("../lib/process/exec")
-local applyPatches = require("./install/patches")
 local installFoundation = require("./install/foundation")
 local rojo = require("../lib/project/rojo")
 
@@ -38,6 +38,20 @@ local VERSION_PIN = "0.712.0.7120913"
 local PACKAGE_DIRS = {
 	"Packages",
 	-- "DevPackages",
+}
+local ROBLOX_PACKAGES = {
+	"Foundation",
+	"FoundationImages",
+	"BuilderIcons",
+	-- Some extra nice-to-haves
+	"ReactUtils",
+	"QRCode",
+
+	-- These are only included so the above dependencies work as expected.
+	-- It seems like roblox-packages has a bug with its dependency
+	-- resolution that is resulting in over-pruning
+	"Promise",
+	"Dash",
 }
 
 local function runWallyInstall(): (boolean, string)
@@ -139,12 +153,17 @@ function install.run(options_: Options?): boolean
 
 	-- Install Roblox packages to the OS temp directory and then extract Foundation
 	local robloxPackagesPath = `/tmp/roblox-packages`
-	exec.run("roblox-packages", {
+	local robloxPackagesArgs = {
 		"install",
 		robloxPackagesPath,
 		"--version",
 		VERSION_PIN,
-	})
+	}
+	for _, pkg in ROBLOX_PACKAGES do
+		table.insert(robloxPackagesArgs, "-d")
+		table.insert(robloxPackagesArgs, pkg)
+	end
+	exec.run("roblox-packages", robloxPackagesArgs)
 
 	if not quiet then
 		print(color.dim("Installing Foundation packages..."))

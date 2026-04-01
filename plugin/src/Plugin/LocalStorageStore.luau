@@ -12,16 +12,19 @@ type ApiUser = DiscordApi.User
 export type LocalStorageStore = {
 	wasUserPromptedForTelemetry: boolean,
 	userDetailsCache: { [string]: ApiUser }?,
+	disabledAccountIds: { [string]: true }?,
 }
 
 local defaultValue: LocalStorageStore = {
 	wasUserPromptedForTelemetry = false,
 	userDetailsCache = {},
+	disabledAccountIds = {},
 }
 
 local validate = t.interface({
 	wasUserPromptedForTelemetry = t.boolean,
 	userDetailsCache = t.optional(t.table),
+	disabledAccountIds = t.optional(t.table),
 })
 
 return {

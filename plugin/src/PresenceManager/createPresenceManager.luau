@@ -8,14 +8,17 @@ type ApiActivity = DiscordApi.Activity
 
 local AuthStore = require(Plugin.Source.Authentication.AuthStore)
 local BuildVars = require(Plugin.Source.BuildVars)
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 
 local signal = Charm.signal
+local computed = Charm.computed
 local effect = Charm.effect
 local peek = Charm.peek
 
 local HEARTBEAT_INTERVAL = 900 -- 15 minutes in seconds
+local SYNC_DEBOUNCE_SECONDS = 1.5
 local MAX_RETRIES = 3
 
 export type ActivityConfigAssets = {
@@ -38,9 +41,11 @@ export type ActivityConfig = {
 export type PresenceManager = {
 	getActivity: () -> ActivityConfig?,
 	getIsActive: () -> boolean,
+	getDisabledAccountIds: () -> { [string]: true },
 
 	setActivity: (ActivityConfig?) -> (),
 	setIsActive: (boolean | (boolean) -> boolean) -> (),
+	setAccountActive: (accountId: string, isActive: boolean) -> (),
 
 	destroy: () -> (),
 }
@@ -81,9 +86,30 @@ end
 
 local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceManager
 	local auth = AuthStore.get()
+	local localStorage = LocalStorageStore.get()
 
 	local getActivity, setActivity = signal(nil :: ActivityConfig?)
 	local getIsActive, setIsActive = signal(true)
+
+	local getDisabledAccountIds = computed(function(): { [string]: true }
+		return localStorage.getStorage().disabledAccountIds or {}
+	end)
+
+	local function setAccountActive(accountId: string, isActive: boolean)
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			local disabled = table.clone(prev.disabledAccountIds or {})
+
+			if isActive then
+				disabled[accountId] = nil
+			else
+				disabled[accountId] = true
+			end
+
+			new.disabledAccountIds = disabled
+			return new
+		end)
+	end
 
 	-- In-memory session tokens: accountId → sessionToken
 	local sessionTokens: { [string]: string } = {}
@@ -291,14 +317,54 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 		local authAccounts = auth.getStorage().accounts
 		local activity = getActivity()
 		local isActive = getIsActive()
+		local disabledIds = getDisabledAccountIds()
 
 		-- Cancel any in-flight sync from a previous run
 		if sessionThread then
 			pcall(task.cancel, sessionThread)
 		end
 
-		sessionThread = task.spawn(function()
-			syncSessionsAsync(authAccounts, activity, isActive)
+		sessionThread = task.delay(SYNC_DEBOUNCE_SECONDS, function()
+			-- Split accounts into active and disabled sets
+			local activeAccounts: { [string]: AuthStore.Account } = {}
+			for id, account in authAccounts do
+				if not disabledIds[id] then
+					activeAccounts[id] = account
+				end
+			end
+
+			-- Delete sessions for newly-disabled accounts
+			for id in disabledIds do
+				local token = sessionTokens[id]
+				local account = authAccounts[id]
+				if token and account then
+					deleteSessionAsync(id, account.accessToken, token)
+				end
+			end
+
+			-- Prune disabled IDs for accounts that no longer exist
+			local needsPrune = false
+			for id in disabledIds do
+				if not authAccounts[id] then
+					needsPrune = true
+					break
+				end
+			end
+			if needsPrune then
+				localStorage.setStorage(function(prev)
+					local new = table.clone(prev)
+					local cleaned: { [string]: true } = table.clone(prev.disabledAccountIds or {})
+					for id in cleaned do
+						if not authAccounts[id] then
+							cleaned[id] = nil
+						end
+					end
+					new.disabledAccountIds = cleaned
+					return new
+				end)
+			end
+
+			syncSessionsAsync(activeAccounts, activity, isActive)
 			sessionThread = nil
 		end)
 	end)
@@ -320,13 +386,14 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 
 			local serialized = serializeActivity(activity)
 			local authAccounts = peek(auth.getStorage).accounts
+			local disabledIds = peek(getDisabledAccountIds)
 
 			-- Snapshot tokens so we iterate a stable set
 			local snapshot = table.clone(sessionTokens)
 
 			for id, token in snapshot do
 				local account = authAccounts[id]
-				if not account then
+				if not account or disabledIds[id] then
 					continue
 				end
 
@@ -374,9 +441,11 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	return {
 		getActivity = getActivity,
 		getIsActive = getIsActive,
+		getDisabledAccountIds = getDisabledAccountIds,
 
 		setActivity = setActivity,
 		setIsActive = setIsActive,
+		setAccountActive = setAccountActive,
 
 		destroy = destroy,
 	}
