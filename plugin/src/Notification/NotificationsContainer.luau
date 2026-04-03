@@ -26,14 +26,12 @@ local function NotificationsContainer()
 	return e(View, {
 		tag = "size-full",
 		ZIndex = 10,
-	}, {
-		ActiveNotification = active and e(Notification, {
-			key = active.id,
-			type = active.type,
-			text = active.text,
-			onClose = onClose,
-		}),
-	})
+	}, active and e(Notification, {
+		key = tostring(active.id),
+		type = active.type,
+		text = active.text,
+		onClose = onClose,
+	}))
 end
 
 return React.memo(NotificationsContainer)

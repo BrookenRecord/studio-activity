@@ -15,16 +15,22 @@ local presets: { [string]: PresetProfile } = {
 	default = {
 		name = "Default",
 		buildActivityAsync = function(context: PlaceContext): ActivityConfig
-			assert(context.placeType == "online")
+			local onlineDetails = if context.placeType == "online" then context.onlinePlaceDetails else nil
+			local offlineDetails = if context.placeType == "offline" then context.offlinePlaceDetails else nil
 
 			return {
 				name = "Roblox Studio",
 				details = "Editing in Studio",
-				state = context.onlinePlaceDetails.placeName,
-				stateUrl = context.onlinePlaceDetails.placeLink,
-				assets = {
-					largeImage = context.onlinePlaceDetails.iconWebUrl,
-				},
+				state = if onlineDetails
+					then onlineDetails.placeName
+					elseif offlineDetails then offlineDetails.placeName
+					else nil,
+				stateUrl = if onlineDetails then onlineDetails.placeLink else nil,
+				assets = if onlineDetails
+					then {
+						largeImage = onlineDetails.iconWebUrl,
+					}
+					else nil,
 			}
 		end,
 	},
