@@ -6,7 +6,7 @@ local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
 local AuthContext = require(script.Parent.AuthContext)
-local Content = require(script.Parent.Content)
+local StartPage = require(script.Parent.StartPage.StartPage)
 local Title = require(script.Parent.Title)
 
 local Sheet = Foundation.Sheet
@@ -27,7 +27,7 @@ local function AddAccountFlow(props: Props)
 	return e(Sheet.Root, {
 		isOpen = props.isOpen,
 		preferCenterSheet = true,
-		size = DialogSize.Large,
+		size = DialogSize.Medium,
 		disablePortal = false,
 		hasBackdrop = true,
 		onClose = props.onClose,
@@ -43,10 +43,16 @@ local function AddAccountFlow(props: Props)
 		Content = props.isOpen and e(Sheet.Content, nil, {
 			Context = e(ReactUtils.ContextStack, {
 				providers = {
-					e(AuthContext.Provider, {}),
+					e(AuthContext.Provider, {
+						onClose = props.onClose,
+					}),
 				},
 			}, {
-				InnerContent = e(Content),
+				-- This was setup to have multiple pages, but not sure if it
+				-- will anymore.
+				StartPage = e(StartPage, {
+					LayoutOrder = nextOrder(),
+				}),
 			}),
 		}),
 	})

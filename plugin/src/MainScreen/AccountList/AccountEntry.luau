@@ -9,6 +9,7 @@ local ReactUtils = require(Packages.ReactUtils)
 
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
 local DiscordAvatar = require(Plugin.Source.Common.DiscordAvatar)
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local PresenceManager = require(Plugin.Source.PresenceManager)
 local useAccountStatus = require(script.Parent.useAccountStatus)
 
@@ -21,6 +22,7 @@ local Button = Foundation.Button
 local IconButton = Foundation.IconButton
 local Toggle = Foundation.Toggle
 local Skeleton = Foundation.Skeleton
+local Menu = Foundation.Menu
 local ButtonVariant = Foundation.Enums.ButtonVariant
 local InputSize = Foundation.Enums.InputSize
 local IconName = Foundation.Enums.IconName
@@ -28,10 +30,12 @@ local Radius = Foundation.Enums.Radius
 local useTokens = Foundation.Hooks.useTokens
 
 local createNextOrder = ReactUtils.createNextOrder
+local useToggleState = ReactUtils.useToggleState
 local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
 local useCallback = React.useCallback
+local useMemo = React.useMemo
 
 type Props = {
 	accountId: string,
@@ -57,6 +61,35 @@ local function AccountEntry(props: Props)
 		local cachedImages = accountStore.cachedUserImages()
 		return cachedImages[props.accountId]
 	end))
+
+	local menuState = useToggleState(false)
+	local menuItems = useMemo(function(): Foundation.MenuItems
+		return {
+			{
+				id = "remove",
+				icon = IconName.TrashCan,
+				text = "Disconnect Account",
+				onActivated = function()
+					menuState.disable()
+
+					-- Get confirmation before disconnecting the account
+					local modalStore = ModalStore.get()
+					task.spawn(function()
+						local result = modalStore.openAsync("confirmation", {
+							props = {
+								title = "Are you sure?",
+								body = "If you disconnect the account, you'll have to re-link it.",
+							},
+						})
+
+						if result then
+							accountStore.removeUser(props.accountId)
+						end
+					end)
+				end,
+			},
+		}
+	end, { menuState.disable })
 
 	local status = useAccountStatus(isActive, user)
 	local details = if user.status == "ready"
@@ -128,13 +161,33 @@ local function AccountEntry(props: Props)
 				}),
 		}),
 
-		ActiveToggle = (not isError) and e(Toggle, {
-			label = "",
-			isChecked = isActive,
-			isDisabled = isDisabled,
-			onActivated = toggleActive,
-			size = InputSize.Small,
+		RegularControls = (not isError) and e(View, {
+			tag = "auto-xy row align-y-center gap-small",
 			LayoutOrder = nextOrder(),
+		}, {
+			ActiveToggle = e(Toggle, {
+				label = "",
+				isChecked = isActive,
+				isDisabled = isDisabled,
+				onActivated = toggleActive,
+				size = InputSize.Small,
+				LayoutOrder = nextOrder(),
+			}),
+
+			Menu = e(Menu, {
+				isOpen = menuState.enabled,
+				items = menuItems,
+				size = InputSize.Small,
+				onPressedOutside = menuState.disable,
+				onActivated = menuState.disable,
+				LayoutOrder = nextOrder(),
+			}, {
+				MenuBtn = e(IconButton, {
+					icon = IconName.ThreeDotsHorizontal,
+					size = InputSize.Small,
+					onActivated = menuState.toggle,
+				}),
+			}),
 		}),
 
 		ErrorControls = isError and e(View, {

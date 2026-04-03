@@ -220,8 +220,6 @@ local function create(config: Config)
 
 			-- Token granted
 			if pollOk and pollStatus == 200 and type(pollBody) == "table" then
-				setStatus("authorized")
-
 				-- Add the authorized user to the account store
 				-- TODO: Expose better error handling on this API
 				accountStore.addUserAsync({
@@ -230,6 +228,7 @@ local function create(config: Config)
 					expiresAt = os.time() + (pollBody.expires_in or 604800),
 				})
 
+				setStatus("authorized")
 				return
 			end
 

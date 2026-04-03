@@ -63,7 +63,11 @@ local function PhoneFlow(props: Props)
 		}),
 
 		TextBlock = e(View, {
-			tag = "size-full-0 auto-y col gap-xsmall",
+			tag = "auto-y col gap-xsmall",
+			-- For some reason, automatic size doesn't behave as expected in
+			-- Foundation sheets. We need to manually size this so that text
+			-- wrap works properly when the widget is small.
+			Size = UDim2.new(1, -(tokens.Size.Size_2400 + tokens.Gap.Large), 0, 0),
 			LayoutOrder = nextOrder(),
 		}, {
 			Title = e(Text, {

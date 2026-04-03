@@ -98,7 +98,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	local function setAccountActive(accountId: string, isActive: boolean)
 		localStorage.setStorage(function(prev)
 			local new = table.clone(prev)
-			local disabled = table.clone(prev.disabledAccountIds or {})
+			local disabled: { [string]: true } = table.clone(prev.disabledAccountIds or {})
 
 			if isActive then
 				disabled[accountId] = nil

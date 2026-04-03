@@ -5,6 +5,7 @@ local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
 
 local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
+local ConfirmationDialog = require(script.Parent.ConfirmationDialog)
 local ModalStore = require(script.Parent.ModalStore)
 local TelemetryOptOutDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
 
@@ -32,6 +33,17 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 		type = "dialog",
 		render = function(_isOpen, onClose, _props)
 			return e(TelemetryOptOutDialog, {
+				onClose = onClose,
+			})
+		end,
+	},
+
+	confirmation = {
+		type = "dialog",
+		render = function(_isOpen, onClose, props)
+			return e(ConfirmationDialog, {
+				title = props.title,
+				body = props.body,
 				onClose = onClose,
 			})
 		end,

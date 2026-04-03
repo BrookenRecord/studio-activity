@@ -8,6 +8,7 @@ local ReactCharm = require(Packages.ReactCharm)
 local AccountEntry = require(script.Parent.AccountEntry)
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
 local LinkAccountEntry = require(script.Parent.LinkAccountEntry)
+local NoneLinkedBlock = require(script.Parent.NoneLinkedBlock)
 local Section = require(script.Parent.Parent.Section)
 
 local useSignalState = ReactCharm.useSignalState
@@ -16,7 +17,7 @@ local e = React.createElement
 
 local STATUS_ORDER = { ready = 1, error = 2, loading = 3 }
 
-local userChildrenComputed = Charm.computed(function()
+local userChildrenComputed = Charm.computed(function(): React.ReactNode
 	local accountStore = AccountStore.get()
 	local users = accountStore.cachedUsers()
 
@@ -48,6 +49,15 @@ local userChildrenComputed = Charm.computed(function()
 				LayoutOrder = index,
 			})
 		)
+	end
+
+	if #children == 0 then
+		return {
+			e(NoneLinkedBlock, {
+				key = "NoneLinkedBlock",
+				LayoutOrder = 1,
+			}),
+		}
 	end
 
 	if #children < 3 then

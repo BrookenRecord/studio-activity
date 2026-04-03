@@ -3,12 +3,14 @@ local HttpService = game:GetService("HttpService")
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
+local Charm = require(Packages.Charm)
 local React = require(Packages.React)
 
 local BuildVars = require(Plugin.Source.BuildVars)
 
 local DeviceCodeFlow = require(Plugin.Source.Authentication.Flows.DeviceCodeFlow)
 type DeviceCodeFlow = DeviceCodeFlow.DeviceCodeFlow
+type Status = DeviceCodeFlow.Status
 
 local e = React.createElement
 local useMemo = React.useMemo
@@ -25,6 +27,7 @@ local AuthContext = React.createContext<<AuthContext?>>(nil)
 AuthContext.displayName = "AuthContext"
 
 local function AuthContextProvider(props: {
+	onClose: () -> (),
 	children: React.ReactNode,
 }): React.ReactNode
 	local flowRef = useRef<<DeviceCodeFlow?>>(nil)
@@ -49,7 +52,19 @@ local function AuthContextProvider(props: {
 		flowRef.current = flow
 		setDeviceCodeFlow(flow)
 
+		-- Listen for when the status changes and close the sheet when it does.
+		local dispose = Charm.effect(function()
+			local status: Status = flow.status() :: Status
+
+			-- TODO: Handle other new status cases
+			if status == "authorized" then
+				props.onClose()
+			end
+		end)
+
 		return function()
+			dispose()
+
 			-- Only runs on real unmount. In Strict Mode, the first
 			-- unmount is simulated — but since we ref-guarded the
 			-- creation, cleanup here is a no-op on the second mount.

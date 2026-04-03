@@ -6,7 +6,7 @@ local Charm = require(Packages.Charm)
 local signal = Charm.signal
 local computed = Charm.computed
 
-export type ModalId = "addAccount" | "telemetryOptOut"
+export type ModalId = "addAccount" | "telemetryOptOut" | "confirmation"
 
 export type OpenOptions = {
 	priority: number?,

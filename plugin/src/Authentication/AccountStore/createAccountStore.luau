@@ -162,7 +162,6 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 				writeDetailsDiskCache(newDiskCache)
 			end
 
-			print("updated cached users", working)
 			userDetailsThread = nil
 		end)
 	end)
@@ -230,7 +229,6 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			end
 
 			setCachedAvatars(table.clone(working))
-			print("updated cached avatars", working)
 			avatarThread = nil
 		end)
 	end)
