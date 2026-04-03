@@ -13,6 +13,7 @@ type AvatarImage = DiscordApi.AvatarImage
 
 local AuthStore = require(script.Parent.Parent.AuthStore)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 
 export type LocalUser =
 	| {
@@ -238,8 +239,8 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		-- It's only a duplicate in the adding a new user case.
 		local detailsResult = discord.getCurrentUserAsync(account.accessToken)
 		if not detailsResult.ok then
-			-- TODO: Handle this more gracefully
-			error(`Failed to get user details after auth: {detailsResult.error}`)
+			NotificationStore.get().push("error", "Failed to link account")
+			return
 		end
 
 		local id = detailsResult.value.id
@@ -249,6 +250,8 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			new.accounts[id] = account
 			return new
 		end)
+
+		NotificationStore.get().push("info", `Linked account {detailsResult.value.username}`)
 	end
 
 	local function removeUser(id: string)

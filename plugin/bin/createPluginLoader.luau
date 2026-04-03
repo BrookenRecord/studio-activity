@@ -1,6 +1,7 @@
--- this whole module is vide coded im sorry if its bad.
--- purpose is to prevent loading heavy libraries (COUGH react) until the user
--- actually interacts with the plugin.
+--[[
+	The purpose of this module is to prevent the plugin loading heavy libraries
+	(COUGH react) until the user actually interacts with it.
+]]
 
 local StudioService = game:GetService("StudioService")
 

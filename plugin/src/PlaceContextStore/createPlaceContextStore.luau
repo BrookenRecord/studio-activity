@@ -7,6 +7,7 @@ local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 
 local Logger = require(Plugin.Source.Logger)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 
 local signal = Charm.signal
@@ -208,6 +209,7 @@ local function createPlaceContextStore(): PlaceContextStore
 			else
 				setOnlinePlaceDetails(nil)
 				setStatus("error")
+				NotificationStore.get().push("error", "Failed to load place details")
 			end
 
 			fetchOnlineDetailsThread = nil

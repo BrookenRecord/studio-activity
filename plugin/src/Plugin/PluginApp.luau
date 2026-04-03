@@ -5,6 +5,7 @@ local React = require(Packages.React)
 
 local MainScreen = require(Plugin.Source.MainScreen)
 local ModalRenderer = require(Plugin.Source.Modal.ModalRenderer)
+local NotificationsContainer = require(Plugin.Source.Notification.NotificationsContainer)
 local PluginWidget = require(script.Parent.PluginWidget)
 local createPluginLoader = require(Plugin.Bin.createPluginLoader)
 
@@ -53,6 +54,7 @@ local function PluginApp(props: Props)
 		onWidgetRestored = onRestore,
 		onEnabledChanged = onWidgetEnabledChanged,
 	}, {
+		NotificationsContainer = e(NotificationsContainer),
 		ModalRenderer = e(ModalRenderer),
 		MainScreen = e(MainScreen),
 	})

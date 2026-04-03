@@ -10,6 +10,7 @@ local ReactUtils = require(Packages.ReactUtils)
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
 local DiscordAvatar = require(Plugin.Source.Common.DiscordAvatar)
 local ModalStore = require(Plugin.Source.Modal.ModalStore)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local PresenceManager = require(Plugin.Source.PresenceManager)
 local useAccountStatus = require(script.Parent.useAccountStatus)
 
@@ -62,6 +63,12 @@ local function AccountEntry(props: Props)
 		return cachedImages[props.accountId]
 	end))
 
+	local status = useAccountStatus(isActive, user)
+	local details = if user.status == "ready"
+		then user.details
+		elseif user.status == "error" then user.cachedDetails
+		else nil
+
 	local menuState = useToggleState(false)
 	local menuItems = useMemo(function(): Foundation.MenuItems
 		return {
@@ -84,18 +91,16 @@ local function AccountEntry(props: Props)
 
 						if result then
 							accountStore.removeUser(props.accountId)
+
+							local username = if details then details.username else nil
+							NotificationStore.get()
+								.push("info", if username then `Disconnected account {username}` else "Disconnected account")
 						end
 					end)
 				end,
 			},
 		}
-	end, { menuState.disable })
-
-	local status = useAccountStatus(isActive, user)
-	local details = if user.status == "ready"
-		then user.details
-		elseif user.status == "error" then user.cachedDetails
-		else nil
+	end, { menuState.disable :: any, details })
 
 	local isDisabled = user.status ~= "ready"
 	local isLoading = user.status == "loading"

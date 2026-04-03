@@ -6,6 +6,7 @@ local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 
 local Logger = require(Plugin.Source.Logger)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local PluginStore = require(script.Parent.PluginStore)
 
 export type PluginSettingsStore<T> = {
@@ -53,6 +54,7 @@ local function createPluginSettingsStore<T>(
 			if not success then
 				Logger:Warn(`failed to load plugin settings for {storageKey}:`, result)
 				setErr(result)
+				NotificationStore.get().push("error", "Failed to load plugin settings")
 				return nil
 			end
 
@@ -61,6 +63,7 @@ local function createPluginSettingsStore<T>(
 			if not isValid then
 				Logger:Warn(`plugin settings are malformed for {storageKey}:`, message)
 				setErr(message)
+				NotificationStore.get().push("error", "Failed to load plugin settings")
 				return nil
 			end
 
@@ -85,6 +88,7 @@ local function createPluginSettingsStore<T>(
 
 			if not success then
 				Logger:Warn(`failed to write plugin settings to disk: {err}`)
+				NotificationStore.get().push("error", "Failed to save plugin settings")
 			end
 		end
 	end

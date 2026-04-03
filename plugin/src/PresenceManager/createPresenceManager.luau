@@ -10,6 +10,7 @@ local AuthStore = require(Plugin.Source.Authentication.AuthStore)
 local BuildVars = require(Plugin.Source.BuildVars)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 
 local signal = Charm.signal
@@ -159,12 +160,14 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			-- Don't retry unauthorized errors — needs auth refresh from external system
 			if errorType == "unauthorized" then
 				Logger:Warn(`{context}: unauthorized (attempt {attempt}/{MAX_RETRIES})`)
+				NotificationStore.get().push("error", "Discord session expired — re-link your account")
 				return result
 			end
 
 			-- On last attempt, don't wait — just return the error
 			if attempt == MAX_RETRIES then
 				Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
+				NotificationStore.get().push("error", "Failed to update Discord presence")
 				return result
 			end
 
@@ -407,6 +410,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					local err = result.error
 					if err.type == "unauthorized" then
 						Logger:Warn(`PresenceManager: auth token expired for account {id}, removing session`)
+						NotificationStore.get().push("error", "Discord session expired — re-link your account")
 						sessionTokens[id] = nil
 					end
 					-- On other errors, keep the token and retry next heartbeat

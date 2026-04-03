@@ -11,6 +11,7 @@ private = true
 [dependencies]
 React = "jsdotlua/react@17.2.1"
 ReactRoblox = "jsdotlua/react-roblox@17.2.1"
+ReactFlow = "outofbears/react-flow@0.4.0"
 Log = "realthx1/luaulog@0.3.0"
 Sift = "csqrl/sift@0.0.8"
 sha256 = "dekkonot/sha256@1.0.1"

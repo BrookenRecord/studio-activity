@@ -11,6 +11,7 @@ local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
 type PlaceContext = PlaceContextStore.PlaceContext
 
 local Logger = require(Plugin.Source.Logger)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
 local presets = require(script.Parent.presets)
@@ -120,6 +121,7 @@ local function buildWithRetry(profile: Profile, context: PlaceContext): Activity
 
 		if attempt == MAX_BUILD_RETRIES then
 			Logger:Warn(`ProfileStore: build failed after {MAX_BUILD_RETRIES} attempts: {result}`)
+			NotificationStore.get().push("error", "Failed to build presence profile")
 			return nil
 		end
 
