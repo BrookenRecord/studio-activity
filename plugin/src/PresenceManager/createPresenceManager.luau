@@ -52,7 +52,7 @@ export type PresenceManager = {
 }
 
 --- Convert ActivityConfig into the API format (mostly changing to snake_case.)
-local function serializeActivity(activity: ActivityConfig): ApiActivity
+local function serializeActivity(activity: ActivityConfig, startedAt: number?): ApiActivity
 	local apiActivity: ApiActivity = {
 		type = 0, -- PLAYING
 		name = activity.name,
@@ -67,9 +67,10 @@ local function serializeActivity(activity: ActivityConfig): ApiActivity
 		platform = "desktop",
 	}
 
-	if activity.startedAt then
+	if startedAt then
 		apiActivity.timestamps = {
-			start = tostring(activity.startedAt),
+			-- Convert to milliseconds
+			start = tostring(startedAt * 1000),
 		}
 	end
 
@@ -114,6 +115,9 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 
 	-- In-memory session tokens: accountId → sessionToken
 	local sessionTokens: { [string]: string } = {}
+
+	-- Tracks when sessions first became active, used as the Discord timestamp
+	local sessionStartedAt: number? = os.time()
 
 	-- Tracks when we're next allowed to make Discord API calls.
 	-- 0 means no cooldown is active. Value is os.clock()-based (monotonic).
@@ -248,7 +252,11 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			return
 		end
 
-		local serialized = serializeActivity(activity)
+		if sessionStartedAt == nil then
+			sessionStartedAt = os.time()
+		end
+
+		local serialized = serializeActivity(activity, sessionStartedAt)
 		local activeAccountIds: { [string]: true } = {}
 
 		for id, account in accounts do
@@ -387,7 +395,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 				continue
 			end
 
-			local serialized = serializeActivity(activity)
+			local serialized = serializeActivity(activity, sessionStartedAt)
 			local authAccounts = peek(auth.getStorage).accounts
 			local disabledIds = peek(getDisabledAccountIds)
 
