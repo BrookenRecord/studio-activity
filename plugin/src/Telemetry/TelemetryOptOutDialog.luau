@@ -8,7 +8,7 @@ local Sift = require(Packages.Sift)
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
-local fireEventAsync = require(script.Parent.fireEventAsync)
+local fireEvent = require(script.Parent.fireEventAsync)
 
 local View = Foundation.View
 local Dialog = Foundation.Dialog
@@ -32,6 +32,14 @@ local function TelemetryOptOutDialog(props: Props)
 	local isOptedIn, setIsOptedIn = useState(true)
 
 	local onClose = useCallback(function()
+		-- Fire the event before writing the setting so the opt-out event
+		-- isn't blocked by the collectAnonymousUsageData check.
+		if isOptedIn then
+			fireEvent({ eventName = "TelemetryOptedIn" })
+		else
+			fireEvent({ eventName = "TelemetryOptedOut" })
+		end
+
 		localStorageStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
 				wasUserPromptedForTelemetry = true,
@@ -44,26 +52,23 @@ local function TelemetryOptOutDialog(props: Props)
 			})
 		end)
 
-		task.spawn(function()
-			if isOptedIn then
-				fireEventAsync({
-					eventName = "TelemetryOptedIn",
-				})
-			else
-				fireEventAsync({
-					eventName = "TelemetryOptedOut",
-				})
-			end
-		end)
-
 		props.onClose()
 	end, { localStorageStore.setStorage :: any, userSettingsStore.setStorage, isOptedIn, props.onClose })
+
+	local onCancel = useCallback(function()
+		localStorageStore.setStorage(function(prev)
+			return Sift.Dictionary.join(prev, {
+				wasUserPromptedForTelemetry = true,
+			})
+		end)
+		props.onClose()
+	end, { localStorageStore.setStorage :: any, props.onClose })
 
 	return React.createElement(Dialog.Root, {
 		disablePortal = false,
 		hasBackdrop = true,
-		onClose = onClose,
-		onPressedOutside = onClose,
+		onClose = onCancel,
+		onPressedOutside = onCancel,
 	}, {
 		Title = React.createElement(Dialog.Title, {
 			text = "Help us improve the plugin",

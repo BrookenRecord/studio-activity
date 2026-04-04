@@ -7,7 +7,7 @@ local ReactRoblox = require(Packages.ReactRoblox)
 local ContextProviders = require(Plugin.Source.Common.ContextProviders)
 local Logger = require(Plugin.Source.Logger)
 local createPluginLoader = require(Plugin.Bin.createPluginLoader)
-local fireEventAsync = require(Plugin.Source.Telemetry.fireEventAsync)
+local fireEvent = require(Plugin.Source.Telemetry.fireEventAsync)
 
 local PluginApp = require(script.Parent.PluginApp)
 
@@ -40,11 +40,7 @@ local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createP
 		end)
 		Logger:Info(`unmounted app in {elapsedMs}`)
 
-		task.spawn(function()
-			fireEventAsync({
-				eventName = "AppClosed",
-			})
-		end)
+		fireEvent({ eventName = "AppClosed" })
 	end
 
 	local function mount()
@@ -54,21 +50,13 @@ local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createP
 		end)
 		Logger:Info(`mounted app in {elapsedMs}`)
 
-		task.spawn(function()
-			fireEventAsync({
-				eventName = "AppOpened",
-			})
-		end)
+		fireEvent({ eventName = "AppOpened" })
 	end
 
 	local function destroy()
 		Logger:Info("destroying app...")
 		local elapsedMs = stopwatch(function()
 			unmount()
-
-			-- for _, connection in connections do
-			-- 	connection:Disconnect()
-			-- end
 		end)
 		Logger:Info(`destroyed app in {elapsedMs}`)
 	end

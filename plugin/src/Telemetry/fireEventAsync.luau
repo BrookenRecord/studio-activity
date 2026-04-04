@@ -3,11 +3,17 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Logger = require(Plugin.Source.Logger)
 local Types = require(script.Parent.Types)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
-local getAnonymizedUserId = require(script.Parent.getAnonymizedUserId)
 
 type TelemetryEvent = Types.TelemetryEvent
 
-local function fireEventAsync(event: TelemetryEvent)
+--[[
+	Fire a telemetry event. Respects the user's opt-out setting.
+
+	TODO: Wire up HTTP transport once the backend telemetry endpoint exists.
+	The event payload should include: eventName, properties (if any),
+	anonymizedUserId, build version/channel/hash, and a timestamp.
+]]
+local function fireEvent(event: TelemetryEvent)
 	local userSettingsStore = UserSettingsStore.get()
 	local userSettings = userSettingsStore.getStorage()
 
@@ -15,21 +21,7 @@ local function fireEventAsync(event: TelemetryEvent)
 		return
 	end
 
-	local _body = {
-		eventName = event.eventName,
-		properties = (event :: any).properties,
-		anonymizedUserId = getAnonymizedUserId(),
-		-- buildVersion = _G.BUILD_VERSION,
-		-- buildChannel = _G.BUILD_CHANNEL,
-		-- buildHash = _G.BUILD_HASH,
-	}
-
-	Logger:Info(`firing event {event.eventName}`)
-
-	-- return requestAsync(`{_G.BASE_URL}/telemetry`, {
-	-- 	method = "POST",
-	-- 	body = body,
-	-- })
+	Logger:Info(`telemetry event: {event.eventName}`)
 end
 
-return fireEventAsync
+return fireEvent

@@ -1,4 +1,4 @@
--- The events in this file mirror the TelementryEventName enum in the backend.
+-- The events in this file mirror the TelemetryEventName enum in the backend.
 -- The backend must be updated first before adding new events.
 
 export type AppOpened = {
