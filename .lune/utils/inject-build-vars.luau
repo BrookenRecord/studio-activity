@@ -8,6 +8,7 @@ local BuildVarsModule = require("../../plugin/src/BuildVars/Types")
 type BuildVars = BuildVarsModule.BuildVars
 
 local OUTPUT_PATH = "plugin/src/BuildVars/BuildVars.json"
+local WALLY_TOML_PATH = "plugin/wally.toml"
 
 type Config = {
 	production: boolean,
@@ -16,17 +17,25 @@ type Config = {
 local function injectBuildVars(config: Config)
 	local isProd = config.production
 
-	local clientId =
-		assert(env.loadEnvVar("DISCORD_CLIENT_ID"), "No `DISCORD_CLIENT_ID` provided in environment variables")
+	local clientId = env.loadEnvVar("DISCORD_CLIENT_ID") :: string
+	if not clientId then
+		if isProd then
+			error("No `DISCORD_CLIENT_ID` provided in environment variables (required for production builds)")
+		end
+		clientId = "MISSING_CLIENT_ID"
+	end
 
 	local gitHash = exec.run("git", { "rev-parse", "--short", "HEAD" }, { quiet = true })
 
+	local wallyToml = serde.decode("toml", fs.readFile(WALLY_TOML_PATH)) :: any
+	local version: string = wallyToml.package.version or "0.0.0"
+
 	local vars: BuildVars = {
 		build = {
-			version = "0.0.1",
+			version = version,
 			channel = "live",
 			hash = gitHash,
-			isDev = true,
+			isDev = not isProd,
 		},
 
 		api = {

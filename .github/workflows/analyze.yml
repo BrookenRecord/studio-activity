@@ -28,7 +28,7 @@ jobs:
       - name: Run Lune setup
         run: |
           lune setup
-          rm .luaurc
+          rm -f .luaurc
 
       - name: 📦 Setup project
         run: lune run setup
