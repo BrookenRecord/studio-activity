@@ -3,7 +3,6 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 local Foundation = require(Packages.Foundation)
-local t = require(Packages.t)
 
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
@@ -11,10 +10,10 @@ type ActivityConfig = createPresenceManager.ActivityConfig
 local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
 type PlaceContext = PlaceContextStore.PlaceContext
 
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
-local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
 local presets = require(script.Parent.presets)
 
 local IconName = Foundation.Enums.IconName
@@ -22,13 +21,12 @@ local IconName = Foundation.Enums.IconName
 local signal = Charm.signal
 local effect = Charm.effect
 local computed = Charm.computed
+local peek = Charm.peek
 
 local MAX_BUILD_RETRIES = 3
 
-export type CustomProfileData = {
-	name: string,
-	activity: ActivityConfig,
-}
+type CustomProfileData = LocalStorageStore.CustomProfileData
+type CustomProfiles = LocalStorageStore.CustomProfiles
 
 export type Profile = {
 	name: string,
@@ -49,42 +47,6 @@ export type ProfileStore = {
 	removeCustomProfile: (id: string) -> (),
 
 	destroy: () -> (),
-	_settingsStore: createPluginSettingsStore.PluginSettingsStore<ProfileStoreData>,
-}
-
-type ProfileStoreData = {
-	activeProfileId: string,
-	customProfiles: { [string]: CustomProfileData },
-}
-
-local validateActivity = t.interface({
-	name = t.string,
-	details = t.optional(t.string),
-	detailsUrl = t.optional(t.string),
-	state = t.optional(t.string),
-	stateUrl = t.optional(t.string),
-	startedAt = t.optional(t.number),
-	assets = t.optional(t.interface({
-		largeImage = t.optional(t.string),
-		largeText = t.optional(t.string),
-		smallImage = t.optional(t.string),
-		smallText = t.optional(t.string),
-	})),
-})
-
-local validateCustomProfile = t.interface({
-	name = t.string,
-	activity = validateActivity,
-})
-
-local validate = t.interface({
-	activeProfileId = t.string,
-	customProfiles = t.map(t.string, validateCustomProfile),
-})
-
-local defaultValue: ProfileStoreData = {
-	activeProfileId = "default",
-	customProfiles = {},
 }
 
 --- Wrap a CustomProfileData into a runtime Profile.
@@ -143,27 +105,39 @@ local function buildWithRetry(profile: Profile, context: PlaceContext): Activity
 end
 
 local function createProfileStore(): ProfileStore
-	local settingsStore = createPluginSettingsStore("PresenceProfileStore", defaultValue, validate)
+	local localStorage = LocalStorageStore.get()
 
 	local getActiveProfileId = computed(function(): string
-		return settingsStore.getStorage().activeProfileId
+		return localStorage.getStorage().selectedProfileId or "default"
 	end)
+
+	local function setActiveProfile(id: string)
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			new.selectedProfileId = id
+			return new
+		end)
+	end
 
 	local getActiveProfile = computed(function(): Profile?
 		local id = getActiveProfileId()
-		local storage = settingsStore.getStorage()
+		local customProfiles = localStorage.getStorage().customProfiles or {}
 
 		local preset = presets[id]
 		if preset then
 			return wrapPreset(preset)
 		end
 
-		local custom = storage.customProfiles[id]
+		local custom = customProfiles[id]
 		if custom then
 			return wrapCustomProfile(custom)
 		end
 
-		return nil
+		-- Stored profile no longer exists — reset to default
+		if id ~= "default" then
+			setActiveProfile("default")
+		end
+		return wrapPreset(presets.default)
 	end)
 
 	local getAllProfiles = computed(function(): { [string]: Profile }
@@ -173,8 +147,8 @@ local function createProfileStore(): ProfileStore
 			all[id] = wrapPreset(preset)
 		end
 
-		local storage = settingsStore.getStorage()
-		for id, custom in storage.customProfiles do
+		local customProfiles: CustomProfiles = localStorage.getStorage().customProfiles or {}
+		for id, custom in customProfiles do
 			all[id] = wrapCustomProfile(custom)
 		end
 
@@ -212,52 +186,38 @@ local function createProfileStore(): ProfileStore
 		end)
 	end)
 
-	local function setActiveProfile(id: string)
-		settingsStore.setStorage(function(prev: ProfileStoreData): ProfileStoreData
-			return {
-				activeProfileId = id,
-				customProfiles = prev.customProfiles,
-			}
-		end)
-	end
-
 	local function addCustomProfile(id: string, data: CustomProfileData)
-		settingsStore.setStorage(function(prev: ProfileStoreData): ProfileStoreData
-			local customProfiles = table.clone(prev.customProfiles)
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			local customProfiles = table.clone(prev.customProfiles or {})
 			customProfiles[id] = data
-			return {
-				activeProfileId = prev.activeProfileId,
-				customProfiles = customProfiles,
-			}
+			new.customProfiles = customProfiles
+			return new
 		end)
 	end
 
 	local function updateCustomProfile(id: string, data: CustomProfileData)
-		settingsStore.setStorage(function(prev: ProfileStoreData): ProfileStoreData
-			local customProfiles = table.clone(prev.customProfiles)
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			local customProfiles = table.clone(prev.customProfiles or {})
 			customProfiles[id] = data
-			return {
-				activeProfileId = prev.activeProfileId,
-				customProfiles = customProfiles,
-			}
+			new.customProfiles = customProfiles
+			return new
 		end)
 	end
 
 	local function removeCustomProfile(id: string)
-		settingsStore.setStorage(function(prev: ProfileStoreData): ProfileStoreData
-			local customProfiles = table.clone(prev.customProfiles)
+		-- If the removed profile was active, fall back to default
+		if peek(getActiveProfileId) == id then
+			setActiveProfile("default")
+		end
+
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			local customProfiles = table.clone(prev.customProfiles or {})
 			customProfiles[id] = nil
-
-			-- If the removed profile was active, fall back to default
-			local activeId = prev.activeProfileId
-			if activeId == id then
-				activeId = "default"
-			end
-
-			return {
-				activeProfileId = activeId,
-				customProfiles = customProfiles,
-			}
+			new.customProfiles = customProfiles
+			return new
 		end)
 	end
 
@@ -268,8 +228,6 @@ local function createProfileStore(): ProfileStore
 			pcall(task.cancel, buildThread)
 			buildThread = nil
 		end
-
-		settingsStore.dispose()
 	end
 
 	return {
@@ -284,7 +242,6 @@ local function createProfileStore(): ProfileStore
 		removeCustomProfile = removeCustomProfile,
 
 		destroy = destroy,
-		_settingsStore = settingsStore,
 	}
 end
 

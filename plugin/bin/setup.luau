@@ -30,8 +30,6 @@ local function setup(plugin: Plugin, main: PluginMain)
 		presenceManager.setActivity(profileStore.getResolvedActivity())
 	end)
 
-	profileStore.setActiveProfile("default")
-
 	plugin.Unloading:Connect(function()
 		disposeProfileEffect()
 		profileStore.destroy()

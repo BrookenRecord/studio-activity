@@ -6,7 +6,6 @@ local React = require(Packages.React)
 
 local AuthStore = require(Plugin.Source.Authentication.AuthStore)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
-local ProfileStore = require(Plugin.Source.PresenceManager.ProfileStore)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
 
 local Menu = Foundation.Menu
@@ -34,14 +33,12 @@ local function DeveloperMenu(props: Props)
 
 					local userSettings = UserSettingsStore.get().getStorage()
 					local localStorage = LocalStorageStore.get().getStorage()
-					local profileStore = ProfileStore.get()._settingsStore.getStorage()
 					local auth = AuthStore.get().getStorage()
 
 					print(`\n{divider}\n\nPlugin storage:\n`)
 
 					print("UserSettings:", userSettings)
-					print("LocalStorage", localStorage)
-					print("ProfileStore", profileStore)
+					print("LocalStorage:", localStorage)
 					print("AuthStore (WARNING contains access tokens):", auth)
 
 					print(`\n{divider}`)
