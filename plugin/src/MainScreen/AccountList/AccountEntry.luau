@@ -109,6 +109,7 @@ local function AccountEntry(props: Props)
 	return e(View, {
 		tag = "bg-shift-200 size-full-1400 row gap-medium padding-x-medium align-y-center radius-small",
 		onActivated = if not isDisabled then toggleActive else nil,
+		onSecondaryActivated = if not isDisabled then menuState.toggle else nil,
 		stroke = if user.status == "error"
 			then {
 				Color = tokens.Color.System.Alert.Color3,

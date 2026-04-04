@@ -20,6 +20,7 @@ local useState = React.useState
 type Props = {
 	title: string,
 	hasDivider: boolean,
+	canToggleExpand: boolean,
 	LayoutOrder: number?,
 	children: React.ReactNode,
 }
@@ -41,11 +42,13 @@ local function Section(props: Props)
 			HeaderBlock = e(View, {
 				tag = "size-full-0 auto-y row radius-small align-y-center padding-x-small padding-y-xsmall",
 				LayoutOrder = nextOrder(),
-				onActivated = function()
-					setExpanded(function(prev)
-						return not prev
-					end)
-				end,
+				onActivated = if props.canToggleExpand
+					then function()
+						setExpanded(function(prev)
+							return not prev
+						end)
+					end
+					else nil,
 			}, {
 				Title = e(Text, {
 					tag = "auto-y grow text-align-x-left text-title-small content-muted",
@@ -53,7 +56,7 @@ local function Section(props: Props)
 					LayoutOrder = nextOrder(),
 				}),
 
-				ExpandedIcon = e(Icon, {
+				ExpandedIcon = props.canToggleExpand and e(Icon, {
 					name = if isExpanded then IconName.ChevronLargeDown else IconName.ChevronLargeUp,
 					size = IconSize.XSmall,
 					LayoutOrder = nextOrder(),

@@ -2,6 +2,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
+local Foundation = require(Packages.Foundation)
 local t = require(Packages.t)
 
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
@@ -16,6 +17,8 @@ local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
 local presets = require(script.Parent.presets)
 
+local IconName = Foundation.Enums.IconName
+
 local signal = Charm.signal
 local effect = Charm.effect
 local computed = Charm.computed
@@ -29,6 +32,7 @@ export type CustomProfileData = {
 
 export type Profile = {
 	name: string,
+	icon: Foundation.IconName,
 	isPreset: boolean,
 	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
 }
@@ -88,6 +92,7 @@ local defaultValue: ProfileStoreData = {
 local function wrapCustomProfile(data: CustomProfileData): Profile
 	return {
 		name = data.name,
+		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
 		buildActivityAsync = function(_context: PlaceContext): ActivityConfig
 			return data.activity
@@ -99,6 +104,7 @@ end
 local function wrapPreset(preset: presets.PresetProfile): Profile
 	return {
 		name = preset.name,
+		icon = preset.icon,
 		isPreset = true,
 		buildActivityAsync = preset.buildActivityAsync,
 	}

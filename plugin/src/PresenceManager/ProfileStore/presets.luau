@@ -1,5 +1,11 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
+local Packages = Plugin.Packages
+local Foundation = require(Packages.Foundation)
+
+local IconName = Foundation.Enums.IconName
+type IconName = Foundation.IconName
+
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
@@ -8,12 +14,14 @@ type PlaceContext = PlaceContextStore.PlaceContext
 
 export type PresetProfile = {
 	name: string,
+	icon: IconName,
 	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
 }
 
 local presets: { [string]: PresetProfile } = {
 	default = {
 		name = "Default",
+		icon = IconName.PhotoCameraFace :: IconName,
 		buildActivityAsync = function(context: PlaceContext): ActivityConfig
 			local onlineDetails = if context.placeType == "online" then context.onlinePlaceDetails else nil
 			local offlineDetails = if context.placeType == "offline" then context.offlinePlaceDetails else nil
@@ -37,6 +45,7 @@ local presets: { [string]: PresetProfile } = {
 
 	confidential = {
 		name = "Confidential",
+		icon = IconName.Eyelashes :: IconName,
 		buildActivityAsync = function(_context: PlaceContext): ActivityConfig
 			return {
 				name = "Roblox Studio",

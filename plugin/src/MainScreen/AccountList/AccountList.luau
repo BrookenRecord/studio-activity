@@ -82,7 +82,8 @@ local function AccountList(props: Props)
 
 	return e(Section, {
 		title = "Linked Accounts",
-		hasDivider = true,
+		hasDivider = false,
+		canToggleExpand = true,
 		LayoutOrder = props.LayoutOrder,
 	}, userChildren)
 end

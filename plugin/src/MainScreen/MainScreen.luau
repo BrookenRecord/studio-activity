@@ -9,6 +9,7 @@ local AccountList = require(script.Parent.AccountList)
 local Footer = require(script.Parent.Footer)
 local Header = require(script.Parent.Header)
 local PreviewBlock = require(script.Parent.PreviewBlock)
+local ProfileSelection = require(script.Parent.ProfileSelection)
 
 local View = Foundation.View
 local ScrollView = Foundation.ScrollView
@@ -42,6 +43,10 @@ local function MainScreen()
 				padding = Vector2.new(0, tokens.Padding.Medium),
 			}, {
 				PreviewBlock = e(PreviewBlock, {
+					LayoutOrder = nextOrder(),
+				}),
+
+				ProfileSelection = e(ProfileSelection, {
 					LayoutOrder = nextOrder(),
 				}),
 
