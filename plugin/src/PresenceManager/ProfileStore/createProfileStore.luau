@@ -42,8 +42,7 @@ export type ProfileStore = {
 	getResolvedActivity: () -> ActivityConfig?,
 
 	setActiveProfile: (id: string) -> (),
-	addCustomProfile: (id: string, data: CustomProfileData) -> (),
-	updateCustomProfile: (id: string, data: CustomProfileData) -> (),
+	setCustomProfile: (id: string, data: CustomProfileData) -> (),
 	removeCustomProfile: (id: string) -> (),
 
 	destroy: () -> (),
@@ -133,11 +132,19 @@ local function createProfileStore(): ProfileStore
 			return wrapCustomProfile(custom)
 		end
 
-		-- Stored profile no longer exists — reset to default
-		if id ~= "default" then
+		return wrapPreset(presets.default)
+	end)
+
+	-- Reset to default when the active profile no longer exists.
+	-- This is an effect rather than inline in the computed above to
+	-- avoid writing to a signal during a computed derivation.
+	local disposeProfileFallbackEffect = effect(function()
+		local id = getActiveProfileId()
+		local customProfiles = localStorage.getStorage().customProfiles or {}
+
+		if id ~= "default" and not presets[id] and not customProfiles[id] then
 			setActiveProfile("default")
 		end
-		return wrapPreset(presets.default)
 	end)
 
 	local getAllProfiles = computed(function(): { [string]: Profile }
@@ -186,17 +193,7 @@ local function createProfileStore(): ProfileStore
 		end)
 	end)
 
-	local function addCustomProfile(id: string, data: CustomProfileData)
-		localStorage.setStorage(function(prev)
-			local new = table.clone(prev)
-			local customProfiles = table.clone(prev.customProfiles or {})
-			customProfiles[id] = data
-			new.customProfiles = customProfiles
-			return new
-		end)
-	end
-
-	local function updateCustomProfile(id: string, data: CustomProfileData)
+	local function setCustomProfile(id: string, data: CustomProfileData)
 		localStorage.setStorage(function(prev)
 			local new = table.clone(prev)
 			local customProfiles = table.clone(prev.customProfiles or {})
@@ -222,6 +219,7 @@ local function createProfileStore(): ProfileStore
 	end
 
 	local function destroy()
+		disposeProfileFallbackEffect()
 		disposeBuildEffect()
 
 		if buildThread then
@@ -237,8 +235,7 @@ local function createProfileStore(): ProfileStore
 		getResolvedActivity = getResolvedActivity,
 
 		setActiveProfile = setActiveProfile,
-		addCustomProfile = addCustomProfile,
-		updateCustomProfile = updateCustomProfile,
+		setCustomProfile = setCustomProfile,
 		removeCustomProfile = removeCustomProfile,
 
 		destroy = destroy,

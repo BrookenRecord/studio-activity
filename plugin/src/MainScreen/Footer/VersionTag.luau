@@ -34,7 +34,7 @@ local function VersionTag(props: Props)
 			LayoutOrder = nextOrder(),
 		}),
 
-		DevBadge = e(Badge, {
+		DevBadge = BuildVars.build.isDev and e(Badge, {
 			icon = IconName.HammerCode,
 			text = "Dev Build",
 			variant = BadgeVariant.Neutral,

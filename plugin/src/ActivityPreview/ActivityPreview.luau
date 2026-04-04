@@ -60,6 +60,7 @@ local function ActivityPreview(props: Props)
 				}),
 
 				ActivityTimer = e(ActivityTimer, {
+					startedAt = props.activity.startedAt,
 					LayoutOrder = nextOrder(),
 				}),
 			}),

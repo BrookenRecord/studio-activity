@@ -5,6 +5,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local BuildVars = require(Plugin.Source.BuildVars)
 local DeveloperMenu = require(script.Parent.DeveloperMenu)
 local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local VersionTag = require(script.Parent.VersionTag)
@@ -54,7 +55,7 @@ local function Footer(props: Props)
 				tag = "size-0-full auto-x row gap-medium align-y-center",
 				LayoutOrder = nextOrder(),
 			}, {
-				DeveloperMenu = e(DeveloperMenu, {
+				DeveloperMenu = BuildVars.build.isDev and e(DeveloperMenu, {
 					LayoutOrder = nextOrder(),
 				}),
 

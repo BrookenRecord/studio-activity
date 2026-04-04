@@ -44,8 +44,8 @@ local function useWebImage(url: string): buffer?
 				return
 			end
 
-			local contentType = result.Headers["content-type"]
-			if contentType ~= "image/png" then
+			local contentType = result.Headers["content-type"] or ""
+			if not string.find(contentType, "image/png", 1, true) then
 				Logger:Warn("Downloaded image wasn't a PNG", {
 					url = url,
 					contentType = contentType,

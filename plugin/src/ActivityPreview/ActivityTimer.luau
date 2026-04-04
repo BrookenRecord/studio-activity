@@ -21,6 +21,7 @@ local e = React.createElement
 local useMemo = React.useMemo
 
 type Props = {
+	startedAt: number?,
 	LayoutOrder: number?,
 }
 
@@ -30,10 +31,9 @@ local function ActivityTimer(props: Props)
 	local tokens = useTokens()
 	local contentColor = tokens.Color.Extended.Green.Green_500
 
-	-- TODO: Grab this from the same time value we're actually using.
 	local startTime = useMemo(function()
-		return os.time()
-	end, {})
+		return props.startedAt or os.time()
+	end, { props.startedAt })
 
 	local timerText = useTimerText(startTime)
 

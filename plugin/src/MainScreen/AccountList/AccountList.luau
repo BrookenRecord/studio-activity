@@ -11,22 +11,28 @@ local LinkAccountEntry = require(script.Parent.LinkAccountEntry)
 local NoneLinkedBlock = require(script.Parent.NoneLinkedBlock)
 local Section = require(script.Parent.Parent.Section)
 
+local createAccountStore = require(Plugin.Source.Authentication.AccountStore.createAccountStore)
+type LocalUser = createAccountStore.LocalUser
+
 local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
+local useMemo = React.useMemo
 
 local STATUS_ORDER = { ready = 1, error = 2, loading = 3 }
 
-local userChildrenComputed = Charm.computed(function(): React.ReactNode
+type SortedEntry = { id: string, user: LocalUser }
+
+local sortedUsersComputed = Charm.computed(function(): { SortedEntry }
 	local accountStore = AccountStore.get()
 	local users = accountStore.cachedUsers()
 
-	local sortedEntries = {}
+	local entries: { SortedEntry } = {}
 	for id, user in users do
-		table.insert(sortedEntries, { id = id, user = user })
+		table.insert(entries, { id = id, user = user })
 	end
 
-	table.sort(sortedEntries, function(a, b)
+	table.sort(entries, function(a, b)
 		local aOrder = STATUS_ORDER[a.user.status] or 4
 		local bOrder = STATUS_ORDER[b.user.status] or 4
 		if aOrder ~= bOrder then
@@ -38,39 +44,7 @@ local userChildrenComputed = Charm.computed(function(): React.ReactNode
 		return a.id < b.id
 	end)
 
-	local children: { React.ReactNode } = {}
-	for index, entry in sortedEntries do
-		table.insert(
-			children,
-			e(AccountEntry, {
-				key = entry.id,
-				accountId = entry.id,
-				localUser = entry.user,
-				LayoutOrder = index,
-			})
-		)
-	end
-
-	if #children == 0 then
-		return {
-			e(NoneLinkedBlock, {
-				key = "NoneLinkedBlock",
-				LayoutOrder = 1,
-			}),
-		}
-	end
-
-	if #children < 3 then
-		table.insert(
-			children,
-			e(LinkAccountEntry, {
-				key = "LinkAccount",
-				LayoutOrder = 3,
-			})
-		)
-	end
-
-	return children
+	return entries
 end)
 
 type Props = {
@@ -78,14 +52,51 @@ type Props = {
 }
 
 local function AccountList(props: Props)
-	local userChildren = useSignalState(userChildrenComputed)
+	local sortedUsers = useSignalState(sortedUsersComputed)
+
+	local children = useMemo(function(): { React.ReactNode }
+		local result: { React.ReactNode } = {}
+
+		for index, entry in sortedUsers do
+			table.insert(
+				result,
+				e(AccountEntry, {
+					key = entry.id,
+					accountId = entry.id,
+					localUser = entry.user,
+					LayoutOrder = index,
+				})
+			)
+		end
+
+		if #result == 0 then
+			return {
+				e(NoneLinkedBlock, {
+					key = "NoneLinkedBlock",
+					LayoutOrder = 1,
+				}),
+			}
+		end
+
+		if #result < 3 then
+			table.insert(
+				result,
+				e(LinkAccountEntry, {
+					key = "LinkAccount",
+					LayoutOrder = 3,
+				})
+			)
+		end
+
+		return result
+	end, { sortedUsers })
 
 	return e(Section, {
 		title = "Linked Accounts",
 		hasDivider = false,
 		canToggleExpand = true,
 		LayoutOrder = props.LayoutOrder,
-	}, userChildren)
+	}, children)
 end
 
 return React.memo(AccountList)

@@ -25,6 +25,7 @@ export type Props = {
 }
 
 local DEFAULT_COLOR = Color3.fromRGB(0, 0, 0)
+local RESOLUTION_SCALE = getResolutionScale()
 
 local function QRCodeDisplay(props: Props)
 	local color = props.color or DEFAULT_COLOR
@@ -34,7 +35,7 @@ local function QRCodeDisplay(props: Props)
 	local matrix = useQRCodeMatrix(props.text, props.errorCorrection)
 	local imageRef = React.useRef(nil :: EditableImage?)
 	local content, setContent = React.useState(nil :: Content?)
-	local renderSize = imageSize * getResolutionScale()
+	local renderSize = imageSize * RESOLUTION_SCALE
 
 	React.useEffect(function()
 		local image = imageRef.current

@@ -210,7 +210,10 @@ local function AccountEntry(props: Props)
 				text = "Re-link",
 				variant = ButtonVariant.Utility,
 				size = InputSize.Small,
-				onActivated = function() end,
+				onActivated = function()
+					accountStore.removeUser(props.accountId)
+					ModalStore.get().open("addAccount")
+				end,
 				LayoutOrder = nextOrder(),
 			}),
 

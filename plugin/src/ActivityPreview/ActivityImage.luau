@@ -39,6 +39,11 @@ local function ActivityImage(props: Props)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(1, -4, 1, -4),
 		ZIndex = 2,
+	}, {
+		Image = smallImage and e(WebImage, {
+			url = smallImage,
+			size = "small",
+		}),
 	})
 
 	return e(View, {
