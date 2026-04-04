@@ -2,6 +2,11 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
+
+local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
+
+local useSignalState = ReactCharm.useSignalState
 
 local useMemo = React.useMemo
 local useState = React.useState
@@ -17,6 +22,9 @@ local MOCK_STUDIO = {
 }
 
 local function useThemeName(): ThemeName
+	local userSettings = useSignalState(UserSettingsStore.get().getStorage)
+	local themeOverride = userSettings.theme
+
 	local studio: Studio = useMemo(function()
 		local success, result = pcall(function()
 			return (settings() :: any).Studio
@@ -28,11 +36,15 @@ local function useThemeName(): ThemeName
 	local studioTheme, setStudioTheme = useState(studio.Theme.Name)
 
 	local theme = useMemo(function(): ThemeName
+		if themeOverride ~= "system" then
+			return if themeOverride == "light" then "Light" else "Dark"
+		end
+
 		if studioTheme == "Dark" or studioTheme == "Light" then
 			return studioTheme
 		end
 		return "Dark"
-	end, { studioTheme })
+	end, { studioTheme, themeOverride })
 
 	useEffect(function(): any
 		local connection = studio.ThemeChanged:Connect(function()
