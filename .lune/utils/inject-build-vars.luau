@@ -1,8 +1,8 @@
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
-local exec = require("../lib/process/exec")
 local env = require("./env")
+local exec = require("../lib/process/exec")
 
 local BuildVarsModule = require("../../plugin/src/BuildVars/Types")
 type BuildVars = BuildVarsModule.BuildVars

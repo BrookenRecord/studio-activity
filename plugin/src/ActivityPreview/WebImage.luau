@@ -57,7 +57,8 @@ local function WebImage(props: Props)
 			if Flags.isDataModelContentApiAvailable then
 				-- TODO: Remove the type cast when this API has proper types
 				local result, content = (AssetService :: any):CreateDataModelContentAsync(editableImageContent)
-				if result == Enum.CreateContentResult.Success then
+				-- TODO Luau: This enum is too new for the LSP to type check
+				if result == (Enum :: any).CreateContentResult.Success then
 					setImageContent(content)
 					editableImage:Destroy()
 					editableImage = nil :: any
