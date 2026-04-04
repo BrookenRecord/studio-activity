@@ -34,9 +34,7 @@ local function Header(props: Props)
 	local isActive = useSignalState(presenceManager.getIsActive)
 
 	local toggleActive = useCallback(function()
-		presenceManager.setIsActive(function(prev)
-			return not prev
-		end)
+		presenceManager.setIsActive(not presenceManager.getIsActive())
 	end, { presenceManager })
 
 	return e(View, {

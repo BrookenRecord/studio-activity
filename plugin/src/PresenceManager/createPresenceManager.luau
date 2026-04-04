@@ -45,7 +45,7 @@ export type PresenceManager = {
 	getDisabledAccountIds: () -> { [string]: true },
 
 	setActivity: (ActivityConfig?) -> (),
-	setIsActive: (boolean | (boolean) -> boolean) -> (),
+	setIsActive: (boolean) -> (),
 	setAccountActive: (accountId: string, isActive: boolean) -> (),
 
 	destroy: () -> (),
@@ -91,7 +91,22 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	local localStorage = LocalStorageStore.get()
 
 	local getActivity, setActivity = signal(nil :: ActivityConfig?)
-	local getIsActive, setIsActive = signal(true)
+
+	local getIsActive = computed(function(): boolean
+		local active = localStorage.getStorage().isPresenceActive
+		if active == nil then
+			return true
+		end
+		return active
+	end)
+
+	local function setIsActive(value: boolean)
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			new.isPresenceActive = value
+			return new
+		end)
+	end
 
 	local getDisabledAccountIds = computed(function(): { [string]: true }
 		return localStorage.getStorage().disabledAccountIds or {}
