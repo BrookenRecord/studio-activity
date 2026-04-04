@@ -5,7 +5,7 @@ local Charm = require(Packages.Charm)
 
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
-export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> (() -> ())
+export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> () -> ()
 
 local function setup(plugin: Plugin, main: PluginMain)
 	plugin.Name = "StudioActivity"
