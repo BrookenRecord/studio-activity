@@ -78,9 +78,9 @@ local function WebImage(props: Props)
 			Logger:Warn("Error while rendering web image", {
 				error = err,
 			})
+		else
+			setHasError(false)
 		end
-
-		setHasError(false)
 
 		return function()
 			if editableImage then

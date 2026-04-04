@@ -13,8 +13,11 @@ local useTween = ReactFlow.useTween
 local e = React.createElement
 local useCallback = React.useCallback
 local useEffect = React.useEffect
+local useRef = React.useRef
 
 export type NotificationType = "info" | "error"
+
+local TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 type Props = {
 	type: NotificationType,
@@ -24,34 +27,40 @@ type Props = {
 }
 
 local function Notification(props: Props)
-	local info = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	local alpha: any, updateAlpha = useTween({
 		start = 0,
-		info = info,
+		info = TWEEN_INFO,
 	})
+
+	local animDelayRef = useRef(nil :: thread?)
 
 	local onClose = useCallback(function()
 		updateAlpha({
 			target = 0,
-			info = info,
+			info = TWEEN_INFO,
 		})
 
 		-- Wait for the animation to complete, then tell the container to close
-		task.delay(0.1, props.onClose)
-	end, { updateAlpha })
+		local delayThread = task.delay(0.1, props.onClose)
+		animDelayRef.current = delayThread
+	end, { updateAlpha, props.onClose })
 
 	-- Animate on entry
 	useEffect(function()
 		updateAlpha({
 			target = 1,
-			info = info,
+			info = TWEEN_INFO,
 		})
 
 		local thread = task.delay(4, onClose)
 		return function()
 			task.cancel(thread)
+			if animDelayRef.current then
+				pcall(task.cancel, animDelayRef.current)
+				animDelayRef.current = nil
+			end
 		end
-	end, { updateAlpha :: any, info, onClose })
+	end, { updateAlpha :: any, onClose })
 
 	return e(Snackbar, {
 		AnchorPoint = Vector2.new(0.5, 1),

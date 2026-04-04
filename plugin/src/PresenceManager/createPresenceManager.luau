@@ -131,7 +131,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	-- In-memory session tokens: accountId → sessionToken
 	local sessionTokens: { [string]: string } = {}
 
-	-- Tracks when sessions first became active, used as the Discord timestamp
+	-- Tracks when sessions first became active, used as the Discord timestamp.
 	local sessionStartedAt: number? = os.time()
 
 	-- Tracks when we're next allowed to make Discord API calls.

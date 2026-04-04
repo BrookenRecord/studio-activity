@@ -59,9 +59,9 @@ local function DiscordAvatar(props: Props)
 			Logger:Warn("Error while rendering Discord avatar", {
 				error = err,
 			})
+		else
+			setHasError(false)
 		end
-
-		setHasError(false)
 
 		return function()
 			if editableImage then

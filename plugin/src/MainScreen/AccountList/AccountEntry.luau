@@ -1,7 +1,6 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
@@ -60,10 +59,10 @@ local function AccountEntry(props: Props)
 	end, { presenceManager :: any, props.accountId, isActive })
 
 	local accountStore = AccountStore.get()
-	local avatarImage = useSignalState(Charm.computed(function()
+	local avatarImage = useSignalState(function()
 		local cachedImages = accountStore.cachedUserImages()
 		return cachedImages[props.accountId]
-	end))
+	end)
 
 	local status = useAccountStatus(isActive, isPresenceEnabled, user)
 	local details = if user.status == "ready"
