@@ -59,6 +59,7 @@ local function DeveloperMenu(props: Props)
 		onActivated = function()
 			setIsOpen(false)
 		end,
+		LayoutOrder = props.LayoutOrder,
 	}, {
 		DeveloperMenuButton = e(IconButton, {
 			icon = IconName.HammerCode,
@@ -66,7 +67,6 @@ local function DeveloperMenu(props: Props)
 			onActivated = function()
 				setIsOpen(true)
 			end,
-			LayoutOrder = props.LayoutOrder,
 		}),
 	})
 end

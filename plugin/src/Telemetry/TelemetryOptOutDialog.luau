@@ -3,7 +3,6 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
-local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 local Sift = require(Packages.Sift)
 
@@ -17,7 +16,6 @@ local Checkbox = Foundation.Checkbox
 local ButtonVariant = Foundation.Enums.ButtonVariant
 
 local createNextOrder = ReactUtils.createNextOrder
-local useSignalState = ReactCharm.useSignalState
 local useCallback = React.useCallback
 local useState = React.useState
 
@@ -28,8 +26,8 @@ type Props = {
 local function TelemetryOptOutDialog(props: Props)
 	local nextOrder = createNextOrder()
 
-	local userSettingsStore = useSignalState(UserSettingsStore.get)
-	local localStorageStore = useSignalState(LocalStorageStore.get)
+	local userSettingsStore = UserSettingsStore.get()
+	local localStorageStore = LocalStorageStore.get()
 
 	local isOptedIn, setIsOptedIn = useState(true)
 

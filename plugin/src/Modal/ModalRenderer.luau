@@ -7,6 +7,7 @@ local ReactCharm = require(Packages.ReactCharm)
 local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local ConfirmationDialog = require(script.Parent.ConfirmationDialog)
 local ModalStore = require(script.Parent.ModalStore)
+local SettingsModal = require(Plugin.Source.UserSettings.SettingsModal)
 local TelemetryOptOutDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
 
 local useSignalState = ReactCharm.useSignalState
@@ -44,6 +45,16 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 			return e(ConfirmationDialog, {
 				title = props.title,
 				body = props.body,
+				onClose = onClose,
+			})
+		end,
+	},
+
+	settings = {
+		type = "sheet",
+		render = function(isOpen, onClose, _props)
+			return e(SettingsModal, {
+				isOpen = isOpen,
 				onClose = onClose,
 			})
 		end,

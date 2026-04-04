@@ -6,9 +6,13 @@ local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
 local DeveloperMenu = require(script.Parent.DeveloperMenu)
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local VersionTag = require(script.Parent.VersionTag)
 
 local View = Foundation.View
+local IconButton = Foundation.IconButton
+local IconName = Foundation.Enums.IconName
+local InputSize = Foundation.Enums.InputSize
 local useTokens = Foundation.Hooks.useTokens
 
 local createNextOrder = ReactUtils.createNextOrder
@@ -51,6 +55,15 @@ local function Footer(props: Props)
 				LayoutOrder = nextOrder(),
 			}, {
 				DeveloperMenu = e(DeveloperMenu, {
+					LayoutOrder = nextOrder(),
+				}),
+
+				Settings = e(IconButton, {
+					icon = IconName.Gear,
+					size = InputSize.XSmall,
+					onActivated = function()
+						ModalStore.get().open("settings")
+					end,
 					LayoutOrder = nextOrder(),
 				}),
 			}),

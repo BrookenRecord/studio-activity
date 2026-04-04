@@ -5,10 +5,9 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
-local AuthContext = require(script.Parent.AuthContext)
-local StartPage = require(script.Parent.StartPage.StartPage)
-local Title = require(script.Parent.Title)
+local SettingsView = require(script.Parent.SettingsView)
 
+local Text = Foundation.Text
 local Sheet = Foundation.Sheet
 local DialogSize = Foundation.Enums.DialogSize
 
@@ -21,7 +20,7 @@ type Props = {
 	onClose: (result: any?) -> (),
 }
 
-local function AddAccountFlow(props: Props)
+local function SettingsModal(props: Props)
 	local nextOrder = createNextOrder()
 
 	return e(Sheet.Root, {
@@ -33,27 +32,17 @@ local function AddAccountFlow(props: Props)
 		Header = e(Sheet.Header, {
 			hasCloseAffordance = true,
 		}, {
-			Title = e(Title, {
+			Title = e(Text, {
+				tag = "size-full-0 auto-y text-heading-small content-emphasis text-wrap text-align-x-left",
+				Text = "Settings",
 				LayoutOrder = nextOrder(),
 			}),
 		}),
 
 		Content = props.isOpen and e(Sheet.Content, nil, {
-			Context = e(ReactUtils.ContextStack, {
-				providers = {
-					e(AuthContext.Provider, {
-						onClose = props.onClose,
-					}),
-				},
-			}, {
-				-- This was setup to have multiple pages, but not sure if it
-				-- will anymore.
-				StartPage = e(StartPage, {
-					LayoutOrder = nextOrder(),
-				}),
-			}),
+			SettingsView = e(SettingsView),
 		}),
 	})
 end
 
-return AddAccountFlow
+return SettingsModal
