@@ -101,6 +101,7 @@ export type PluginLoaderContext = {
 	mainDockWidget: DockWidgetPluginGui?,
 	mainButtonClickedSignal: BufferedSignal,
 	waitForUserInteraction: () -> boolean,
+	destroy: () -> (),
 }
 
 local function getLocale(overrideLocaleId: string?): string
@@ -234,7 +235,7 @@ local function createPluginLoader(args: Args): PluginLoaderContext
 		return not destroyed
 	end
 
-	pluginInstance.Unloading:Connect(function()
+	local function destroy()
 		destroyed = true
 
 		-- Resume any threads blocked in waitForUserInteraction
@@ -248,7 +249,7 @@ local function createPluginLoader(args: Args): PluginLoaderContext
 		end
 
 		interactionEvent:Destroy()
-	end)
+	end
 
 	return {
 		plugin = pluginInstance,
@@ -257,6 +258,7 @@ local function createPluginLoader(args: Args): PluginLoaderContext
 		mainDockWidget = mainDockWidget,
 		mainButtonClickedSignal = mainButtonClickedSignal,
 		waitForUserInteraction = waitForUserInteraction,
+		destroy = destroy,
 	}
 end
 

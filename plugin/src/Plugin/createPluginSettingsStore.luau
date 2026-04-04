@@ -109,13 +109,15 @@ local function createPluginSettingsStore<T>(
 		end
 	end)
 
-	-- Write settings to disk when storage changes
-	local prevStorage: T?
+	-- Write settings to disk when storage changes.
+	-- Gated behind isLoading to prevent writing defaults before the load completes.
+	local prevStorage: T? = defaultValue
 	local disposeWrite = Charm.effect(function()
 		local storage = getStorage()
+		local isLoading = getIsLoading()
 		local plugin = PluginStore.get().getPlugin()
 
-		if plugin and storage ~= prevStorage then
+		if plugin and not isLoading and storage ~= prevStorage then
 			task.spawn(function()
 				writePluginSettingsAsync(plugin, storage)
 			end)

@@ -134,6 +134,11 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	-- Tracks when sessions first became active, used as the Discord timestamp.
 	local sessionStartedAt: number? = os.time()
 
+	-- Incremented on every sync to detect stale heartbeat writes.
+	-- The heartbeat checks this before and after API calls to avoid writing
+	-- tokens that were invalidated by a concurrent sync.
+	local syncGeneration: number = 0
+
 	-- Tracks when we're next allowed to make Discord API calls.
 	-- 0 means no cooldown is active. Value is os.clock()-based (monotonic).
 	local apiCooldownUntil: number = 0
@@ -351,6 +356,8 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 		end
 
 		sessionThread = task.delay(SYNC_DEBOUNCE_SECONDS, function()
+			syncGeneration += 1
+
 			-- Split accounts into active and disabled sets
 			local activeAccounts: { [string]: AuthStore.Account } = {}
 			for id, account in authAccounts do
@@ -410,6 +417,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 				continue
 			end
 
+			local generationBefore = syncGeneration
 			local serialized = serializeActivity(activity, sessionStartedAt)
 			local authAccounts = peek(auth.getStorage).accounts
 			local disabledIds = peek(getDisabledAccountIds)
@@ -427,6 +435,11 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					return discord.updateHeadlessSessionAsync(account.accessToken, token, serialized)
 				end, `PresenceManager: heartbeat for account {id}`)
 
+				-- A sync ran while we were yielding — our data is stale, discard
+				if syncGeneration ~= generationBefore then
+					break
+				end
+
 				if result.ok then
 					sessionTokens[id] = result.value.sessionToken
 				else
@@ -436,7 +449,6 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 						NotificationStore.get().push("error", "Discord session expired — re-link your account")
 						sessionTokens[id] = nil
 					end
-					-- On other errors, keep the token and retry next heartbeat
 				end
 			end
 		end

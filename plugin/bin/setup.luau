@@ -5,7 +5,7 @@ local Charm = require(Packages.Charm)
 
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
-export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> ()
+export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> (() -> ())
 
 local function setup(plugin: Plugin, main: PluginMain)
 	plugin.Name = "StudioActivity"
@@ -33,12 +33,6 @@ local function setup(plugin: Plugin, main: PluginMain)
 	-- Wire resolved activity from ProfileStore into PresenceManager
 	local disposeProfileEffect = Charm.effect(function()
 		presenceManager.setActivity(profileStore.getResolvedActivity())
-	end)
-
-	plugin.Unloading:Connect(function()
-		disposeProfileEffect()
-		profileStore.destroy()
-		presenceManager.destroy()
 	end)
 
 	local pluginLoaderContext = createPluginLoader({
@@ -78,12 +72,26 @@ local function setup(plugin: Plugin, main: PluginMain)
 		},
 	})
 
+	-- Single ordered cleanup handler for the entire plugin lifecycle.
+	-- Order: unmount UI → dispose effects → destroy services → destroy loader.
+	local destroyMain: (() -> ())? = nil
+
+	plugin.Unloading:Connect(function()
+		if destroyMain then
+			destroyMain()
+		end
+		disposeProfileEffect()
+		profileStore.destroy()
+		presenceManager.destroy()
+		pluginLoaderContext.destroy()
+	end)
+
 	local success = pluginLoaderContext.waitForUserInteraction()
 	if not success then
 		return
 	end
 
-	main(plugin, pluginLoaderContext)
+	destroyMain = main(plugin, pluginLoaderContext)
 end
 
 return setup
