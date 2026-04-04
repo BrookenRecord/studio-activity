@@ -34,7 +34,7 @@ export type CustomProfileData = {
 export type CustomProfiles = { [string]: CustomProfileData }
 
 export type LocalStorageStore = {
-	wasUserPromptedForTelemetry: boolean,
+	hasCompletedOnboarding: boolean,
 	isPresenceActive: boolean?,
 	selectedProfileId: string?,
 	customProfiles: CustomProfiles?,
@@ -43,7 +43,7 @@ export type LocalStorageStore = {
 }
 
 local defaultValue: LocalStorageStore = {
-	wasUserPromptedForTelemetry = false,
+	hasCompletedOnboarding = false,
 	isPresenceActive = true,
 	selectedProfileId = nil,
 	customProfiles = {},
@@ -74,7 +74,7 @@ local validateCustomProfile = t.interface({
 })
 
 local validate = t.interface({
-	wasUserPromptedForTelemetry = t.boolean,
+	hasCompletedOnboarding = t.boolean,
 	isPresenceActive = t.optional(t.boolean),
 	selectedProfileId = t.optional(t.string),
 	customProfiles = t.optional(t.map(t.string, validateCustomProfile)),

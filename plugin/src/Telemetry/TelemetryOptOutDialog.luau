@@ -23,7 +23,7 @@ type Props = {
 	onClose: (result: any?) -> (),
 }
 
-local function TelemetryOptOutDialog(props: Props)
+local function WelcomeDialog(props: Props)
 	local nextOrder = createNextOrder()
 
 	local userSettingsStore = UserSettingsStore.get()
@@ -32,8 +32,6 @@ local function TelemetryOptOutDialog(props: Props)
 	local isOptedIn, setIsOptedIn = useState(true)
 
 	local onClose = useCallback(function()
-		-- Fire the event before writing the setting so the opt-out event
-		-- isn't blocked by the collectAnonymousUsageData check.
 		if isOptedIn then
 			fireEvent({ eventName = "TelemetryOptedIn" })
 		else
@@ -42,7 +40,7 @@ local function TelemetryOptOutDialog(props: Props)
 
 		localStorageStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
-				wasUserPromptedForTelemetry = true,
+				hasCompletedOnboarding = true,
 			})
 		end)
 
@@ -58,7 +56,7 @@ local function TelemetryOptOutDialog(props: Props)
 	local onCancel = useCallback(function()
 		localStorageStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
-				wasUserPromptedForTelemetry = true,
+				hasCompletedOnboarding = true,
 			})
 		end)
 		props.onClose()
@@ -71,7 +69,7 @@ local function TelemetryOptOutDialog(props: Props)
 		onPressedOutside = onCancel,
 	}, {
 		Title = React.createElement(Dialog.Title, {
-			text = "Help us improve the plugin",
+			text = "Welcome to Studio Activity",
 		}),
 
 		Content = React.createElement(Dialog.Content, {
@@ -80,20 +78,20 @@ local function TelemetryOptOutDialog(props: Props)
 			Wrapper = React.createElement(View, {
 				tag = "auto-xy col gap-large",
 			}, {
-				MainParagraph = React.createElement(Dialog.Text, {
+				WelcomeParagraph = React.createElement(Dialog.Text, {
 					tag = "auto-xy text-wrap text-body-medium",
-					Text = "Studio Rich Presence would like to send anonymized usage data to help us improve the quality of the plugin.",
+					Text = "Studio Activity lets you show what you're working on in Roblox Studio as your Discord status. Link your Discord account to get started!",
 					LayoutOrder = nextOrder(),
 				}),
 
-				WhereToOptOut = React.createElement(Dialog.Text, {
+				TelemetryParagraph = React.createElement(Dialog.Text, {
 					tag = "auto-xy text-wrap text-body-medium",
-					Text = "You can opt out at any time in the settings.",
+					Text = "This is a plugin built by one person. Anonymous usage data helps me understand how many people use it and where things break. You can change this anytime in settings.",
 					LayoutOrder = nextOrder(),
 				}),
 
 				Checkbox = React.createElement(Checkbox, {
-					label = "Help improve the plugin by sending anonymous usage data",
+					label = "Help out by sending anonymous usage data",
 					isChecked = isOptedIn,
 					onActivated = setIsOptedIn,
 					LayoutOrder = nextOrder(),
@@ -104,7 +102,7 @@ local function TelemetryOptOutDialog(props: Props)
 		Actions = React.createElement(Dialog.Actions, {
 			actions = {
 				{
-					text = "Done",
+					text = "Get Started",
 					variant = ButtonVariant.Emphasis,
 					onActivated = onClose,
 				},
@@ -114,4 +112,4 @@ local function TelemetryOptOutDialog(props: Props)
 	})
 end
 
-return TelemetryOptOutDialog
+return WelcomeDialog

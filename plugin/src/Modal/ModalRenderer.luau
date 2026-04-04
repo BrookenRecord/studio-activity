@@ -8,7 +8,7 @@ local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local ConfirmationDialog = require(script.Parent.ConfirmationDialog)
 local ModalStore = require(script.Parent.ModalStore)
 local SettingsModal = require(Plugin.Source.UserSettings.SettingsModal)
-local TelemetryOptOutDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
+local WelcomeDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
 
 local useSignalState = ReactCharm.useSignalState
 
@@ -30,10 +30,10 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 		end,
 	},
 
-	telemetryOptOut = {
+	welcome = {
 		type = "dialog",
 		render = function(_isOpen, onClose, _props)
-			return e(TelemetryOptOutDialog, {
+			return e(WelcomeDialog, {
 				onClose = onClose,
 			})
 		end,

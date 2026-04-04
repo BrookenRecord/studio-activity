@@ -3,8 +3,10 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local React = require(Packages.React)
 
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local MainScreen = require(Plugin.Source.MainScreen)
 local ModalRenderer = require(Plugin.Source.Modal.ModalRenderer)
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local NotificationsContainer = require(Plugin.Source.Notification.NotificationsContainer)
 local PluginWidget = require(script.Parent.PluginWidget)
 local createPluginLoader = require(Plugin.Bin.createPluginLoader)
@@ -45,6 +47,13 @@ local function PluginApp(props: Props)
 			connection.Disconnect()
 		end
 	end, { props.pluginLoaderContext })
+
+	useEffect(function()
+		local storage = LocalStorageStore.get().getStorage()
+		if not storage.hasCompletedOnboarding then
+			ModalStore.get().open("welcome")
+		end
+	end, {})
 
 	return e(PluginWidget, {
 		dockWidget = props.pluginLoaderContext.mainDockWidget :: DockWidgetPluginGui,

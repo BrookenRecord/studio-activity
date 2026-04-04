@@ -6,12 +6,17 @@ local React = require(Packages.React)
 
 local AuthStore = require(Plugin.Source.Authentication.AuthStore)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
+local PluginStore = require(Plugin.Source.Plugin.PluginStore)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
 
 local Menu = Foundation.Menu
 local IconButton = Foundation.IconButton
 local IconName = Foundation.Enums.IconName
 local InputSize = Foundation.Enums.InputSize
+
+local STORAGE_KEYS = { "PresenceAuthStore", "PresenceLocalStorage", "PresenceUserSettings" }
 
 local e = React.createElement
 local useState = React.useState
@@ -44,6 +49,37 @@ local function DeveloperMenu(props: Props)
 					print(`\n{divider}`)
 
 					setIsOpen(false)
+				end,
+			},
+			{
+				id = "clear_storage",
+				text = "Clear All Saved Data",
+				onActivated = function()
+					setIsOpen(false)
+
+					task.spawn(function()
+						local confirmed = ModalStore.get().openAsync("confirmation", {
+							props = {
+								title = "Clear all saved data?",
+								body = "This will remove all linked accounts, settings, and cached data. The plugin will need to be reloaded.",
+							},
+						})
+
+						if not confirmed then
+							return
+						end
+
+						local plugin = PluginStore.get().getPlugin()
+						if not plugin then
+							return
+						end
+
+						for _, key in STORAGE_KEYS do
+							pcall(plugin.SetSetting, plugin, key, nil)
+						end
+
+						NotificationStore.get().push("info", "All saved data cleared — reload the plugin")
+					end)
 				end,
 			},
 		}
