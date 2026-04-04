@@ -78,7 +78,7 @@ local function SettingsView()
 	end
 
 	return e(View, {
-		tag = "size-full-0 auto-y col",
+		tag = "size-full-0 auto-y col padding-bottom-medium",
 	}, children)
 end
 

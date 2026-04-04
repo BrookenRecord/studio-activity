@@ -40,6 +40,11 @@ local function MainScreen()
 		}, {
 			LayoutContainer = e(View, {
 				tag = "size-full-0 auto-y col",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.fromScale(0.5, 0),
+				sizeConstraint = {
+					MaxSize = Vector2.new(620, math.huge),
+				},
 				padding = Vector2.new(0, tokens.Padding.Medium),
 			}, {
 				PreviewBlock = e(PreviewBlock, {
