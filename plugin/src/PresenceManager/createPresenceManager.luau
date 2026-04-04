@@ -226,6 +226,52 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	end
 
 	--[[
+		Check whether an account's access token is nearing expiry and
+		refresh it proactively. Returns the (possibly refreshed) access
+		token, or nil if the refresh token is also invalid (needs re-auth).
+	]]
+	local REFRESH_BUFFER_SECONDS = 3600
+
+	local function refreshIfNeededAsync(accountId: string, account: AuthStore.Account): string?
+		if os.time() < account.expiresAt - REFRESH_BUFFER_SECONDS then
+			return account.accessToken
+		end
+
+		if account.refreshToken == "" then
+			Logger:Warn(`Cannot refresh token for account {accountId} — no refresh token stored`)
+			return account.accessToken
+		end
+
+		Logger:Info(`Refreshing access token for account {accountId}`)
+		local result = discord.refreshTokenAsync(account.refreshToken)
+
+		if result.ok then
+			local newToken = result.value
+			auth.setStorage(function(prev)
+				local new = table.clone(prev)
+				new.accounts = table.clone(prev.accounts)
+				new.accounts[accountId] = {
+					accessToken = newToken.accessToken,
+					refreshToken = newToken.refreshToken or account.refreshToken,
+					expiresAt = newToken.expiresAt,
+				}
+				return new
+			end)
+			return newToken.accessToken
+		end
+
+		local err = result.error
+		if err.type == "invalid_grant" then
+			Logger:Warn(`Refresh token invalid for account {accountId} — user needs to re-link`)
+			NotificationStore.get().push("error", "Discord session expired — re-link your account")
+			return nil
+		end
+
+		Logger:Warn(`Failed to refresh token for account {accountId}: {err.type}`)
+		return account.accessToken
+	end
+
+	--[[
 		Delete a single session with retry. Clears the session token immediately
 		so it's cleaned up even if the API call ultimately fails.
 	]]
@@ -281,32 +327,35 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 
 		for id, account in accounts do
 			activeAccountIds[id] = true
+
+			local accessToken = refreshIfNeededAsync(id, account)
+			if not accessToken then
+				continue
+			end
+
 			local existingToken = sessionTokens[id]
 
 			if existingToken then
-				-- Update existing session (heartbeat with new activity data)
 				local result = retryAsync(function()
-					return discord.updateHeadlessSessionAsync(account.accessToken, existingToken, serialized)
+					return discord.updateHeadlessSessionAsync(accessToken, existingToken, serialized)
 				end, `PresenceManager: update session for account {id}`)
 
 				if result.ok then
 					sessionTokens[id] = result.value.sessionToken
 				else
-					-- Session may have expired or token is bad — try creating a new one
 					sessionTokens[id] = nil
 
 					local err = result.error
 					if err.type == "unauthorized" then
-						Logger:Warn(
-							`PresenceManager: auth token may be expired for account {id}, skipping session create`
-						)
+						Logger:Warn(`PresenceManager: auth token expired for account {id}, skipping session create`)
+						NotificationStore.get().push("error", "Discord session expired — re-link your account")
 					else
 						Logger:Warn(
 							`PresenceManager: update failed for account {id} ({err.type}), attempting new session`
 						)
 
 						local createResult = retryAsync(function()
-							return discord.createHeadlessSessionAsync(account.accessToken, serialized)
+							return discord.createHeadlessSessionAsync(accessToken, serialized)
 						end, `PresenceManager: create session for account {id}`)
 
 						if createResult.ok then
@@ -315,9 +364,8 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					end
 				end
 			else
-				-- Create new session
 				local result = retryAsync(function()
-					return discord.createHeadlessSessionAsync(account.accessToken, serialized)
+					return discord.createHeadlessSessionAsync(accessToken, serialized)
 				end, `PresenceManager: create session for account {id}`)
 
 				if result.ok then
@@ -431,8 +479,14 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					continue
 				end
 
+				local accessToken = refreshIfNeededAsync(id, account)
+				if not accessToken then
+					sessionTokens[id] = nil
+					continue
+				end
+
 				local result = retryAsync(function()
-					return discord.updateHeadlessSessionAsync(account.accessToken, token, serialized)
+					return discord.updateHeadlessSessionAsync(accessToken, token, serialized)
 				end, `PresenceManager: heartbeat for account {id}`)
 
 				-- A sync ran while we were yielding — our data is stale, discard

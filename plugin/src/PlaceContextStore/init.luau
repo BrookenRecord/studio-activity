@@ -1,3 +1,8 @@
+local Plugin = script:FindFirstAncestor("StudioActivity")
+
+local Packages = Plugin.Packages
+local Charm = require(Packages.Charm)
+
 local createPlaceContextStore = require(script.createPlaceContextStore)
 
 export type PlaceType = createPlaceContextStore.PlaceType
@@ -6,13 +11,8 @@ export type OnlinePlaceDetails = createPlaceContextStore.OnlinePlaceDetails
 export type OfflinePlaceDetails = createPlaceContextStore.OfflinePlaceDetails
 export type PlaceContext = createPlaceContextStore.PlaceContext
 
-local instance = nil
-
-local function get()
-	if not instance then
-		instance = createPlaceContextStore()
-	end
-	return instance
-end
-
-return table.freeze({ get = get })
+return table.freeze({
+	get = Charm.computed(function()
+		return createPlaceContextStore()
+	end),
+})

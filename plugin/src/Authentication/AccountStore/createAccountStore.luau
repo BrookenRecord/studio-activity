@@ -41,7 +41,7 @@ export type AccountStore = {
 	cachedUsers: () -> { [string]: LocalUser },
 	cachedUserImages: () -> { [string]: AvatarImage },
 
-	addUserAsync: (account: AuthStore.Account) -> (),
+	addUserAsync: (account: AuthStore.Account) -> boolean,
 	removeUser: (id: string) -> (),
 	destroy: () -> (),
 }
@@ -234,13 +234,13 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		end)
 	end)
 
-	local function addUserAsync(account: AuthStore.Account)
+	local function addUserAsync(account: AuthStore.Account): boolean
 		-- This is a duplicate API call but we need to do it to get the user ID.
 		-- It's only a duplicate in the adding a new user case.
 		local detailsResult = discord.getCurrentUserAsync(account.accessToken)
 		if not detailsResult.ok then
 			NotificationStore.get().push("error", "Failed to link account")
-			return
+			return false
 		end
 
 		local id = detailsResult.value.id
@@ -252,6 +252,7 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		end)
 
 		NotificationStore.get().push("info", `Linked account {detailsResult.value.username}`)
+		return true
 	end
 
 	local function removeUser(id: string)

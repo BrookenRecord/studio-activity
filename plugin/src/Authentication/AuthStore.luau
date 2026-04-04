@@ -1,6 +1,7 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
+local Charm = require(Packages.Charm)
 local t = require(Packages.t)
 
 local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
@@ -29,13 +30,8 @@ local validate = t.interface({
 	})),
 })
 
-local instance = nil
-
-local function get()
-	if not instance then
-		instance = createPluginSettingsStore("PresenceAuthStore", defaultValue, validate)
-	end
-	return instance
-end
-
-return { get = get }
+return {
+	get = Charm.computed(function()
+		return createPluginSettingsStore("PresenceAuthStore", defaultValue, validate)
+	end),
+}

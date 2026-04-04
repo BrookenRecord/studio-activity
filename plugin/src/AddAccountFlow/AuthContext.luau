@@ -1,5 +1,3 @@
-local HttpService = game:GetService("HttpService")
-
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
@@ -7,6 +5,7 @@ local Charm = require(Packages.Charm)
 local React = require(Packages.React)
 
 local BuildVars = require(Plugin.Source.BuildVars)
+local DiscordApi = require(Plugin.Source.Api.Discord)
 
 local DeviceCodeFlow = require(Plugin.Source.Authentication.Flows.DeviceCodeFlow)
 type DeviceCodeFlow = DeviceCodeFlow.DeviceCodeFlow
@@ -40,9 +39,12 @@ local function AuthContextProvider(props: {
 			return
 		end
 
-		local flow = DeviceCodeFlow.create({
-			httpService = HttpService,
+		local discord = DiscordApi.new({
 			clientId = BuildVars.discord.clientId,
+		})
+
+		local flow = DeviceCodeFlow.create({
+			discord = discord,
 		})
 
 		task.spawn(function()
