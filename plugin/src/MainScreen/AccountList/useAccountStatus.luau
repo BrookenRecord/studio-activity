@@ -20,7 +20,7 @@ type Status = {
 	statusBadgeColor: Foundation.ColorStyle,
 }
 
-local function useAccountStatus(isActive: boolean, user: LocalUser): Status
+local function useAccountStatus(isActive: boolean, isPresenceEnabled: boolean, user: LocalUser): Status
 	local tokens = useTokens()
 
 	if user.status == "error" then
@@ -31,7 +31,13 @@ local function useAccountStatus(isActive: boolean, user: LocalUser): Status
 			statusBadgeColor = tokens.Color.System.Alert,
 		}
 	else
-		if isActive then
+		if not isPresenceEnabled then
+			return {
+				statusLabel = "Plugin Paused",
+				statusLabelColor = tokens.Color.Content.Muted,
+				statusBadgeColor = tokens.Color.Content.Muted,
+			}
+		elseif isActive then
 			return {
 				statusLabel = "Sending presence",
 				statusLabelColor = tokens.Color.Content.Default,

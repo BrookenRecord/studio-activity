@@ -50,7 +50,9 @@ local function AccountEntry(props: Props)
 	local user = props.localUser
 
 	local presenceManager = PresenceManager.get()
+	local isPresenceEnabled = useSignalState(presenceManager.getIsActive)
 	local disabledIds = useSignalState(presenceManager.getDisabledAccountIds)
+
 	local isActive = not disabledIds[props.accountId]
 
 	local toggleActive = useCallback(function()
@@ -63,7 +65,7 @@ local function AccountEntry(props: Props)
 		return cachedImages[props.accountId]
 	end))
 
-	local status = useAccountStatus(isActive, user)
+	local status = useAccountStatus(isActive, isPresenceEnabled, user)
 	local details = if user.status == "ready"
 		then user.details
 		elseif user.status == "error" then user.cachedDetails
@@ -102,7 +104,7 @@ local function AccountEntry(props: Props)
 		}
 	end, { menuState.disable :: any, details })
 
-	local isDisabled = user.status ~= "ready"
+	local isDisabled = (not isPresenceEnabled) or user.status ~= "ready"
 	local isLoading = user.status == "loading"
 	local isError = user.status == "error"
 
@@ -137,7 +139,11 @@ local function AccountEntry(props: Props)
 					LayoutOrder = nextOrder(),
 				})
 				else e(Text, {
-					tag = "auto-xy text-label-medium content-emphasis",
+					tag = {
+						["auto-xy text-label-medium"] = true,
+						["content-emphasis"] = not isDisabled,
+						["content-default"] = isDisabled,
+					},
 					Text = if details then details.username else "Unknown user",
 					LayoutOrder = nextOrder(),
 				}),
