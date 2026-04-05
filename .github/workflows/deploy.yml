@@ -1,4 +1,4 @@
-name: CI
+name: Deploy Backend
 
 on:
   push:
@@ -6,32 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-unknown-unknown
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: backend -> target
-
-      - uses: arduino/setup-protoc@v3
-
-      - name: Install worker-build
-        run: cargo install worker-build
-
-      - name: Build
-        run: |
-          cd backend
-          worker-build --release
-
-  deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -55,6 +30,7 @@ jobs:
           worker-build --release
 
       - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
