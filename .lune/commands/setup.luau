@@ -6,6 +6,7 @@
 
 local codegen = require("./codegen")
 local color = require("../utils/color")
+local fs = require("@lune/fs")
 local install = require("./install")
 
 local setup = {}
@@ -43,6 +44,10 @@ function setup.run(options_: Options?): boolean
 
 	if not quiet then
 		print(color.bold(color.white("Setting up project...\n")))
+	end
+
+	if not fs.isDir("plugin/generated") then
+		fs.writeDir("plugin/generated")
 	end
 
 	-- Run code generation
