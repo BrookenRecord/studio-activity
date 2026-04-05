@@ -74,6 +74,10 @@ end
 local function fetchGlobalTypes(): boolean
 	local typesFile = "plugin/generated/globalTypes.d.luau"
 
+	if not fs.isDir("plugin/generated") then
+		fs.writeDir("plugin/generated")
+	end
+
 	if fs.isFile(typesFile) then
 		print(color.dim(`  Skipping download, {typesFile} already exists`))
 		return true
@@ -140,7 +144,7 @@ function ci.run(options_: Options?): boolean
 
 	-- Step 4: Update sourcemap
 	print(color.cyan("→ Updating sourcemap"))
-	local codegenSuccess = codegen.run({ quiet = true })
+	local codegenSuccess = codegen.run({ quiet = true, generateSourcemap = true })
 	if codegenSuccess then
 		print(color.green("  ✓ Sourcemap updated"))
 	else
