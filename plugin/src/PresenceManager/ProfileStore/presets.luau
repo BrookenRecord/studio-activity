@@ -12,6 +12,8 @@ type ActivityConfig = createPresenceManager.ActivityConfig
 local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
 type PlaceContext = PlaceContextStore.PlaceContext
 
+local STUDIO_LOGO_ASSET = "studio-logo"
+
 export type PresetProfile = {
 	name: string,
 	icon: IconName,
@@ -37,6 +39,8 @@ local presets: { [string]: PresetProfile } = {
 				assets = if onlineDetails
 					then {
 						largeImage = onlineDetails.iconWebUrl,
+						smallImage = STUDIO_LOGO_ASSET,
+						smallText = "Studio Activity",
 					}
 					else nil,
 			}
@@ -49,6 +53,11 @@ local presets: { [string]: PresetProfile } = {
 		buildActivityAsync = function(_context: PlaceContext): ActivityConfig
 			return {
 				name = "Roblox Studio",
+				details = "Editing in Studio",
+				assets = {
+					largeImage = STUDIO_LOGO_ASSET,
+					largeText = "Studio Activity",
+				},
 			}
 		end,
 	},

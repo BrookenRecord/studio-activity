@@ -81,6 +81,7 @@ export type HeadlessSessionCreateProblem =
 	| UnexpectedProblem
 
 export type AvatarProblem = NetworkProblem | UnexpectedProblem
+export type ApplicationAssetsProblem = NetworkProblem | UnexpectedProblem
 
 -- ────────────────────────────────────────────────────────────
 -- Value types
@@ -113,6 +114,12 @@ export type User = {
 export type AvatarImage = {
 	data: string, -- raw PNG bytes
 	contentType: string,
+}
+
+export type ApplicationAsset = {
+	id: string,
+	name: string,
+	assetType: number, -- 1 = large, 2 = small
 }
 
 export type Activity = {
@@ -237,6 +244,31 @@ local function getJsonAuthAsync(url: string, accessToken: string): Result.Result
 		Headers = {
 			["Authorization"] = `Bearer {accessToken}`,
 		},
+		Compress = Enum.HttpCompression.None,
+	})
+
+	if not requestOk then
+		return Result.err({ type = "network" :: "network", message = tostring(result) })
+	end
+
+	local body = nil
+	if result.Body and #result.Body > 0 then
+		local decodeOk, decoded = pcall(HttpService.JSONDecode, HttpService, result.Body)
+		body = if decodeOk then decoded else result.Body
+	end
+
+	return Result.ok({
+		ok = result.Success,
+		body = body,
+		statusCode = result.StatusCode,
+	})
+end
+
+-- GET without auth (public endpoints).
+local function getJsonAsync(url: string): Result.Result<RawResponse, NetworkProblem>
+	local requestOk, result = pcall(HttpService.RequestAsync, HttpService, {
+		Url = url,
+		Method = "GET" :: "GET",
 		Compress = Enum.HttpCompression.None,
 	})
 
@@ -523,6 +555,41 @@ local function new(config: Config)
 	end
 
 	-- ────────────────────────────────────────────────────────
+	-- Application assets
+	-- ────────────────────────────────────────────────────────
+
+	--[[
+		Get all assets registered for this application.
+
+		GET /oauth2/applications/{clientId}/assets
+
+		Public endpoint — no authentication required.
+	]]
+	local function getApplicationAssetsAsync(): Result.Result<{ ApplicationAsset }, ApplicationAssetsProblem>
+		local res = getJsonAsync(`{apiBase}/oauth2/applications/{clientId}/assets`)
+		if not res.ok then
+			return Result.err(res.error)
+		end
+
+		if not res.value.ok or type(res.value.body) ~= "table" then
+			return Result.err(unexpected(res.value))
+		end
+
+		local assets: { ApplicationAsset } = {}
+		for _, raw in res.value.body do
+			if type(raw) == "table" and raw.id and raw.name then
+				table.insert(assets, {
+					id = tostring(raw.id),
+					name = raw.name,
+					assetType = raw.type or 1,
+				})
+			end
+		end
+
+		return Result.ok(assets)
+	end
+
+	-- ────────────────────────────────────────────────────────
 	-- Headless sessions (presence)
 	-- ────────────────────────────────────────────────────────
 
@@ -674,6 +741,7 @@ local function new(config: Config)
 		refreshTokenAsync = refreshTokenAsync,
 		getCurrentUserAsync = getCurrentUserAsync,
 		getUserAvatarAsync = getUserAvatarAsync,
+		getApplicationAssetsAsync = getApplicationAssetsAsync,
 		createHeadlessSessionAsync = createHeadlessSessionAsync,
 		updateHeadlessSessionAsync = updateHeadlessSessionAsync,
 		deleteHeadlessSessionAsync = deleteHeadlessSessionAsync,

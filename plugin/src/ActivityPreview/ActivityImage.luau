@@ -3,7 +3,9 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 
+local AppAssetsStore = require(Plugin.Source.Api.AppAssetsStore)
 local Types = require(script.Parent.Types)
 local WebImage = require(script.Parent.WebImage)
 
@@ -11,6 +13,9 @@ local View = Foundation.View
 local Tooltip = Foundation.Tooltip
 local PopoverSide = Foundation.Enums.PopoverSide
 local PopoverAlign = Foundation.Enums.PopoverAlign
+local useTokens = Foundation.Hooks.useTokens
+
+local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
 
@@ -20,37 +25,41 @@ type Props = {
 }
 
 local function ActivityImage(props: Props)
-	local largeImage = props.assets and props.assets.largeImage
+	local tokens = useTokens()
+	local appAssets = AppAssetsStore.get()
+
+	-- Subscribe to the assets signal so the component re-renders when
+	-- the async fetch completes and the name->id map becomes available.
+	useSignalState(appAssets.getAssetsByName)
+
+	local rawLargeImage = props.assets and props.assets.largeImage
 	local largeText = props.assets and props.assets.largeText
-	local smallImage = props.assets and props.assets.smallImage
+	local rawSmallImage = props.assets and props.assets.smallImage
 	local smallText = props.assets and props.assets.smallText
 
-	local largeBlock = e(View, {
-		tag = "size-full",
-	}, {
-		Image = e(WebImage, {
-			url = largeImage or "https://cdn.discordapp.com/app-assets/709530901058420776/1455660026638369003.png",
-			size = "big",
-		}),
-	})
+	local largeImageUrl = if rawLargeImage then appAssets.resolveUrl(rawLargeImage) else nil
+	local smallImageUrl = if rawSmallImage then appAssets.resolveUrl(rawSmallImage) else nil
 
-	local smallImageBlock = e(View, {
-		tag = "size-800-800 bg-surface-300 radius-circle",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(1, -4, 1, -4),
-		ZIndex = 2,
-	}, {
-		Image = smallImage and e(WebImage, {
-			url = smallImage,
-			size = "small",
-		}),
+	local largeBlock = largeImageUrl
+		and e(View, {
+			tag = "size-full",
+		}, {
+			Image = e(WebImage, {
+				url = largeImageUrl,
+				size = "big",
+			}),
+		})
+
+	local smallImageBlock = smallImageUrl and e(WebImage, {
+		url = smallImageUrl,
+		size = "small",
 	})
 
 	return e(View, {
 		tag = "size-1600-1600",
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		LargeImageBlock = if largeText
+		LargeImageBlock = largeBlock and if largeText
 			then e(Tooltip, {
 				title = largeText,
 				align = PopoverAlign.Center,
@@ -58,13 +67,25 @@ local function ActivityImage(props: Props)
 			}, largeBlock)
 			else largeBlock,
 
-		SmallImageBlock = smallImage and if smallText
-			then e(Tooltip, {
-				title = smallText,
-				align = PopoverAlign.Center,
-				side = PopoverSide.Top,
-			}, smallImageBlock)
-			else smallImageBlock,
+		SmallImageBlock = smallImageUrl and e(View, {
+			tag = "size-700-700 bg-surface-300 radius-circle",
+			stroke = {
+				Color = tokens.Color.Surface.Surface_300.Color3,
+				Thickness = tokens.Stroke.Thicker,
+			},
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(1, -9, 1, -9),
+			ZIndex = 2,
+		}, {
+			Image = if smallText
+				then e(Tooltip, {
+					title = smallText,
+					align = PopoverAlign.Center,
+					side = PopoverSide.Top,
+					ZIndex = 2,
+				}, smallImageBlock)
+				else smallImageBlock,
+		}),
 	})
 end
 

@@ -6,6 +6,7 @@ local Charm = require(Packages.Charm)
 local DiscordApi = require(Plugin.Source.Api.Discord)
 type ApiActivity = DiscordApi.Activity
 
+local AppAssetsStore = require(Plugin.Source.Api.AppAssetsStore)
 local AuthStore = require(Plugin.Source.Authentication.AuthStore)
 local BuildVars = require(Plugin.Source.BuildVars)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
@@ -75,10 +76,11 @@ local function serializeActivity(activity: ActivityConfig, startedAt: number?): 
 	end
 
 	if activity.assets then
+		local appAssets = AppAssetsStore.get()
 		apiActivity.assets = {
-			large_image = activity.assets.largeImage,
+			large_image = if activity.assets.largeImage then appAssets.resolveId(activity.assets.largeImage) else nil,
 			large_text = activity.assets.largeText,
-			small_image = activity.assets.smallImage,
+			small_image = if activity.assets.smallImage then appAssets.resolveId(activity.assets.smallImage) else nil,
 			small_text = activity.assets.smallText,
 		}
 	end
