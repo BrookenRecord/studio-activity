@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package api.v1;
+
+message PingRequest {
+  optional string message = 1;
+}
+
+message PingResponse {
+  string message = 1;
+  int64 timestamp = 2;
+}
