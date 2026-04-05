@@ -18,6 +18,9 @@ fn main() -> Result<()> {
 
     // Rerun if protos change
     println!("cargo:rerun-if-changed={}", proto_root.display());
+    for proto in &protos {
+        println!("cargo:rerun-if-changed={}", proto.display());
+    }
 
     let mut config = prost_build::Config::new();
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");

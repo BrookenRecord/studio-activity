@@ -62,7 +62,13 @@ struct ProblemDetail {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        tracing::error!(error=?self, "internal error");
+        match &self {
+            AppError::Validation { .. } => tracing::debug!(error=?self, "validation error"),
+            AppError::NotFound { .. } => tracing::debug!(error=?self, "not found"),
+            AppError::Unauthorized => tracing::info!(error=?self, "unauthorized"),
+            AppError::Forbidden => tracing::info!(error=?self, "forbidden"),
+            _ => tracing::error!(error=?self, "internal error"),
+        }
 
         #[allow(unused_variables)]
         let (status, problem) = match &self {

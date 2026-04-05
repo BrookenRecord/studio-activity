@@ -1,12 +1,13 @@
 #![forbid(unsafe_code)]
+#![warn(clippy::pedantic)]
 
-mod app;
-mod error;
-mod extractors;
-mod middleware;
-mod models;
-mod proto;
-mod routes;
+pub mod app;
+pub mod error;
+pub mod extractors;
+pub mod middleware;
+pub mod models;
+pub mod proto;
+pub mod routes;
 
 use tracing_subscriber::fmt::format::Pretty;
 use tracing_subscriber::fmt::time::UtcTime;

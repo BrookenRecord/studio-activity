@@ -4,6 +4,8 @@ use axum::{
     middleware::Next,
     response::Response,
 };
+use tracing::Instrument;
+use uuid::Uuid;
 
 #[derive(Clone, Debug)]
 #[allow(unused)]
@@ -15,15 +17,17 @@ pub async fn layer(
     mut req: Request,
     next: Next,
 ) -> Response {
-    let request_id = edge.cf_ray.clone().unwrap_or_else(|| "unknown".to_string());
+    let request_id = edge
+        .cf_ray
+        .clone()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     // Make request id available to downstream handlers/middleware
     req.extensions_mut().insert(RequestId(request_id.clone()));
 
     let span = tracing::info_span!("http_request", request_id = %request_id);
-    let _enter = span.enter();
 
-    let mut resp = next.run(req).await;
+    let mut resp = next.run(req).instrument(span).await;
 
     // Echo request id back for client-side correlation
     resp.headers_mut().insert(

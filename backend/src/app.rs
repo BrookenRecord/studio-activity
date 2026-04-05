@@ -32,7 +32,7 @@ impl App {
     }
 }
 
-fn build_router() -> Router<AppState> {
+pub fn build_router() -> Router<AppState> {
     Router::new()
         .route("/", get(routes::gh_redirect))
         .route("/ping", get(routes::ping))

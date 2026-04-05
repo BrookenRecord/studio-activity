@@ -26,8 +26,8 @@ where
                     JsonRejection::MissingJsonContentType(_) => {
                         "Expected request with `Content-Type: application/json`".into()
                     }
-                    JsonRejection::JsonDataError(e) => {
-                        format!("Invalid JSON fields: {e}")
+                    JsonRejection::JsonDataError(_) => {
+                        format!("Invalid JSON fields")
                     }
                     JsonRejection::JsonSyntaxError(_) => {
                         "Request body contains invalid JSON".into()
