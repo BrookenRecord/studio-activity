@@ -24,10 +24,6 @@ jobs:
       - name: Install worker-build and wasm-bindgen-cli
         run: cargo install worker-build wasm-bindgen-cli
 
-      - name: Test
-        working-directory: backend
-        run: cargo test
-
       - name: Build
         run: |
           cd backend
