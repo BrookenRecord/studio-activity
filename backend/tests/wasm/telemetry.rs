@@ -5,7 +5,8 @@ use wasm_bindgen_test::*;
 
 use backend::posthog::decompose_event;
 use backend::proto::api::v1::{
-    telemetry_request, AppOpened, AuthFailed, AuthStarted, TelemetryRequest,
+    telemetry_request, AccountLinkFailed, AccountLinked, OnboardingCompleted, PluginLoaded,
+    PresenceToggled, ProfileSelected, SessionError, TelemetryRequest,
 };
 
 use crate::helpers::{inject_edge, mock_edge_context, test_router};
@@ -15,93 +16,178 @@ use crate::helpers::{inject_edge, mock_edge_context, test_router};
 // ---------------------------------------------------------------------------
 
 #[wasm_bindgen_test]
-async fn deserialize_app_opened_event() {
-    let json = r#"{"distinctId":"user-1","event":{"appOpened":{}}}"#;
+async fn deserialize_plugin_loaded() {
+    let json = r#"{
+        "distinctId": "user-1",
+        "event": {
+            "pluginLoaded": {
+                "accountCount": 2,
+                "isPresenceActive": true,
+                "activeProfile": "default"
+            }
+        }
+    }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.distinct_id, "user-1");
+    match req.event {
+        Some(telemetry_request::Event::PluginLoaded(e)) => {
+            assert_eq!(e.account_count, 2);
+            assert!(e.is_presence_active);
+            assert_eq!(e.active_profile, "default");
+        }
+        other => panic!("expected PluginLoaded, got {other:?}"),
+    }
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_plugin_loaded_defaults() {
+    let json = r#"{"distinctId":"user-1","event":{"pluginLoaded":{}}}"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    match req.event {
+        Some(telemetry_request::Event::PluginLoaded(PluginLoaded {
+            account_count,
+            is_presence_active,
+            active_profile,
+        })) => {
+            assert_eq!(account_count, 0);
+            assert!(!is_presence_active);
+            assert_eq!(active_profile, "");
+        }
+        other => panic!("expected PluginLoaded, got {other:?}"),
+    }
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_ui_opened() {
+    let json = r#"{"distinctId":"user-2","event":{"uiOpened":{}}}"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
         req.event,
-        Some(telemetry_request::Event::AppOpened(_))
+        Some(telemetry_request::Event::UiOpened(_))
     ));
 }
 
 #[wasm_bindgen_test]
-async fn deserialize_auth_started_with_properties() {
+async fn deserialize_onboarding_completed() {
     let json = r#"{
-        "distinctId": "user-2",
+        "distinctId": "user-3",
         "event": {
-            "authStarted": {
-                "hasExistingCredentials": true
-            }
+            "onboardingCompleted": { "optedIntoTelemetry": true }
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
         req.event,
-        Some(telemetry_request::Event::AuthStarted(AuthStarted {
-            has_existing_credentials: true,
+        Some(telemetry_request::Event::OnboardingCompleted(
+            OnboardingCompleted {
+                opted_into_telemetry: true,
+            }
+        ))
+    ));
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_account_linked() {
+    let json = r#"{
+        "distinctId": "user-4",
+        "event": {
+            "accountLinked": { "accountCount": 1, "isFirstAccount": true }
+        }
+    }"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    assert!(matches!(
+        req.event,
+        Some(telemetry_request::Event::AccountLinked(AccountLinked {
+            account_count: 1,
+            is_first_account: true,
         }))
     ));
 }
 
 #[wasm_bindgen_test]
-async fn deserialize_auth_failed_optional_fields() {
+async fn deserialize_account_link_failed() {
     let json = r#"{
-        "distinctId": "user-3",
+        "distinctId": "user-5",
         "event": {
-            "authFailed": {
-                "errorType": "network"
-            }
+            "accountLinkFailed": { "error": "expired" }
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
-        Some(telemetry_request::Event::AuthFailed(e)) => {
-            assert_eq!(e.error_type, "network");
-            assert_eq!(e.error_code, None);
+        Some(telemetry_request::Event::AccountLinkFailed(AccountLinkFailed { error })) => {
+            assert_eq!(error, "expired");
         }
-        other => panic!("expected AuthFailed, got {other:?}"),
+        other => panic!("expected AccountLinkFailed, got {other:?}"),
     }
 }
 
 #[wasm_bindgen_test]
-async fn deserialize_auth_failed_with_all_fields() {
+async fn deserialize_presence_toggled() {
     let json = r#"{
-        "distinctId": "user-3",
-        "event": {
-            "authFailed": {
-                "errorType": "network",
-                "errorCode": "ETIMEOUT"
-            }
-        }
+        "distinctId": "user-6",
+        "event": { "presenceToggled": { "isActive": false } }
     }"#;
-    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
-    match req.event {
-        Some(telemetry_request::Event::AuthFailed(AuthFailed {
-            error_type,
-            error_code,
-        })) => {
-            assert_eq!(error_type, "network");
-            assert_eq!(error_code.as_deref(), Some("ETIMEOUT"));
-        }
-        other => panic!("expected AuthFailed, got {other:?}"),
-    }
-}
-
-#[wasm_bindgen_test]
-async fn deserialize_defaults_missing_scalar_fields() {
-    // Proto3 scalars default when omitted; serde(default) handles this.
-    let json = r#"{"distinctId":"user-4","event":{"appOpened":{}}}"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
         req.event,
-        Some(telemetry_request::Event::AppOpened(AppOpened {}))
+        Some(telemetry_request::Event::PresenceToggled(PresenceToggled {
+            is_active: false,
+        }))
     ));
 }
 
 #[wasm_bindgen_test]
+async fn deserialize_profile_selected() {
+    let json = r#"{
+        "distinctId": "user-7",
+        "event": { "profileSelected": { "profile": "minimal" } }
+    }"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    match req.event {
+        Some(telemetry_request::Event::ProfileSelected(ProfileSelected { profile })) => {
+            assert_eq!(profile, "minimal");
+        }
+        other => panic!("expected ProfileSelected, got {other:?}"),
+    }
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_session_error() {
+    let json = r#"{
+        "distinctId": "user-8",
+        "event": { "sessionError": { "error": "refresh_failed" } }
+    }"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    match req.event {
+        Some(telemetry_request::Event::SessionError(SessionError { error })) => {
+            assert_eq!(error, "refresh_failed");
+        }
+        other => panic!("expected SessionError, got {other:?}"),
+    }
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_with_plugin_metadata() {
+    let json = r#"{
+        "distinctId": "user-9",
+        "pluginVersion": "1.2.0",
+        "pluginChannel": "stable",
+        "pluginHash": "abc123",
+        "event": { "uiOpened": {} }
+    }"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    assert_eq!(req.plugin_version, "1.2.0");
+    assert_eq!(req.plugin_channel, "stable");
+    assert_eq!(req.plugin_hash, "abc123");
+}
+
+// ---------------------------------------------------------------------------
+// Validation (reject bad input)
+// ---------------------------------------------------------------------------
+
+#[wasm_bindgen_test]
 async fn reject_unknown_event_variant() {
-    let json = r#"{"distinctId":"user-5","event":{"madeUpEvent":{}}}"#;
+    let json = r#"{"distinctId":"u","event":{"madeUpEvent":{}}}"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(result.is_err(), "unknown event variant should be rejected");
 }
@@ -109,12 +195,9 @@ async fn reject_unknown_event_variant() {
 #[wasm_bindgen_test]
 async fn reject_unknown_fields_on_event() {
     let json = r#"{
-        "distinctId": "user-6",
+        "distinctId": "u",
         "event": {
-            "authStarted": {
-                "hasExistingCredentials": true,
-                "extraField": 42
-            }
+            "accountLinked": { "accountCount": 1, "isFirstAccount": true, "extra": 42 }
         }
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
@@ -127,26 +210,19 @@ async fn reject_unknown_fields_on_event() {
 #[wasm_bindgen_test]
 async fn reject_unknown_fields_on_request() {
     let json = r#"{
-        "distinctId": "user-7",
-        "event": {"appOpened": {}},
+        "distinctId": "u",
+        "event": {"uiOpened": {}},
         "extraTopLevel": true
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
-    assert!(
-        result.is_err(),
-        "extra top-level fields should be rejected"
-    );
+    assert!(result.is_err(), "extra top-level fields should be rejected");
 }
 
 #[wasm_bindgen_test]
 async fn reject_wrong_property_types() {
     let json = r#"{
-        "distinctId": "user-8",
-        "event": {
-            "authStarted": {
-                "hasExistingCredentials": "yes"
-            }
-        }
+        "distinctId": "u",
+        "event": { "presenceToggled": { "isActive": "yes" } }
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(result.is_err(), "wrong property type should be rejected");
@@ -158,45 +234,40 @@ async fn reject_wrong_property_types() {
 
 #[wasm_bindgen_test]
 async fn decompose_produces_snake_case_name() {
-    let event = telemetry_request::Event::AppOpened(AppOpened {});
-    let (name, props) = decompose_event(&event);
-    assert_eq!(name, "app_opened");
-    assert_eq!(props, serde_json::json!({}));
+    let event = telemetry_request::Event::PluginLoaded(PluginLoaded {
+        account_count: 0,
+        is_presence_active: false,
+        active_profile: String::new(),
+    });
+    let (name, _) = decompose_event(&event);
+    assert_eq!(name, "plugin_loaded");
 }
 
 #[wasm_bindgen_test]
 async fn decompose_includes_event_properties() {
-    let event = telemetry_request::Event::AuthStarted(AuthStarted {
-        has_existing_credentials: true,
+    let event = telemetry_request::Event::AccountLinked(AccountLinked {
+        account_count: 2,
+        is_first_account: false,
     });
     let (name, props) = decompose_event(&event);
-    assert_eq!(name, "auth_started");
-    assert_eq!(props["has_existing_credentials"], true);
+    assert_eq!(name, "account_linked");
+    assert_eq!(props["account_count"], 2);
+    assert_eq!(props["is_first_account"], false);
 }
 
 #[wasm_bindgen_test]
-async fn decompose_strips_null_optional_fields() {
-    let event = telemetry_request::Event::AuthFailed(AuthFailed {
-        error_type: "network".into(),
-        error_code: None,
-    });
+async fn decompose_empty_event() {
+    let event = telemetry_request::Event::UiOpened(Default::default());
     let (name, props) = decompose_event(&event);
-    assert_eq!(name, "auth_failed");
-    assert_eq!(props["error_type"], "network");
-    assert!(
-        props.get("error_code").is_none(),
-        "None optional fields should be stripped, not serialized as null"
-    );
+    assert_eq!(name, "ui_opened");
+    assert_eq!(props, serde_json::json!({}));
 }
 
 #[wasm_bindgen_test]
-async fn decompose_keeps_present_optional_fields() {
-    let event = telemetry_request::Event::AuthFailed(AuthFailed {
-        error_type: "network".into(),
-        error_code: Some("ETIMEOUT".into()),
-    });
-    let (_, props) = decompose_event(&event);
-    assert_eq!(props["error_code"], "ETIMEOUT");
+async fn decompose_multiword_event_name() {
+    let event = telemetry_request::Event::AccountLinkStarted(Default::default());
+    let (name, _) = decompose_event(&event);
+    assert_eq!(name, "account_link_started");
 }
 
 // ---------------------------------------------------------------------------
@@ -216,20 +287,18 @@ async fn telemetry_get_returns_405() {
 }
 
 #[wasm_bindgen_test]
-async fn telemetry_missing_content_type_returns_400() {
+async fn telemetry_missing_content_type_returns_error() {
     let app = test_router();
-    // POST without Content-Type: application/json
     let req = inject_edge(
         Request::post("/v1/telemetry")
-            .body(Body::from(r#"{"distinctId":"u","event":{"appOpened":{}}}"#))
+            .body(Body::from(
+                r#"{"distinctId":"u","event":{"pluginLoaded":{}}}"#,
+            ))
             .unwrap(),
         mock_edge_context(),
     );
 
     let resp = app.oneshot(req).await.unwrap();
-    // Without Env in extensions, WorkerEnv extractor fails first with 500.
-    // With Env, AppJson would fail with 400 for missing content-type.
-    // Either way, we get an error -- not a 204.
     assert_ne!(resp.status(), StatusCode::NO_CONTENT);
 }
 
@@ -245,8 +314,6 @@ async fn telemetry_invalid_json_returns_error() {
     );
 
     let resp = app.oneshot(req).await.unwrap();
-    // Without Env, WorkerEnv extractor returns 500 before JSON parsing.
-    // The important thing: bad input never returns 204.
     assert_ne!(resp.status(), StatusCode::NO_CONTENT);
 }
 

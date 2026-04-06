@@ -12,59 +12,75 @@ message TelemetryRequest {
   string plugin_channel = 3;
   string plugin_hash = 4;
 
+  // Client-generated UUID v4, created once per plugin load. Groups all
+  // events from the same Studio session in PostHog's session view.
+  string session_id = 5;
+
   oneof event {
-    AppOpened app_opened = 10;
-    AppClosed app_closed = 11;
-    TelemetryOptedIn telemetry_opted_in = 12;
-    TelemetryOptedOut telemetry_opted_out = 13;
-    AuthStarted auth_started = 14;
-    AuthCompleted auth_completed = 15;
-    AuthFailed auth_failed = 16;
-    PresenceUpdated presence_updated = 17;
-    PresenceCleared presence_cleared = 18;
-    ApiError api_error = 19;
-    RateLimited rate_limited = 20;
+    PluginLoaded plugin_loaded = 10;
+    UiOpened ui_opened = 11;
+    OnboardingCompleted onboarding_completed = 12;
+    AccountLinkStarted account_link_started = 13;
+    AccountLinked account_linked = 14;
+    AccountLinkFailed account_link_failed = 15;
+    AccountRemoved account_removed = 16;
+    PresenceToggled presence_toggled = 17;
+    ProfileSelected profile_selected = 18;
+    SessionError session_error = 19;
+    PluginUnloaded plugin_unloaded = 20;
   }
 }
 
-message AppOpened {}
-
-message AppClosed {}
-
-message TelemetryOptedIn {}
-
-message TelemetryOptedOut {}
-
-message AuthStarted {
-  bool has_existing_credentials = 1;
+// Fired on plugin init (before UI). Carries current user state
+// so PostHog person properties stay up to date each session.
+message PluginLoaded {
+  int32 account_count = 1;
+  bool is_presence_active = 2;
+  string active_profile = 3;
 }
 
-message AuthCompleted {
-  bool is_new_user = 1;
+// User opened the plugin dock widget.
+message UiOpened {}
+
+// User completed the welcome/onboarding dialog.
+message OnboardingCompleted {
+  bool opted_into_telemetry = 1;
 }
 
-message AuthFailed {
-  string error_type = 1;
-  optional string error_code = 2;
+// User opened the Add Account sheet.
+message AccountLinkStarted {}
+
+// A Discord account was successfully linked.
+message AccountLinked {
+  int32 account_count = 1;
+  bool is_first_account = 2;
 }
 
-message PresenceUpdated {
-  int32 updated_count = 1;
-  int32 failed_count = 2;
+// The account linking auth flow ended in error.
+message AccountLinkFailed {
+  string error = 1;
 }
 
-message PresenceCleared {
-  int32 cleared_count = 1;
-  int32 failed_count = 2;
+// User disconnected a Discord account.
+message AccountRemoved {
+  int32 account_count = 1;
 }
 
-message ApiError {
-  string endpoint = 1;
-  string error_type = 2;
-  optional int32 status_code = 3;
+// User toggled the global Active/Inactive presence switch.
+message PresenceToggled {
+  bool is_active = 1;
 }
 
-message RateLimited {
-  string endpoint = 1;
-  optional int32 retry_after = 2;
+// User changed their presence profile preset.
+message ProfileSelected {
+  string profile = 1;
 }
+
+// A terminal Discord session or token failure that impacts the user.
+message SessionError {
+  string error = 1;
+}
+
+// Fired when the plugin is unloading (Studio closing or plugin reload).
+// Bookends PluginLoaded so PostHog can compute session duration.
+message PluginUnloaded {}

@@ -39,8 +39,6 @@ local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createP
 			root:unmount()
 		end)
 		Logger:Info(`unmounted app in {elapsedMs}`)
-
-		fireEvent({ eventName = "AppClosed" })
 	end
 
 	local function mount()
@@ -50,7 +48,7 @@ local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createP
 		end)
 		Logger:Info(`mounted app in {elapsedMs}`)
 
-		fireEvent({ eventName = "AppOpened" })
+		fireEvent({ eventName = "UiOpened" })
 	end
 
 	local function destroy()

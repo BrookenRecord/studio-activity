@@ -66,7 +66,7 @@ pub fn decompose_event(event: &Event) -> (String, Value) {
 /// - `$screen`: signals an "app open" so PostHog's built-in daily/weekly/
 ///   monthly active user dashboards work.
 fn is_session_start(event: &Event) -> bool {
-    matches!(event, Event::AppOpened(_))
+    matches!(event, Event::PluginLoaded(_))
 }
 
 /// Returns true if this event needs per-user correlation in PostHog.
@@ -79,11 +79,12 @@ fn is_session_start(event: &Event) -> bool {
 fn is_identified(event: &Event) -> bool {
     matches!(
         event,
-        Event::AppOpened(_)
-            | Event::TelemetryOptedIn(_)
-            | Event::AuthStarted(_)
-            | Event::AuthCompleted(_)
-            | Event::PresenceUpdated(_)
+        Event::PluginLoaded(_)
+            | Event::UiOpened(_)
+            | Event::OnboardingCompleted(_)
+            | Event::AccountLinkStarted(_)
+            | Event::AccountLinked(_)
+            | Event::PresenceToggled(_)
     )
 }
 
@@ -96,6 +97,11 @@ fn inject_common_properties(
     // Identifies this backend as the event source in PostHog.
     props.insert("$lib".into(), json!(LIB_NAME));
     props.insert("$lib_version".into(), json!(LIB_VERSION));
+
+    // Session ID groups all events from one plugin load into a PostHog session.
+    if !req.session_id.is_empty() {
+        props.insert("$session_id".into(), json!(req.session_id));
+    }
 
     // Plugin build metadata — lets us see which versions are in use.
     if !req.plugin_version.is_empty() {
@@ -144,11 +150,13 @@ fn build_capture_payload(
 }
 
 /// Builds a `$identify` event that links the anonymous hash to usage
-/// metadata (plugin version, channel). This is what lets PostHog count
-/// unique active users over time. It does **not** identify a real person.
+/// metadata (plugin version, channel, current state). This is what lets
+/// PostHog count unique active users over time and slice dashboards by
+/// user properties. It does **not** identify a real person.
 fn build_identify_payload(
     api_key: &str,
     req: &TelemetryRequest,
+    event: &Event,
     client_ip: Option<&str>,
 ) -> Value {
     // $set: overwrite with the latest values each session.
@@ -164,7 +172,17 @@ fn build_identify_payload(
         set["$app_build"] = json!(req.plugin_hash);
     }
     if !req.plugin_channel.is_empty() {
-        set["$app_namespace"] = json!(req.plugin_channel);
+        set["plugin_channel"] = json!(req.plugin_channel);
+    }
+
+    // PluginLoaded carries current user state so PostHog person properties
+    // reflect the user's setup at the start of each session.
+    if let Event::PluginLoaded(loaded) = event {
+        set["account_count"] = json!(loaded.account_count);
+        set["is_presence_active"] = json!(loaded.is_presence_active);
+        if !loaded.active_profile.is_empty() {
+            set["active_profile"] = json!(loaded.active_profile);
+        }
     }
 
     let mut properties = json!({
@@ -189,11 +207,7 @@ fn build_identify_payload(
 /// Builds a `$screen` event that signals "the user opened the plugin".
 /// This is the mobile-app equivalent of a page view and is what powers
 /// PostHog's built-in daily/weekly/monthly active user dashboards.
-fn build_screen_payload(
-    api_key: &str,
-    req: &TelemetryRequest,
-    client_ip: Option<&str>,
-) -> Value {
+fn build_screen_payload(api_key: &str, req: &TelemetryRequest, client_ip: Option<&str>) -> Value {
     let mut properties = json!({
         "$screen_name": "studio_activity",
         "$lib": LIB_NAME,
@@ -251,8 +265,9 @@ async fn send_to_posthog(host: &str, payload: &Value) {
 
 /// Forwards a validated, opt-in telemetry event to PostHog.
 ///
-/// For session-start events (`AppOpened`), also sends `$identify` and
-/// `$screen` so PostHog can count active users over time.
+/// For session-start events (`PluginLoaded`), also sends `$identify`
+/// (with current user state as person properties) and `$screen` so
+/// PostHog can count active users over time.
 pub async fn forward_event(
     host: &str,
     api_key: &str,
@@ -264,7 +279,7 @@ pub async fn forward_event(
     send_to_posthog(host, &capture).await;
 
     if is_session_start(event) {
-        let identify = build_identify_payload(api_key, request, client_ip);
+        let identify = build_identify_payload(api_key, request, event, client_ip);
         send_to_posthog(host, &identify).await;
 
         let screen = build_screen_payload(api_key, request, client_ip);

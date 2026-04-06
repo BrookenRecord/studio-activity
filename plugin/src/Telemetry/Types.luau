@@ -1,101 +1,88 @@
--- The events in this file mirror the TelemetryEventName enum in the backend.
+-- The events in this file mirror the TelemetryRequest oneof in the backend.
 -- The backend must be updated first before adding new events.
 
-export type AppOpened = {
-	eventName: "AppOpened",
-}
-
-export type AppClosed = {
-	eventName: "AppClosed",
-}
-
-export type TelemetryOptedIn = {
-	eventName: "TelemetryOptedIn",
-}
-
-export type TelemetryOptedOut = {
-	eventName: "TelemetryOptedOut",
-}
-
-export type AuthStarted = {
-	eventName: "AuthStarted",
+export type PluginLoaded = {
+	eventName: "PluginLoaded",
 	properties: {
-		--- Whether the user already has credentials (linking additional account)
-		hasExistingCredentials: boolean,
+		accountCount: number,
+		isPresenceActive: boolean,
+		activeProfile: string,
 	},
 }
 
-export type AuthCompleted = {
-	eventName: "AuthCompleted",
+export type UiOpened = {
+	eventName: "UiOpened",
+}
+
+export type OnboardingCompleted = {
+	eventName: "OnboardingCompleted",
 	properties: {
-		--- Whether this was a new user (credentials were issued)
-		isNewUser: boolean,
+		optedIntoTelemetry: boolean,
 	},
 }
 
-export type AuthFailed = {
-	eventName: "AuthFailed",
+export type AccountLinkStarted = {
+	eventName: "AccountLinkStarted",
+}
+
+export type AccountLinked = {
+	eventName: "AccountLinked",
 	properties: {
-		--- The type of error that occurred
-		errorType: string,
-		--- The error code from the API (if available)
-		errorCode: string?,
+		accountCount: number,
+		isFirstAccount: boolean,
 	},
 }
 
-export type PresenceUpdated = {
-	eventName: "PresenceUpdated",
+export type AccountLinkFailed = {
+	eventName: "AccountLinkFailed",
 	properties: {
-		--- Number of accounts successfully updated
-		updatedCount: number,
-		--- Number of accounts that failed to update
-		failedCount: number,
+		error: string,
 	},
 }
 
-export type PresenceCleared = {
-	eventName: "PresenceCleared",
+export type AccountRemoved = {
+	eventName: "AccountRemoved",
 	properties: {
-		--- Number of accounts successfully cleared
-		clearedCount: number,
-		--- Number of accounts that failed to clear
-		failedCount: number,
+		accountCount: number,
 	},
 }
 
-export type ApiError = {
-	eventName: "ApiError",
+export type PresenceToggled = {
+	eventName: "PresenceToggled",
 	properties: {
-		--- The API endpoint that failed
-		endpoint: string,
-		--- The type of error
-		errorType: string,
-		--- HTTP status code (if applicable)
-		statusCode: number?,
+		isActive: boolean,
 	},
 }
 
-export type RateLimited = {
-	eventName: "RateLimited",
+export type ProfileSelected = {
+	eventName: "ProfileSelected",
 	properties: {
-		--- The API endpoint that was rate limited
-		endpoint: string,
-		--- Retry-After value in seconds (if provided)
-		retryAfter: number?,
+		profile: string,
 	},
+}
+
+export type SessionError = {
+	eventName: "SessionError",
+	properties: {
+		error: string,
+	},
+}
+
+export type PluginUnloaded = {
+	eventName: "PluginUnloaded",
 }
 
 export type TelemetryEvent =
-	| AppOpened
-	| AppClosed
-	| TelemetryOptedIn
-	| TelemetryOptedOut
-	| AuthStarted
-	| AuthCompleted
-	| AuthFailed
-	| PresenceUpdated
-	| PresenceCleared
-	| ApiError
-	| RateLimited
+	| PluginLoaded
+	| UiOpened
+	| OnboardingCompleted
+	| AccountLinkStarted
+	| AccountLinked
+	| AccountLinkFailed
+	| AccountRemoved
+	| PresenceToggled
+	| ProfileSelected
+	| SessionError
+	| PluginUnloaded
 
 return nil

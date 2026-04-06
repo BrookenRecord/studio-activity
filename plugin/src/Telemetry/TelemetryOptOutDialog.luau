@@ -32,11 +32,12 @@ local function WelcomeDialog(props: Props)
 	local isOptedIn, setIsOptedIn = useState(true)
 
 	local onClose = useCallback(function()
-		if isOptedIn then
-			fireEvent({ eventName = "TelemetryOptedIn" })
-		else
-			fireEvent({ eventName = "TelemetryOptedOut" })
-		end
+		fireEvent({
+			eventName = "OnboardingCompleted",
+			properties = {
+				optedIntoTelemetry = isOptedIn,
+			},
+		})
 
 		localStorageStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
