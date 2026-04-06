@@ -24,7 +24,11 @@ fn main() -> Result<()> {
 
     let mut config = prost_build::Config::new();
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
-    config.type_attribute(".", "#[serde(rename_all = \"camelCase\")]");
+    config.type_attribute(
+        ".",
+        "#[serde(rename_all(serialize = \"snake_case\", deserialize = \"camelCase\"))]",
+    );
+    config.message_attribute(".", "#[serde(default, deny_unknown_fields)]");
 
     config.compile_protos(&protos, &[proto_root])?;
 

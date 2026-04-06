@@ -2,11 +2,69 @@ syntax = "proto3";
 
 package api.v1;
 
-message PingRequest {
-  optional string message = 1;
+// --- Telemetry ---
+
+message TelemetryRequest {
+  string distinct_id = 1;
+
+  // Plugin build metadata — attributed to every event.
+  string plugin_version = 2;
+  string plugin_channel = 3;
+  string plugin_hash = 4;
+
+  oneof event {
+    AppOpened app_opened = 10;
+    AppClosed app_closed = 11;
+    TelemetryOptedIn telemetry_opted_in = 12;
+    TelemetryOptedOut telemetry_opted_out = 13;
+    AuthStarted auth_started = 14;
+    AuthCompleted auth_completed = 15;
+    AuthFailed auth_failed = 16;
+    PresenceUpdated presence_updated = 17;
+    PresenceCleared presence_cleared = 18;
+    ApiError api_error = 19;
+    RateLimited rate_limited = 20;
+  }
 }
 
-message PingResponse {
-  string message = 1;
-  int64 timestamp = 2;
+message AppOpened {}
+
+message AppClosed {}
+
+message TelemetryOptedIn {}
+
+message TelemetryOptedOut {}
+
+message AuthStarted {
+  bool has_existing_credentials = 1;
+}
+
+message AuthCompleted {
+  bool is_new_user = 1;
+}
+
+message AuthFailed {
+  string error_type = 1;
+  optional string error_code = 2;
+}
+
+message PresenceUpdated {
+  int32 updated_count = 1;
+  int32 failed_count = 2;
+}
+
+message PresenceCleared {
+  int32 cleared_count = 1;
+  int32 failed_count = 2;
+}
+
+message ApiError {
+  string endpoint = 1;
+  string error_type = 2;
+  optional int32 status_code = 3;
+}
+
+message RateLimited {
+  string endpoint = 1;
+  optional int32 retry_after = 2;
 }

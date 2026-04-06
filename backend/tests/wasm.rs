@@ -12,11 +12,14 @@ pub mod extractors;
 #[path = "wasm/middleware.rs"]
 pub mod middleware;
 
-#[path = "wasm/ping.rs"]
-pub mod ping;
+#[path = "wasm/health.rs"]
+pub mod health;
 
 #[path = "wasm/redirect.rs"]
 pub mod redirect;
 
 #[path = "wasm/routing.rs"]
 pub mod routing;
+
+#[path = "wasm/telemetry.rs"]
+pub mod telemetry;

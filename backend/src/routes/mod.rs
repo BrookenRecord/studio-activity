@@ -1,5 +1,7 @@
 mod gh_redirect;
-mod ping;
+mod health;
+mod telemetry;
 
 pub use gh_redirect::gh_redirect;
-pub use ping::ping;
+pub use health::health;
+pub use telemetry::telemetry;

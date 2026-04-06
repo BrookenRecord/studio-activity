@@ -9,10 +9,7 @@ use crate::helpers::{inject_edge, mock_edge_context, mock_edge_context_minimal, 
 async fn cf_ray_propagated_as_request_id() {
     let app = test_router();
     let req = inject_edge(
-        Request::get("/ping")
-            .header("content-type", "application/json")
-            .body(Body::from(r#"{}"#))
-            .unwrap(),
+        Request::get("/health").body(Body::empty()).unwrap(),
         mock_edge_context(),
     );
 
@@ -32,10 +29,7 @@ async fn cf_ray_propagated_as_request_id() {
 async fn missing_cf_ray_generates_fallback_request_id() {
     let app = test_router();
     let req = inject_edge(
-        Request::get("/ping")
-            .header("content-type", "application/json")
-            .body(Body::from(r#"{}"#))
-            .unwrap(),
+        Request::get("/health").body(Body::empty()).unwrap(),
         mock_edge_context_minimal(),
     );
 
@@ -48,12 +42,6 @@ async fn missing_cf_ray_generates_fallback_request_id() {
         .expect("x-request-id header should be set")
         .to_str()
         .unwrap();
-    assert!(
-        !request_id.is_empty(),
-        "fallback request id should not be empty"
-    );
-    assert_ne!(
-        request_id, "unknown",
-        "should generate a UUID, not 'unknown'"
-    );
+    assert!(!request_id.is_empty(), "fallback request id should not be empty");
+    assert_ne!(request_id, "unknown", "should generate a UUID, not 'unknown'");
 }

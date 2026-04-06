@@ -1,9 +1,15 @@
-use axum::{middleware, routing::get, Router};
+use std::sync::Arc;
+
+use axum::{
+    middleware,
+    routing::{get, post},
+    Router,
+};
 use once_cell::sync::OnceCell;
 use tower_service::Service;
 use worker::{Context, Env, HttpRequest};
 
-use crate::{error::AppError, middleware as mw, routes};
+use crate::{error::AppError, extractors::WorkerContext, middleware as mw, routes};
 
 static APP: OnceCell<App> = OnceCell::new();
 
@@ -35,17 +41,20 @@ impl App {
 pub fn build_router() -> Router<AppState> {
     Router::new()
         .route("/", get(routes::gh_redirect))
-        .route("/ping", get(routes::ping))
+        .route("/health", get(routes::health))
+        .route("/v1/telemetry", post(routes::telemetry))
 }
 
 pub async fn handle(
-    req: HttpRequest,
+    mut req: HttpRequest,
     env: Env,
-    _ctx: Context,
+    ctx: Context,
 ) -> worker::Result<axum::http::Response<axum::body::Body>> {
     let app = APP.get_or_try_init(|| {
         App::try_new(&env).map_err(|e| worker::Error::JsError(e.to_string()))
     })?;
 
+    req.extensions_mut().insert(env);
+    req.extensions_mut().insert(WorkerContext(Arc::new(ctx)));
     Ok(app.router.clone().call(req).await?)
 }

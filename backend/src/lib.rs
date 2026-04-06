@@ -6,6 +6,7 @@ pub mod error;
 pub mod extractors;
 pub mod middleware;
 pub mod models;
+pub mod posthog;
 pub mod proto;
 pub mod routes;
 
