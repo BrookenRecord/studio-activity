@@ -1,0 +1,61 @@
+name: 📝 Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version (e.g. 0.2.0, no leading v)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ✅ Validate version
+        run: |
+          if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version must be MAJOR.MINOR.PATCH (got '${{ inputs.version }}')"
+            exit 1
+          fi
+
+      - name: ✏️ Bump plugin/wally.toml
+        run: |
+          sed -i -E 's/^version = "[^"]+"/version = "${{ inputs.version }}"/' plugin/wally.toml
+          grep -q '^version = "${{ inputs.version }}"' plugin/wally.toml || {
+            echo "::error::failed to update version in plugin/wally.toml"
+            exit 1
+          }
+
+      - name: 🌿 Create branch and commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="release/v${{ inputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add plugin/wally.toml
+          git commit -m "release: v${{ inputs.version }}"
+          git push -u origin "$BRANCH"
+
+      - name: 🔖 Open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "release/v${{ inputs.version }}" \
+            --title "release: v${{ inputs.version }}" \
+            --body "Release v${{ inputs.version }}.
+
+          Merging this PR will trigger \`release.yml\`, which builds the plugin with \`lune run build\`, tags \`v${{ inputs.version }}\`, and publishes a GitHub Release with \`StudioActivity.rbxm\` attached."
