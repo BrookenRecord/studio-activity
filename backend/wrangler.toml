@@ -30,12 +30,9 @@ head_sampling_rate = 1
 binding = "TELEMETRY_KV"
 id = "15efd808adc6465985093413fe84a9d7"
 
-# OAuth2 browser-flow session state. Created with:
-#   wrangler kv namespace create OAUTH_KV
-# Replace the id below with the value wrangler prints.
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "REPLACE_WITH_OAUTH_KV_NAMESPACE_ID"
+id = "bdb16cb5abce4ed2b54016643cba0cb4"
 
 # Per-IP telemetry rate limit: 100 events per 60 seconds
 [[ratelimits]]
