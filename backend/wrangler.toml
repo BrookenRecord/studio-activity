@@ -7,7 +7,7 @@ command = "cargo install -q \"worker-build@^0.7\" && worker-build --release"
 
 [vars]
 POSTHOG_HOST = "https://us.i.posthog.com"
-BACKEND_PUBLIC_URL = "http://localhost:8787" # "https://studio-activity.brooke.sh"
+BACKEND_PUBLIC_URL = "https://activity.brooke.sh"
 DISCORD_OAUTH_SCOPE = "sdk.social_layer_presence"
 DISCORD_CLIENT_ID = "1488672108933550192"
 
