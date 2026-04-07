@@ -6,7 +6,7 @@
 
 [![🔍 Static Code Analysis](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml)
 
-[Download](https://github.com/grilme99/studio-rich-presence/releases/latest) · [Report a bug](https://github.com/grilme99/studio-rich-presence/issues)
+[Download](https://github.com/grilme99/studio-activity/releases/latest) · [Report a bug](https://github.com/grilme99/studio-activity/issues)
 
 </div>
 
@@ -22,7 +22,7 @@ Studio Activity shows your current Roblox Studio session as a Discord activity o
 
 Studio Activity isn't on the Creator Marketplace right now, so installation is a one-time manual step:
 
-1. Download `StudioActivity.rbxm` from the [latest release](https://github.com/grilme99/studio-rich-presence/releases/latest).
+1. Download `StudioActivity.rbxm` from the [latest release](https://github.com/grilme99/studio-activity/releases/latest).
 2. Open Roblox Studio.
 3. Open the **Plugins** tab and click **Plugins Folder**. Studio opens the plugins directory in your file manager.
 4. Drag `StudioActivity.rbxm` into that folder.

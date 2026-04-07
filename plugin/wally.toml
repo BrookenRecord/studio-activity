@@ -1,5 +1,5 @@
 [package]
-name = "brhodes/studio-rich-presence"
+name = "brhodes/studio-activity"
 version = "0.3.1"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
