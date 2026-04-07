@@ -18,27 +18,23 @@ jobs:
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: ✅ Validate version
         run: |
           if ! [[ "${{ inputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::version must be MAJOR.MINOR.PATCH (got '${{ inputs.version }}')"
+            echo "::error::Version must be MAJOR.MINOR.PATCH (got '${{ inputs.version }}')"
             exit 1
           fi
 
       - name: ✏️ Bump plugin/wally.toml
         run: |
           sed -i -E 's/^version = "[^"]+"/version = "${{ inputs.version }}"/' plugin/wally.toml
-          grep -q '^version = "${{ inputs.version }}"' plugin/wally.toml || {
-            echo "::error::failed to update version in plugin/wally.toml"
+          grep -q "^version = \"${{ inputs.version }}\"" plugin/wally.toml || {
+            echo "::error::Failed to update version in plugin/wally.toml"
             exit 1
           }
 
       - name: 🌿 Create branch and commit
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH="release/v${{ inputs.version }}"
           git config user.name "github-actions[bot]"
@@ -58,4 +54,4 @@ jobs:
             --title "release: v${{ inputs.version }}" \
             --body "Release v${{ inputs.version }}.
 
-          Merging this PR will trigger \`release.yml\`, which builds the plugin with \`lune run build\`, tags \`v${{ inputs.version }}\`, and publishes a GitHub Release with \`StudioActivity.rbxm\` attached."
+          Merging this PR will trigger the release workflow, which builds the plugin, tags \`v${{ inputs.version }}\`, and publishes a GitHub Release with \`StudioActivity.rbxm\` attached."

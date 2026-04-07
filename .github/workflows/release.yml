@@ -1,82 +1,69 @@
 name: 🚀 Release Plugin
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [ closed ]
+    branches: [ main ]
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: >-
+      github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: 🔍 Check release commit
-        id: guard
-        env:
-          COMMIT_MSG: ${{ github.event.head_commit.message }}
+      - name: 🔍 Extract version
+        id: meta
         run: |
-          # Only consider the first line of the commit message.
-          FIRST_LINE=$(printf '%s' "$COMMIT_MSG" | head -n1)
-          if [[ "$FIRST_LINE" =~ ^release:\ v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            VERSION="${BASH_REMATCH[1]}"
-            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-            echo "is_release=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Detected release commit for v$VERSION"
-          else
-            echo "is_release=false" >> "$GITHUB_OUTPUT"
-            echo "Not a release commit, skipping."
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          VERSION="${BRANCH#release/v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Could not parse version from branch '$BRANCH'"
+            exit 1
           fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: 📥 Checkout repository
-        if: steps.guard.outputs.is_release == 'true'
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: 🔧 Install Rokit
-        if: steps.guard.outputs.is_release == 'true'
         uses: CompeyDev/setup-rokit@v0.1.2
         with:
           cache: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Lune setup
-        if: steps.guard.outputs.is_release == 'true'
         run: |
           lune setup
           rm -f .luaurc
 
       - name: 📦 Setup project
-        if: steps.guard.outputs.is_release == 'true'
         run: lune run setup
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
 
       - name: 🛠️ Build plugin
-        if: steps.guard.outputs.is_release == 'true'
         run: lune run build
         env:
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
 
       - name: 🔖 Tag release
-        if: steps.guard.outputs.is_release == 'true'
         run: |
-          VERSION="${{ steps.guard.outputs.version }}"
+          VERSION="${{ steps.meta.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag "v$VERSION"
           git push origin "v$VERSION"
 
       - name: 🚀 Publish GitHub Release
-        if: steps.guard.outputs.is_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.guard.outputs.version }}"
+          VERSION="${{ steps.meta.outputs.version }}"
           gh release create "v$VERSION" StudioActivity.rbxm \
             --title "v$VERSION" \
             --generate-notes
