@@ -1,6 +1,6 @@
 [package]
 name = "brhodes/studio-rich-presence"
-version = "0.1.0"
+version = "0.2.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 private = true
