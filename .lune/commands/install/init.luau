@@ -134,23 +134,6 @@ function install.run(options_: Options?): boolean
 		print(color.bold(color.white("Successfully installed Wally packages!")))
 	end
 
-	-- Apply patches to Wally packages
-	if not quiet then
-		print(color.dim("Applying package patches..."))
-	end
-
-	local patchResult = applyPatches(quiet)
-	if not patchResult then
-		if not quiet then
-			print(color.bold(color.red("Failed to apply package patches")))
-		end
-		return false
-	end
-
-	if not quiet then
-		print(color.bold(color.white("Successfully applied package patches!")))
-	end
-
 	-- Install Roblox packages to the OS temp directory and then extract Foundation
 	local robloxPackagesPath = `/tmp/roblox-packages`
 	local robloxPackagesArgs = {
@@ -173,6 +156,23 @@ function install.run(options_: Options?): boolean
 
 	if not quiet then
 		print(color.bold(color.white("Successfully installed Foundation packages!")))
+	end
+
+	-- Apply patches to Wally packages
+	if not quiet then
+		print(color.dim("Applying package patches..."))
+	end
+
+	local patchResult = applyPatches(quiet)
+	if not patchResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to apply package patches")))
+		end
+		return false
+	end
+
+	if not quiet then
+		print(color.bold(color.white("Successfully applied package patches!")))
 	end
 
 	return true

@@ -26,7 +26,7 @@ type Props = {
 	LayoutOrder: number?,
 }
 
-local function PhoneFlow(props: Props)
+local function QRCodeFlow(props: Props)
 	local tokens = useTokens()
 	local nextOrder = createNextOrder()
 	local auth = AuthContext.useAuth()
@@ -38,7 +38,7 @@ local function PhoneFlow(props: Props)
 	local showQrCode = status == "polling" or status == "authorized"
 
 	return e(View, {
-		tag = "size-full-0 auto-y row gap-large align-y-center",
+		tag = "size-full-0 auto-y row gap-large align-y-center padding-top-large",
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		QRCodeContainer = e(View, {
@@ -63,22 +63,18 @@ local function PhoneFlow(props: Props)
 		}),
 
 		TextBlock = e(View, {
-			tag = "auto-y col gap-xsmall",
-			-- For some reason, automatic size doesn't behave as expected in
-			-- Foundation sheets. We need to manually size this so that text
-			-- wrap works properly when the widget is small.
-			Size = UDim2.new(1, -(tokens.Size.Size_2400 + tokens.Gap.Large), 0, 0),
+			tag = "grow auto-y col gap-xsmall",
 			LayoutOrder = nextOrder(),
 		}, {
 			Title = e(Text, {
-				tag = "size-full-0 auto-y text-wrap text-align-x-left text-title-medium content-emphasis",
+				tag = "size-full-0 auto-y text-wrap text-align-x-left text-label-medium content-emphasis",
 				Text = "Scan with your phone",
 				LayoutOrder = nextOrder(),
 			}),
 
 			Subtitle = e(Text, {
 				tag = {
-					["size-full-0 auto-y text-wrap text-align-x-left text-caption-medium"] = true,
+					["size-full-0 auto-y text-wrap text-align-x-left text-body-small"] = true,
 					["content-default"] = status ~= "error",
 					["content-alert"] = status == "error",
 				},
@@ -91,4 +87,4 @@ local function PhoneFlow(props: Props)
 	})
 end
 
-return PhoneFlow
+return React.memo(QRCodeFlow)

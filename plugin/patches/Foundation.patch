@@ -1,0 +1,118 @@
+diff --git a/Foundation/Components/Sheet/BottomSheet.lua b/Foundation/Components/Sheet/BottomSheet.lua
+index ad7336b..6e8ff45 100644
+--- a/Foundation/Components/Sheet/BottomSheet.lua
++++ b/Foundation/Components/Sheet/BottomSheet.lua
+@@ -462,6 +462,7 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
+ 					ClipsDescendants = false,
+ 					BackgroundTransparency = 1,
+ 					ScrollingDirection = Enum.ScrollingDirection.Y,
++					ScrollingEnabled = false,
+ 					ScrollBarThickness = 0,
+ 					ref = outerScrollingRef,
+ 					[React.Change.CanvasPosition] = function(instance: ScrollingFrame)
+@@ -498,42 +499,8 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
+ 							-- Needed to sink the onActivated event to the backdrop
+ 							onActivated = Dash.noop,
+ 							testId = props.testId,
+-							tag = "bg-surface-100 radius-large col items-center clip padding-top-small",
++							tag = "bg-surface-100 radius-large col items-center clip",
+ 						}, {
+-							Gripper = React.createElement(View, {
+-								ZIndex = 3,
+-								backgroundStyle = tokens.Color.Content.Muted,
+-								tag = "padding-y-small size-1000-100 radius-small align-y-center",
+-								testId = `{props.testId}--gripper`,
+-							}, {
+-								TouchTarget = React.createElement(View, {
+-									tag = "size-1000-600",
+-									stateLayer = {
+-										affordance = StateLayerAffordance.None,
+-									},
+-									onActivated = function()
+-										-- Cancel input ended if the gripper is pressed
+-										inputActive.current = false
+-										if #snapPoints > 1 then
+-											local nextIndex = currentSnapIndex.current % #snapPoints + 1
+-											if Flags.FoundationSheetReducedMotion and reducedMotion then
+-												jumpToSnapIndex(nextIndex)
+-											else
+-												springToSnapIndex(nextIndex)
+-											end
+-											if Flags.FoundationSheetFixClosingSwipe then
+-												local isAtMaxSnapPoint = snapValueToPixels(snapPoints[nextIndex])
+-													== maxSheetHeight
+-												if isAtMaxSnapPoint then
+-													setInnerScrollingEnabled(true)
+-												end
+-											end
+-										else
+-											closeSheet()
+-										end
+-									end,
+-								}),
+-							}),
+ 							Content = React.createElement(SheetContext.Provider, {
+ 								value = contextValue,
+ 							}, React.createElement(OwnerScope, { owner = elevation }, props.children)),
+diff --git a/Foundation/Components/Sheet/Sheet.lua b/Foundation/Components/Sheet/Sheet.lua
+index f5bd39e..f0ebe64 100644
+--- a/Foundation/Components/Sheet/Sheet.lua
++++ b/Foundation/Components/Sheet/Sheet.lua
+@@ -30,7 +30,23 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 
+ 	local isLandscape, setIsLandscape =
+ 		React.useState(if overlay then overlay.AbsoluteSize.X > overlay.AbsoluteSize.Y else true)
+-	local displaySize, setDisplaySize = React.useState(GuiService.ViewportDisplaySize)
++
++	local isSmallDisplay, setSmallDisplay = React.useState(false)
++	React.useEffect(function()
++		if overlay == nil then
++			return
++		end
++
++		local function update()
++			setSmallDisplay(overlay.AbsoluteSize.X <= 500)
++		end
++		update()
++
++		local connection = GuiService:GetPropertyChangedSignal("ViewportDisplaySize"):Connect(update)
++		return function()
++			connection:Disconnect()
++		end
++	end, { overlay })
+ 
+ 	React.useImperativeHandle(props.sheetRef, function()
+ 		return sheetRef.current
+@@ -50,10 +66,6 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 		end
+ 	end, { isOpen })
+ 
+-	ReactUtils.useEventConnection(GuiService:GetPropertyChangedSignal("ViewportDisplaySize"), function()
+-		setDisplaySize(GuiService.ViewportDisplaySize)
+-	end, {})
+-
+ 	React.useLayoutEffect(function()
+ 		local connection
+ 		if overlay then
+@@ -78,9 +90,9 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 	childProps.isOpen = nil
+ 	childProps.ref = ref
+ 	childProps.sheetRef = sheetRef
+-	if not Flags.FoundationSideSheetNewWidthCalculation or Flags.FoundationSideSheetFixNewWidth then
+-		childProps.displaySize = displaySize
+-	end
++	-- if not Flags.FoundationSideSheetNewWidthCalculation or Flags.FoundationSideSheetFixNewWidth then
++	-- 	childProps.displaySize = displaySize
++	-- end
+ 	childProps.onClose = function()
+ 		if props.onClose then
+ 			props.onClose()
+@@ -88,7 +100,7 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 		setIsOpen(false)
+ 	end
+ 
+-	if displaySize == Enum.DisplaySize.Small and not isLandscape then
++	if isSmallDisplay and not isLandscape then
+ 		return React.createElement(BottomSheet, childProps)
+ 	elseif props.preferCenterSheet then
+ 		return React.createElement(CenterSheet, childProps)

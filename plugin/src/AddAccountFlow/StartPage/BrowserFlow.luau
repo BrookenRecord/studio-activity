@@ -6,10 +6,10 @@ local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
 
 local AuthContext = require(script.Parent.Parent.AuthContext)
+local Steps = require(script.Parent.Steps)
 
 local TextInput = Foundation.TextInput
 local InputSize = Foundation.Enums.InputSize
-local IconName = Foundation.Enums.IconName
 
 local useSignalState = ReactCharm.useSignalState
 
@@ -18,11 +18,7 @@ local useState = React.useState
 local useEffect = React.useEffect
 local useCallback = React.useCallback
 
-type Props = {
-	LayoutOrder: number?,
-}
-
-local function BrowserFlow(_props: Props)
+local function BrowserFlow()
 	local auth = AuthContext.useAuth()
 
 	local status = useSignalState(auth.browserCodeFlow.status)
@@ -75,7 +71,7 @@ local function BrowserFlow(_props: Props)
 	end, { textbox :: any, selectAll })
 
 	-- Show whichever message best reflects the current state.
-	local hint: string
+	local hint: string?
 	if status == "requesting" then
 		hint = "Generating link…"
 	elseif status == "exchanging" then
@@ -89,29 +85,41 @@ local function BrowserFlow(_props: Props)
 	elseif status == "error" then
 		hint = `Something went wrong: {errorText or "unknown error"}`
 	else
-		hint = "Paste into your browser to authorize. Return here when done."
+		hint = nil
 	end
 
 	local startUrl = if sessionInfo then sessionInfo.startUrl else ""
 
-	return e(TextInput, {
-		onReturnPressed = function() end,
-		text = startUrl,
-		label = "Continue in browser",
-		hint = hint,
-		width = UDim.new(1, 0),
-		size = InputSize.Medium,
-		ref = function(rbx: Frame?)
-			if rbx then
-				setTextbox(rbx:FindFirstChildWhichIsA("TextBox", true))
-			end
-		end,
-		iconTrailing = {
-			name = IconName.TwoStackedSquares,
-			onActivated = selectAll,
+	return e(Steps, {
+		steps = {
+			{
+				id = "step-1",
+				text = "Select and copy this link",
+				content = e(TextInput, {
+					onReturnPressed = function() end,
+					text = startUrl,
+					label = "",
+					hint = hint,
+					width = UDim.new(1, 0),
+					size = InputSize.Small,
+					ref = function(rbx: Frame?)
+						if rbx then
+							setTextbox(rbx:FindFirstChildWhichIsA("TextBox", true))
+						end
+					end,
+					onChanged = function() end,
+				}),
+			},
+			{
+				id = "step-2",
+				text = "Paste into your browser and authorize",
+			},
+			{
+				id = "step-3",
+				text = "Return here when done",
+			},
 		},
-		onChanged = function() end,
 	})
 end
 
-return BrowserFlow
+return React.memo(BrowserFlow)

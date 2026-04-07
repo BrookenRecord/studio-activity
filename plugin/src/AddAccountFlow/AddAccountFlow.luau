@@ -37,7 +37,7 @@ local function AddAccountFlow(props: Props)
 	return e(Sheet.Root, {
 		isOpen = props.isOpen,
 		preferCenterSheet = true,
-		size = DialogSize.Medium,
+		size = DialogSize.Small,
 		onClose = props.onClose,
 	}, {
 		Header = e(Sheet.Header, {
