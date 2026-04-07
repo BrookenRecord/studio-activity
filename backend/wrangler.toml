@@ -10,6 +10,7 @@ POSTHOG_HOST = "https://us.i.posthog.com"
 BACKEND_PUBLIC_URL = "https://activity.brooke.sh"
 DISCORD_OAUTH_SCOPE = "sdk.social_layer_presence"
 DISCORD_CLIENT_ID = "1488672108933550192"
+GITHUB_REPO = "grilme99/studio-activity"
 
 [observability]
 enabled = true
@@ -33,6 +34,11 @@ id = "15efd808adc6465985093413fe84a9d7"
 [[kv_namespaces]]
 binding = "OAUTH_KV"
 id = "bdb16cb5abce4ed2b54016643cba0cb4"
+
+# Caches the latest GitHub release for /v1/version/latest (~5 min TTL).
+[[kv_namespaces]]
+binding = "VERSION_KV"
+id = "7678bd743e514b0d823aad6fd466d38f"
 
 # Per-IP telemetry rate limit: 100 events per 60 seconds
 [[ratelimits]]

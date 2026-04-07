@@ -43,6 +43,7 @@ pub fn build_router() -> Router<AppState> {
         .route("/", get(routes::gh_redirect))
         .route("/health", get(routes::health))
         .route("/v1/telemetry", post(routes::telemetry))
+        .route("/v1/version/latest", get(routes::version::latest))
         .route("/start/{token}", get(routes::oauth_browser::start_redirect))
         .route(
             "/v1/oauth/browser/start",

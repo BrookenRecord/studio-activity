@@ -153,3 +153,23 @@ message BrowserFlowPollResponse {
   // code over.
   string code = 2;
 }
+
+// --- Plugin updates ---
+
+// Latest published GitHub release for the plugin. The backend caches
+// the upstream GitHub response in KV (~5 min) so the plugin can poll
+// freely without burning the unauthenticated API budget.
+message LatestVersionResponse {
+  // Release tag, e.g. "v0.2.0".
+  string tag = 1;
+
+  // Plain version string parsed from the tag (no leading "v"),
+  // e.g. "0.2.0". Compared verbatim against `BuildVars.build.version`.
+  string version = 2;
+
+  // GitHub release page URL, surfaced to users for the changelog.
+  string html_url = 3;
+
+  // ISO-8601 publish timestamp from GitHub.
+  string published_at = 4;
+}

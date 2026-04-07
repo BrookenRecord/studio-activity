@@ -24,6 +24,7 @@ type _Messages = {
 	BrowserFlowStartResponse: _BrowserFlowStartResponseMessage,
 	BrowserFlowPollRequest: _BrowserFlowPollRequestMessage,
 	BrowserFlowPollResponse: _BrowserFlowPollResponseMessage,
+	LatestVersionResponse: _LatestVersionResponseMessage,
 	AccountLinkFlow: _AccountLinkFlowMessage,
 	BrowserFlowStatus: _BrowserFlowStatusMessage,
 }
@@ -442,6 +443,36 @@ export type BrowserFlowPollResponse = typeof(setmetatable(
 	{} :: _BrowserFlowPollResponseImpl
 ))
 type _BrowserFlowPollResponseMessage = proto.Message<BrowserFlowPollResponse, _BrowserFlowPollResponsePartialFields>
+
+type _LatestVersionResponseImpl = {
+	__index: _LatestVersionResponseImpl,
+	new: (fields: _LatestVersionResponsePartialFields?) -> LatestVersionResponse,
+	encode: (self: LatestVersionResponse) -> buffer,
+	decode: (input: buffer) -> LatestVersionResponse,
+	jsonEncode: (self: LatestVersionResponse) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> LatestVersionResponse,
+	descriptor: proto.Descriptor,
+}
+
+type _LatestVersionResponseFields = {
+	tag: string,
+	version: string,
+	htmlUrl: string,
+	publishedAt: string,
+}
+
+type _LatestVersionResponsePartialFields = {
+	tag: string?,
+	version: string?,
+	htmlUrl: string?,
+	publishedAt: string?,
+}
+
+export type LatestVersionResponse = typeof(setmetatable(
+	{} :: _LatestVersionResponseFields,
+	{} :: _LatestVersionResponseImpl
+))
+type _LatestVersionResponseMessage = proto.Message<LatestVersionResponse, _LatestVersionResponsePartialFields>
 
 type _AccountLinkFlowMessage = proto.Enum<AccountLinkFlow>
 export type AccountLinkFlow =
@@ -2522,6 +2553,160 @@ do
 	typeRegistry.default:register(messages.BrowserFlowPollResponse)
 end
 
+do
+	local _LatestVersionResponseImpl = {}
+	_LatestVersionResponseImpl.__index = _LatestVersionResponseImpl
+
+	function _LatestVersionResponseImpl.new(data: _LatestVersionResponsePartialFields?): LatestVersionResponse
+		return setmetatable({
+			tag = if data == nil or data.tag == nil then "" else data.tag,
+			version = if data == nil or data.version == nil then "" else data.version,
+			htmlUrl = if data == nil or data.htmlUrl == nil then "" else data.htmlUrl,
+			publishedAt = if data == nil or data.publishedAt == nil then "" else data.publishedAt,
+		}, _LatestVersionResponseImpl :: _LatestVersionResponseImpl)
+	end
+
+	function _LatestVersionResponseImpl.encode(self: LatestVersionResponse): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if self.tag ~= nil and self.tag ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.tag)
+		end
+
+		if self.version ~= nil and self.version ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.version)
+		end
+
+		if self.htmlUrl ~= nil and self.htmlUrl ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 3, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.htmlUrl)
+		end
+
+		if self.publishedAt ~= nil and self.publishedAt ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 4, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.publishedAt)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _LatestVersionResponseImpl.decode(input: buffer): LatestVersionResponse
+		local self = _LatestVersionResponseImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				-- No fields
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 1 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.tag = proto.decodeString(value)
+					continue
+				elseif field == 2 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.version = proto.decodeString(value)
+					continue
+				elseif field == 3 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.htmlUrl = proto.decodeString(value)
+					continue
+				elseif field == 4 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.publishedAt = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _LatestVersionResponseImpl.jsonEncode(self: LatestVersionResponse): any
+		local output = {}
+
+		if self.tag ~= nil and self.tag ~= "" then
+			output.tag = self.tag
+		end
+
+		if self.version ~= nil and self.version ~= "" then
+			output.version = self.version
+		end
+
+		if self.htmlUrl ~= nil and self.htmlUrl ~= "" then
+			output.htmlUrl = self.htmlUrl
+		end
+
+		if self.publishedAt ~= nil and self.publishedAt ~= "" then
+			output.publishedAt = self.publishedAt
+		end
+
+		return output
+	end
+
+	function _LatestVersionResponseImpl.jsonDecode(input: { [string]: any }): LatestVersionResponse
+		local self = _LatestVersionResponseImpl.new()
+
+		if input.tag ~= nil then
+			self.tag = input.tag
+		end
+
+		if input.version ~= nil then
+			self.version = input.version
+		end
+
+		if input.htmlUrl ~= nil then
+			self.htmlUrl = input.htmlUrl
+		end
+
+		if input.publishedAt ~= nil then
+			self.publishedAt = input.publishedAt
+		end
+
+		return self
+	end
+
+	_LatestVersionResponseImpl.descriptor = {
+		name = "LatestVersionResponse",
+		fullName = "api.v1.LatestVersionResponse",
+	}
+
+	messages.LatestVersionResponse = _LatestVersionResponseImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.LatestVersionResponse)
+end
+
 messages.AccountLinkFlow = {
 	fromNumber = function(value: number): AccountLinkFlow?
 		if value == 0 then
@@ -2628,6 +2813,7 @@ return {
 	BrowserFlowStartResponse = messages.BrowserFlowStartResponse,
 	BrowserFlowPollRequest = messages.BrowserFlowPollRequest,
 	BrowserFlowPollResponse = messages.BrowserFlowPollResponse,
+	LatestVersionResponse = messages.LatestVersionResponse,
 	AccountLinkFlow = messages.AccountLinkFlow,
 	BrowserFlowStatus = messages.BrowserFlowStatus,
 }

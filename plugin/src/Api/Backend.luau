@@ -35,6 +35,7 @@ export type UnexpectedProblem = { type: "unexpected", statusCode: number, body: 
 
 export type TelemetryProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
 export type BrowserFlowProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
+export type LatestVersionProblem = NetworkProblem | UnexpectedProblem
 
 -- ────────────────────────────────────────────────────────────
 -- Config
@@ -64,6 +65,33 @@ local function postJsonAsync(url: string, jsonBody: string): Result.Result<RawRe
 		},
 		Compress = Enum.HttpCompression.None,
 		Body = jsonBody,
+	})
+
+	if not requestOk then
+		return Result.err({ type = "network" :: "network", message = tostring(result) })
+	end
+
+	local body = nil
+	if result.Body and #result.Body > 0 then
+		local decodeOk, decoded = pcall(HttpService.JSONDecode, HttpService, result.Body)
+		body = if decodeOk then decoded else result.Body
+	end
+
+	return Result.ok({
+		ok = result.Success,
+		body = body,
+		statusCode = result.StatusCode,
+	})
+end
+
+local function getJsonAsync(url: string): Result.Result<RawResponse, NetworkProblem>
+	local requestOk, result = pcall(HttpService.RequestAsync, HttpService, {
+		Url = url,
+		Method = "GET" :: "GET",
+		Headers = {
+			["Accept"] = "application/json",
+		},
+		Compress = Enum.HttpCompression.None,
 	})
 
 	if not requestOk then
@@ -219,10 +247,36 @@ local function new(config: Config)
 		})
 	end
 
+	--[[
+		Fetch the latest published plugin release.
+
+		GET /v1/version/latest
+
+		The backend caches GitHub's response in KV (~5 min) so plugins
+		can poll freely. Used by the footer "Update Available" badge.
+	]]
+	local function getLatestVersionAsync(): Result.Result<api.LatestVersionResponse, LatestVersionProblem>
+		local res = getJsonAsync(`{baseUrl}/v1/version/latest`)
+		if not res.ok then
+			return Result.err(res.error)
+		end
+
+		if res.value.ok and type(res.value.body) == "table" then
+			return Result.ok(api.LatestVersionResponse.jsonDecode(res.value.body))
+		end
+
+		return Result.err({
+			type = "unexpected" :: "unexpected",
+			statusCode = res.value.statusCode,
+			body = if type(res.value.body) == "string" then res.value.body else nil,
+		})
+	end
+
 	return table.freeze({
 		captureTelemetryAsync = captureTelemetryAsync,
 		startBrowserFlowAsync = startBrowserFlowAsync,
 		pollBrowserFlowAsync = pollBrowserFlowAsync,
+		getLatestVersionAsync = getLatestVersionAsync,
 	})
 end
 
