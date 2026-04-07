@@ -3,10 +3,15 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
+
+local AuthContext = require(script.Parent.Parent.AuthContext)
 
 local TextInput = Foundation.TextInput
 local InputSize = Foundation.Enums.InputSize
 local IconName = Foundation.Enums.IconName
+
+local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
 local useState = React.useState
@@ -18,6 +23,12 @@ type Props = {
 }
 
 local function BrowserFlow(_props: Props)
+	local auth = AuthContext.useAuth()
+
+	local status = useSignalState(auth.browserCodeFlow.status)
+	local sessionInfo = useSignalState(auth.browserCodeFlow.sessionInfo)
+	local errorText = useSignalState(auth.browserCodeFlow.error)
+
 	local textbox, setTextbox = useState<<TextBox?>>(nil)
 
 	local selectAll = useCallback(function()
@@ -63,11 +74,31 @@ local function BrowserFlow(_props: Props)
 		return nil
 	end, { textbox :: any, selectAll })
 
+	-- Show whichever message best reflects the current state.
+	local hint: string
+	if status == "requesting" then
+		hint = "Generating link…"
+	elseif status == "exchanging" then
+		hint = "Linking your account…"
+	elseif status == "authorized" then
+		hint = "Account linked. You're all set."
+	elseif status == "denied" then
+		hint = "You cancelled the request in Discord."
+	elseif status == "expired" then
+		hint = "This link expired. Try again."
+	elseif status == "error" then
+		hint = `Something went wrong: {errorText or "unknown error"}`
+	else
+		hint = "Paste into your browser to authorize. Return here when done."
+	end
+
+	local startUrl = if sessionInfo then sessionInfo.startUrl else ""
+
 	return e(TextInput, {
 		onReturnPressed = function() end,
-		text = "https://presence.brooke.sh/start/pjGXMs9OPcBh",
+		text = startUrl,
 		label = "Continue in browser",
-		hint = "Paste into your browser to authorize. Return here when done.",
+		hint = hint,
 		width = UDim.new(1, 0),
 		size = InputSize.Medium,
 		ref = function(rbx: Frame?)

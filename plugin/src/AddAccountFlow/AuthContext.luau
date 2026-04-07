@@ -4,92 +4,84 @@ local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 local React = require(Packages.React)
 
+local BackendApi = require(Plugin.Source.Api.Backend)
 local BuildVars = require(Plugin.Source.BuildVars)
 local DiscordApi = require(Plugin.Source.Api.Discord)
 
+local BrowserCodeFlow = require(Plugin.Source.Authentication.Flows.BrowserCodeFlow)
 local DeviceCodeFlow = require(Plugin.Source.Authentication.Flows.DeviceCodeFlow)
+type BrowserCodeFlow = BrowserCodeFlow.BrowserCodeFlow
 type DeviceCodeFlow = DeviceCodeFlow.DeviceCodeFlow
-type Status = DeviceCodeFlow.Status
 
 local e = React.createElement
-local useMemo = React.useMemo
 local useRef = React.useRef
-local useState = React.useState
 local useEffect = React.useEffect
 local useContext = React.useContext
 
 export type AuthContext = {
 	deviceCodeFlow: DeviceCodeFlow,
+	browserCodeFlow: BrowserCodeFlow,
 }
 
 local AuthContext = React.createContext<<AuthContext?>>(nil)
 AuthContext.displayName = "AuthContext"
 
+-- Construct fresh flow instances. Cheap (just signals + closures) — the
+-- network calls only start once `requestAsync` is invoked from the effect.
+local function createFlows(): AuthContext
+	local discord = DiscordApi.new({
+		clientId = BuildVars.discord.clientId,
+	})
+	local backend = BackendApi.new(BuildVars.api)
+
+	return {
+		deviceCodeFlow = DeviceCodeFlow.create({ discord = discord }),
+		browserCodeFlow = BrowserCodeFlow.create({ discord = discord, backend = backend }),
+	}
+end
+
 local function AuthContextProvider(props: {
 	onClose: () -> (),
 	children: React.ReactNode,
 }): React.ReactNode
-	local flowRef = useRef<<DeviceCodeFlow?>>(nil)
-	local deviceCodeFlow, setDeviceCodeFlow = useState<<DeviceCodeFlow?>>(nil)
+	-- Lazy ref init: build the flows exactly once per real component
+	-- lifetime. The ref keeps the same object across re-renders, and a
+	-- fresh component instance gets a fresh ref, so we never leak flows
+	-- and never observe nil during render.
+	local flowsRef = useRef<<AuthContext?>>(nil)
+	if flowsRef.current == nil then
+		flowsRef.current = createFlows()
+	end
+	local flows = flowsRef.current :: AuthContext
 
 	useEffect(function()
-		-- Strict Mode calls this twice, but the ref guard
-		-- ensures we only start one flow.
-		if flowRef.current ~= nil then
-			return
-		end
+		flows.deviceCodeFlow.requestAsync()
+		flows.browserCodeFlow.requestAsync()
 
-		local discord = DiscordApi.new({
-			clientId = BuildVars.discord.clientId,
-		})
-
-		local flow = DeviceCodeFlow.create({
-			discord = discord,
-		})
-
-		task.spawn(function()
-			flow.requestAsync()
-		end)
-
-		flowRef.current = flow
-		setDeviceCodeFlow(flow)
-
-		-- Listen for when the status changes and close the sheet when it does.
+		-- Close the sheet as soon as either flow authorizes.
 		local dispose = Charm.effect(function()
-			local status: Status = flow.status() :: Status
+			local deviceStatus: DeviceCodeFlow.Status = flows.deviceCodeFlow.status() :: DeviceCodeFlow.Status
+			local browserStatus: BrowserCodeFlow.Status = flows.browserCodeFlow.status() :: BrowserCodeFlow.Status
 
-			-- TODO: Handle other new status cases
-			if status == "authorized" then
+			if deviceStatus == "authorized" or browserStatus == "authorized" then
 				props.onClose()
 			end
 		end)
 
 		return function()
 			dispose()
-
-			-- Only runs on real unmount. In Strict Mode, the first
-			-- unmount is simulated — but since we ref-guarded the
-			-- creation, cleanup here is a no-op on the second mount.
-			if flowRef.current == flow then
-				flow.destroy()
-				flowRef.current = nil
-			end
+			-- destroy() cancels in-flight polling and resets each flow
+			-- to "idle" without freeing the object. Strict Mode's
+			-- simulated unmount→remount will simply re-`requestAsync`
+			-- on the same instances, which is exactly the behavior we
+			-- want for a real "user reopens the sheet" cycle too.
+			flows.deviceCodeFlow.destroy()
+			flows.browserCodeFlow.destroy()
 		end
 	end, {})
 
-	local value = useMemo(function(): AuthContext
-		return {
-			deviceCodeFlow = deviceCodeFlow :: DeviceCodeFlow,
-		}
-	end, { deviceCodeFlow })
-
-	-- Don't render children until we have the state
-	if deviceCodeFlow == nil then
-		return nil
-	end
-
 	return e(AuthContext.Provider, {
-		value = value,
+		value = flows,
 	}, props.children)
 end
 

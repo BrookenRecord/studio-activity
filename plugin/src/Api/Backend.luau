@@ -34,6 +34,7 @@ export type ValidationProblem = { type: "validation", message: string? }
 export type UnexpectedProblem = { type: "unexpected", statusCode: number, body: string? }
 
 export type TelemetryProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
+export type BrowserFlowProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
 
 -- ────────────────────────────────────────────────────────────
 -- Config
@@ -129,8 +130,99 @@ local function new(config: Config)
 		})
 	end
 
+	--[[
+		Start a browser-based OAuth2 (PKCE) account-link session.
+
+		POST /v1/oauth/browser/start
+
+		The plugin generates the verifier+challenge locally; only the
+		challenge is ever sent to the backend. The backend creates a KV
+		entry, mints a session token, and returns a short URL the user
+		can paste into their browser.
+	]]
+	local function startBrowserFlowAsync(
+		codeChallenge: string
+	): Result.Result<api.BrowserFlowStartResponse, BrowserFlowProblem>
+		local request = api.BrowserFlowStartRequest.new({
+			codeChallenge = codeChallenge,
+		})
+		local jsonBody = HttpService:JSONEncode(request:jsonEncode())
+
+		local res = postJsonAsync(`{baseUrl}/v1/oauth/browser/start`, jsonBody)
+		if not res.ok then
+			return Result.err(res.error)
+		end
+
+		if res.value.statusCode == 400 then
+			local message: string? = nil
+			if type(res.value.body) == "table" then
+				message = res.value.body.detail
+			end
+			return Result.err({
+				type = "validation" :: "validation",
+				message = message,
+			})
+		end
+
+		if res.value.ok and type(res.value.body) == "table" then
+			return Result.ok(api.BrowserFlowStartResponse.jsonDecode(res.value.body))
+		end
+
+		return Result.err({
+			type = "unexpected" :: "unexpected",
+			statusCode = res.value.statusCode,
+			body = if type(res.value.body) == "string" then res.value.body else nil,
+		})
+	end
+
+	--[[
+		Poll a browser-flow session for completion.
+
+		POST /v1/oauth/browser/poll
+
+		Returns the current status. When status == COMPLETE, the
+		response carries the authorization code (single use — the
+		backend deletes the KV entry as soon as it hands it over).
+	]]
+	local function pollBrowserFlowAsync(
+		sessionToken: string
+	): Result.Result<api.BrowserFlowPollResponse, BrowserFlowProblem>
+		local request = api.BrowserFlowPollRequest.new({
+			sessionToken = sessionToken,
+		})
+		local jsonBody = HttpService:JSONEncode(request:jsonEncode())
+
+		local res = postJsonAsync(`{baseUrl}/v1/oauth/browser/poll`, jsonBody)
+		if not res.ok then
+			return Result.err(res.error)
+		end
+
+		if res.value.statusCode == 400 then
+			local message: string? = nil
+			if type(res.value.body) == "table" then
+				message = res.value.body.detail
+			end
+			return Result.err({
+				type = "validation" :: "validation",
+				message = message,
+			})
+		end
+
+		if res.value.ok and type(res.value.body) == "table" then
+			return Result.ok(api.BrowserFlowPollResponse.jsonDecode(res.value.body))
+		end
+
+		return Result.err({
+			type = "unexpected" :: "unexpected",
+			statusCode = res.value.statusCode,
+			body = if type(res.value.body) == "string" then res.value.body else nil,
+		})
+	end
+
 	return table.freeze({
 		captureTelemetryAsync = captureTelemetryAsync,
+		startBrowserFlowAsync = startBrowserFlowAsync,
+		pollBrowserFlowAsync = pollBrowserFlowAsync,
 	})
 end
 

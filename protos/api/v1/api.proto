@@ -98,3 +98,58 @@ message SessionError {
 // Fired when the plugin is unloading (Studio closing or plugin reload).
 // Bookends PluginLoaded so PostHog can compute session duration.
 message PluginUnloaded {}
+
+// --- Browser OAuth2 (PKCE) ---
+
+// Plugin asks the backend to create a new browser-flow session. The
+// code_challenge is base64url(SHA256(code_verifier)); the verifier
+// itself never leaves the plugin, so the backend cannot exchange the
+// authorization code for tokens on its own.
+message BrowserFlowStartRequest {
+  string code_challenge = 1;
+}
+
+message BrowserFlowStartResponse {
+  // Opaque session identifier. Used as the Discord `state` parameter
+  // and as the KV key on the backend. The plugin echoes it back on
+  // every poll.
+  string session_token = 1;
+
+  // Short URL the user pastes into their browser. Hits the backend,
+  // which redirects to Discord's authorize URL with all the right
+  // parameters.
+  string start_url = 2;
+
+  // Exact redirect_uri the backend will hand Discord. The plugin MUST
+  // send this identical value when exchanging the code, otherwise
+  // Discord will reject the token request.
+  string redirect_uri = 3;
+
+  // Seconds until the backend stops accepting polls / callbacks for
+  // this session.
+  int32 expires_in = 4;
+
+  // Recommended polling interval in seconds.
+  int32 poll_interval = 5;
+}
+
+message BrowserFlowPollRequest {
+  string session_token = 1;
+}
+
+enum BrowserFlowStatus {
+  BROWSER_FLOW_STATUS_UNSPECIFIED = 0;
+  BROWSER_FLOW_STATUS_PENDING = 1;
+  BROWSER_FLOW_STATUS_COMPLETE = 2;
+  BROWSER_FLOW_STATUS_DENIED = 3;
+  BROWSER_FLOW_STATUS_EXPIRED = 4;
+}
+
+message BrowserFlowPollResponse {
+  BrowserFlowStatus status = 1;
+
+  // Only populated when status == COMPLETE. Consumed exactly once: the
+  // backend deletes the KV entry on the same response that hands the
+  // code over.
+  string code = 2;
+}

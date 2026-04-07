@@ -7,6 +7,9 @@ command = "cargo install -q \"worker-build@^0.7\" && worker-build --release"
 
 [vars]
 POSTHOG_HOST = "https://us.i.posthog.com"
+BACKEND_PUBLIC_URL = "http://localhost:8787" # "https://studio-activity.brooke.sh"
+DISCORD_OAUTH_SCOPE = "sdk.social_layer_presence"
+DISCORD_CLIENT_ID = "1488672108933550192"
 
 [observability]
 enabled = true
@@ -27,6 +30,13 @@ head_sampling_rate = 1
 binding = "TELEMETRY_KV"
 id = "15efd808adc6465985093413fe84a9d7"
 
+# OAuth2 browser-flow session state. Created with:
+#   wrangler kv namespace create OAUTH_KV
+# Replace the id below with the value wrangler prints.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "REPLACE_WITH_OAUTH_KV_NAMESPACE_ID"
+
 # Per-IP telemetry rate limit: 100 events per 60 seconds
 [[ratelimits]]
 name = "TELEMETRY_IP_LIMITER"
@@ -43,4 +53,15 @@ namespace_id = "1002"
 
 [ratelimits.simple]
 limit = 30
+period = 60
+
+# Per-IP polling throttle for the browser OAuth flow.
+# Plugins poll every ~2s, so 60/min leaves slack for one user
+# but blocks abusive loops.
+[[ratelimits]]
+name = "OAUTH_POLL_LIMITER"
+namespace_id = "1003"
+
+[ratelimits.simple]
+limit = 60
 period = 60

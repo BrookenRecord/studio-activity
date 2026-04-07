@@ -20,7 +20,12 @@ type _Messages = {
 	ProfileSelected: _ProfileSelectedMessage,
 	SessionError: _SessionErrorMessage,
 	PluginUnloaded: _PluginUnloadedMessage,
+	BrowserFlowStartRequest: _BrowserFlowStartRequestMessage,
+	BrowserFlowStartResponse: _BrowserFlowStartResponseMessage,
+	BrowserFlowPollRequest: _BrowserFlowPollRequestMessage,
+	BrowserFlowPollResponse: _BrowserFlowPollResponseMessage,
 	AccountLinkFlow: _AccountLinkFlowMessage,
+	BrowserFlowStatus: _BrowserFlowStatusMessage,
 }
 local messages: _Messages = {} :: _Messages
 
@@ -332,11 +337,126 @@ type _PluginUnloadedPartialFields = {}
 export type PluginUnloaded = typeof(setmetatable({} :: _PluginUnloadedFields, {} :: _PluginUnloadedImpl))
 type _PluginUnloadedMessage = proto.Message<PluginUnloaded, _PluginUnloadedPartialFields>
 
+type _BrowserFlowStartRequestImpl = {
+	__index: _BrowserFlowStartRequestImpl,
+	new: (fields: _BrowserFlowStartRequestPartialFields?) -> BrowserFlowStartRequest,
+	encode: (self: BrowserFlowStartRequest) -> buffer,
+	decode: (input: buffer) -> BrowserFlowStartRequest,
+	jsonEncode: (self: BrowserFlowStartRequest) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> BrowserFlowStartRequest,
+	descriptor: proto.Descriptor,
+}
+
+type _BrowserFlowStartRequestFields = {
+	codeChallenge: string,
+}
+
+type _BrowserFlowStartRequestPartialFields = {
+	codeChallenge: string?,
+}
+
+export type BrowserFlowStartRequest = typeof(setmetatable(
+	{} :: _BrowserFlowStartRequestFields,
+	{} :: _BrowserFlowStartRequestImpl
+))
+type _BrowserFlowStartRequestMessage = proto.Message<BrowserFlowStartRequest, _BrowserFlowStartRequestPartialFields>
+
+type _BrowserFlowStartResponseImpl = {
+	__index: _BrowserFlowStartResponseImpl,
+	new: (fields: _BrowserFlowStartResponsePartialFields?) -> BrowserFlowStartResponse,
+	encode: (self: BrowserFlowStartResponse) -> buffer,
+	decode: (input: buffer) -> BrowserFlowStartResponse,
+	jsonEncode: (self: BrowserFlowStartResponse) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> BrowserFlowStartResponse,
+	descriptor: proto.Descriptor,
+}
+
+type _BrowserFlowStartResponseFields = {
+	sessionToken: string,
+	startUrl: string,
+	redirectUri: string,
+	expiresIn: number,
+	pollInterval: number,
+}
+
+type _BrowserFlowStartResponsePartialFields = {
+	sessionToken: string?,
+	startUrl: string?,
+	redirectUri: string?,
+	expiresIn: number?,
+	pollInterval: number?,
+}
+
+export type BrowserFlowStartResponse = typeof(setmetatable(
+	{} :: _BrowserFlowStartResponseFields,
+	{} :: _BrowserFlowStartResponseImpl
+))
+type _BrowserFlowStartResponseMessage = proto.Message<BrowserFlowStartResponse, _BrowserFlowStartResponsePartialFields>
+
+type _BrowserFlowPollRequestImpl = {
+	__index: _BrowserFlowPollRequestImpl,
+	new: (fields: _BrowserFlowPollRequestPartialFields?) -> BrowserFlowPollRequest,
+	encode: (self: BrowserFlowPollRequest) -> buffer,
+	decode: (input: buffer) -> BrowserFlowPollRequest,
+	jsonEncode: (self: BrowserFlowPollRequest) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> BrowserFlowPollRequest,
+	descriptor: proto.Descriptor,
+}
+
+type _BrowserFlowPollRequestFields = {
+	sessionToken: string,
+}
+
+type _BrowserFlowPollRequestPartialFields = {
+	sessionToken: string?,
+}
+
+export type BrowserFlowPollRequest = typeof(setmetatable(
+	{} :: _BrowserFlowPollRequestFields,
+	{} :: _BrowserFlowPollRequestImpl
+))
+type _BrowserFlowPollRequestMessage = proto.Message<BrowserFlowPollRequest, _BrowserFlowPollRequestPartialFields>
+
+type _BrowserFlowPollResponseImpl = {
+	__index: _BrowserFlowPollResponseImpl,
+	new: (fields: _BrowserFlowPollResponsePartialFields?) -> BrowserFlowPollResponse,
+	encode: (self: BrowserFlowPollResponse) -> buffer,
+	decode: (input: buffer) -> BrowserFlowPollResponse,
+	jsonEncode: (self: BrowserFlowPollResponse) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> BrowserFlowPollResponse,
+	descriptor: proto.Descriptor,
+}
+
+type _BrowserFlowPollResponseFields = {
+	status: BrowserFlowStatus,
+	code: string,
+}
+
+type _BrowserFlowPollResponsePartialFields = {
+	status: BrowserFlowStatus?,
+	code: string?,
+}
+
+export type BrowserFlowPollResponse = typeof(setmetatable(
+	{} :: _BrowserFlowPollResponseFields,
+	{} :: _BrowserFlowPollResponseImpl
+))
+type _BrowserFlowPollResponseMessage = proto.Message<BrowserFlowPollResponse, _BrowserFlowPollResponsePartialFields>
+
 type _AccountLinkFlowMessage = proto.Enum<AccountLinkFlow>
 export type AccountLinkFlow =
 	"ACCOUNT_LINK_FLOW_UNSPECIFIED"
 	| "ACCOUNT_LINK_FLOW_DEVICE_CODE"
 	| "ACCOUNT_LINK_FLOW_BROWSER"
+	| number -- Unknown
+
+type _BrowserFlowStatusMessage = proto.Enum<BrowserFlowStatus>
+export type BrowserFlowStatus =
+	"BROWSER_FLOW_STATUS_UNSPECIFIED"
+	| "BROWSER_FLOW_STATUS_PENDING"
+	| "BROWSER_FLOW_STATUS_COMPLETE"
+	| "BROWSER_FLOW_STATUS_DENIED"
+	| "BROWSER_FLOW_STATUS_EXPIRED"
 	| number -- Unknown
 
 do
@@ -1907,6 +2027,501 @@ do
 	typeRegistry.default:register(messages.PluginUnloaded)
 end
 
+do
+	local _BrowserFlowStartRequestImpl = {}
+	_BrowserFlowStartRequestImpl.__index = _BrowserFlowStartRequestImpl
+
+	function _BrowserFlowStartRequestImpl.new(data: _BrowserFlowStartRequestPartialFields?): BrowserFlowStartRequest
+		return setmetatable({
+			codeChallenge = if data == nil or data.codeChallenge == nil then "" else data.codeChallenge,
+		}, _BrowserFlowStartRequestImpl :: _BrowserFlowStartRequestImpl)
+	end
+
+	function _BrowserFlowStartRequestImpl.encode(self: BrowserFlowStartRequest): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if self.codeChallenge ~= nil and self.codeChallenge ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.codeChallenge)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _BrowserFlowStartRequestImpl.decode(input: buffer): BrowserFlowStartRequest
+		local self = _BrowserFlowStartRequestImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				-- No fields
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 1 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.codeChallenge = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _BrowserFlowStartRequestImpl.jsonEncode(self: BrowserFlowStartRequest): any
+		local output = {}
+
+		if self.codeChallenge ~= nil and self.codeChallenge ~= "" then
+			output.codeChallenge = self.codeChallenge
+		end
+
+		return output
+	end
+
+	function _BrowserFlowStartRequestImpl.jsonDecode(input: { [string]: any }): BrowserFlowStartRequest
+		local self = _BrowserFlowStartRequestImpl.new()
+
+		if input.codeChallenge ~= nil then
+			self.codeChallenge = input.codeChallenge
+		end
+
+		return self
+	end
+
+	_BrowserFlowStartRequestImpl.descriptor = {
+		name = "BrowserFlowStartRequest",
+		fullName = "api.v1.BrowserFlowStartRequest",
+	}
+
+	messages.BrowserFlowStartRequest = _BrowserFlowStartRequestImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.BrowserFlowStartRequest)
+end
+
+do
+	local _BrowserFlowStartResponseImpl = {}
+	_BrowserFlowStartResponseImpl.__index = _BrowserFlowStartResponseImpl
+
+	function _BrowserFlowStartResponseImpl.new(data: _BrowserFlowStartResponsePartialFields?): BrowserFlowStartResponse
+		return setmetatable({
+			sessionToken = if data == nil or data.sessionToken == nil then "" else data.sessionToken,
+			startUrl = if data == nil or data.startUrl == nil then "" else data.startUrl,
+			redirectUri = if data == nil or data.redirectUri == nil then "" else data.redirectUri,
+			expiresIn = if data == nil or data.expiresIn == nil then 0 else data.expiresIn,
+			pollInterval = if data == nil or data.pollInterval == nil then 0 else data.pollInterval,
+		}, _BrowserFlowStartResponseImpl :: _BrowserFlowStartResponseImpl)
+	end
+
+	function _BrowserFlowStartResponseImpl.encode(self: BrowserFlowStartResponse): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if self.sessionToken ~= nil and self.sessionToken ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.sessionToken)
+		end
+
+		if self.startUrl ~= nil and self.startUrl ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.startUrl)
+		end
+
+		if self.redirectUri ~= nil and self.redirectUri ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 3, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.redirectUri)
+		end
+
+		if self.expiresIn ~= nil and self.expiresIn ~= 0 then
+			output, cursor = proto.writeTag(output, cursor, 4, proto.wireTypes.varint)
+			output, cursor = proto.writeVarInt(output, cursor, self.expiresIn)
+		end
+
+		if self.pollInterval ~= nil and self.pollInterval ~= 0 then
+			output, cursor = proto.writeTag(output, cursor, 5, proto.wireTypes.varint)
+			output, cursor = proto.writeVarInt(output, cursor, self.pollInterval)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _BrowserFlowStartResponseImpl.decode(input: buffer): BrowserFlowStartResponse
+		local self = _BrowserFlowStartResponseImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				if field == 4 then
+					local value
+					value, cursor = proto.readVarIntI32(input, cursor)
+					self.expiresIn = value
+					continue
+				elseif field == 5 then
+					local value
+					value, cursor = proto.readVarIntI32(input, cursor)
+					self.pollInterval = value
+					continue
+				end
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 1 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.sessionToken = proto.decodeString(value)
+					continue
+				elseif field == 2 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.startUrl = proto.decodeString(value)
+					continue
+				elseif field == 3 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.redirectUri = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _BrowserFlowStartResponseImpl.jsonEncode(self: BrowserFlowStartResponse): any
+		local output = {}
+
+		if self.sessionToken ~= nil and self.sessionToken ~= "" then
+			output.sessionToken = self.sessionToken
+		end
+
+		if self.startUrl ~= nil and self.startUrl ~= "" then
+			output.startUrl = self.startUrl
+		end
+
+		if self.redirectUri ~= nil and self.redirectUri ~= "" then
+			output.redirectUri = self.redirectUri
+		end
+
+		if self.expiresIn ~= nil and self.expiresIn ~= 0 then
+			output.expiresIn = self.expiresIn
+		end
+
+		if self.pollInterval ~= nil and self.pollInterval ~= 0 then
+			output.pollInterval = self.pollInterval
+		end
+
+		return output
+	end
+
+	function _BrowserFlowStartResponseImpl.jsonDecode(input: { [string]: any }): BrowserFlowStartResponse
+		local self = _BrowserFlowStartResponseImpl.new()
+
+		if input.sessionToken ~= nil then
+			self.sessionToken = input.sessionToken
+		end
+
+		if input.startUrl ~= nil then
+			self.startUrl = input.startUrl
+		end
+
+		if input.redirectUri ~= nil then
+			self.redirectUri = input.redirectUri
+		end
+
+		if input.expiresIn ~= nil then
+			self.expiresIn = input.expiresIn
+		end
+
+		if input.pollInterval ~= nil then
+			self.pollInterval = input.pollInterval
+		end
+
+		return self
+	end
+
+	_BrowserFlowStartResponseImpl.descriptor = {
+		name = "BrowserFlowStartResponse",
+		fullName = "api.v1.BrowserFlowStartResponse",
+	}
+
+	messages.BrowserFlowStartResponse = _BrowserFlowStartResponseImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.BrowserFlowStartResponse)
+end
+
+do
+	local _BrowserFlowPollRequestImpl = {}
+	_BrowserFlowPollRequestImpl.__index = _BrowserFlowPollRequestImpl
+
+	function _BrowserFlowPollRequestImpl.new(data: _BrowserFlowPollRequestPartialFields?): BrowserFlowPollRequest
+		return setmetatable({
+			sessionToken = if data == nil or data.sessionToken == nil then "" else data.sessionToken,
+		}, _BrowserFlowPollRequestImpl :: _BrowserFlowPollRequestImpl)
+	end
+
+	function _BrowserFlowPollRequestImpl.encode(self: BrowserFlowPollRequest): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if self.sessionToken ~= nil and self.sessionToken ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.sessionToken)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _BrowserFlowPollRequestImpl.decode(input: buffer): BrowserFlowPollRequest
+		local self = _BrowserFlowPollRequestImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				-- No fields
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 1 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.sessionToken = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _BrowserFlowPollRequestImpl.jsonEncode(self: BrowserFlowPollRequest): any
+		local output = {}
+
+		if self.sessionToken ~= nil and self.sessionToken ~= "" then
+			output.sessionToken = self.sessionToken
+		end
+
+		return output
+	end
+
+	function _BrowserFlowPollRequestImpl.jsonDecode(input: { [string]: any }): BrowserFlowPollRequest
+		local self = _BrowserFlowPollRequestImpl.new()
+
+		if input.sessionToken ~= nil then
+			self.sessionToken = input.sessionToken
+		end
+
+		return self
+	end
+
+	_BrowserFlowPollRequestImpl.descriptor = {
+		name = "BrowserFlowPollRequest",
+		fullName = "api.v1.BrowserFlowPollRequest",
+	}
+
+	messages.BrowserFlowPollRequest = _BrowserFlowPollRequestImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.BrowserFlowPollRequest)
+end
+
+do
+	local _BrowserFlowPollResponseImpl = {}
+	_BrowserFlowPollResponseImpl.__index = _BrowserFlowPollResponseImpl
+
+	function _BrowserFlowPollResponseImpl.new(data: _BrowserFlowPollResponsePartialFields?): BrowserFlowPollResponse
+		return setmetatable({
+			status = if data == nil or data.status == nil
+				then assert(messages.BrowserFlowStatus.fromNumber(0), "Enum has no 0 default")
+				else data.status,
+			code = if data == nil or data.code == nil then "" else data.code,
+		}, _BrowserFlowPollResponseImpl :: _BrowserFlowPollResponseImpl)
+	end
+
+	function _BrowserFlowPollResponseImpl.encode(self: BrowserFlowPollResponse): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if
+			self.status ~= nil
+			and (self.status ~= nil and self.status ~= 0 or self.status ~= messages.BrowserFlowStatus.fromNumber(0))
+		then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
+			output, cursor = proto.writeVarInt(output, cursor, messages.BrowserFlowStatus.toNumber(self.status :: any))
+		end
+
+		if self.code ~= nil and self.code ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.code)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _BrowserFlowPollResponseImpl.decode(input: buffer): BrowserFlowPollResponse
+		local self = _BrowserFlowPollResponseImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				if field == 1 then
+					local value
+					value, cursor = proto.readVarIntI32(input, cursor)
+					self.status = (messages.BrowserFlowStatus.fromNumber(value) or value) :: any --[[ Luau: Enums are a string intersection which Luau is quick to dismantle ]]
+					continue
+				end
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 2 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.code = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _BrowserFlowPollResponseImpl.jsonEncode(self: BrowserFlowPollResponse): any
+		local output = {}
+
+		if
+			self.status ~= nil
+			and (self.status ~= nil and self.status ~= 0 or self.status ~= messages.BrowserFlowStatus.fromNumber(0))
+		then
+			output.status = if typeof(self.status) == "number"
+				then self.status
+				else messages.BrowserFlowStatus.toNumber(self.status :: any)
+		end
+
+		if self.code ~= nil and self.code ~= "" then
+			output.code = self.code
+		end
+
+		return output
+	end
+
+	function _BrowserFlowPollResponseImpl.jsonDecode(input: { [string]: any }): BrowserFlowPollResponse
+		local self = _BrowserFlowPollResponseImpl.new()
+
+		if input.status ~= nil then
+			self.status = if typeof(input.status) == "number"
+				then (messages.BrowserFlowStatus.fromNumber(input.status) or input.status)
+				else (messages.BrowserFlowStatus.fromName(input.status) or input.status)
+		end
+
+		if input.code ~= nil then
+			self.code = input.code
+		end
+
+		return self
+	end
+
+	_BrowserFlowPollResponseImpl.descriptor = {
+		name = "BrowserFlowPollResponse",
+		fullName = "api.v1.BrowserFlowPollResponse",
+	}
+
+	messages.BrowserFlowPollResponse = _BrowserFlowPollResponseImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.BrowserFlowPollResponse)
+end
+
 messages.AccountLinkFlow = {
 	fromNumber = function(value: number): AccountLinkFlow?
 		if value == 0 then
@@ -1945,6 +2560,56 @@ messages.AccountLinkFlow = {
 	end,
 }
 
+messages.BrowserFlowStatus = {
+	fromNumber = function(value: number): BrowserFlowStatus?
+		if value == 0 then
+			return "BROWSER_FLOW_STATUS_UNSPECIFIED"
+		elseif value == 1 then
+			return "BROWSER_FLOW_STATUS_PENDING"
+		elseif value == 2 then
+			return "BROWSER_FLOW_STATUS_COMPLETE"
+		elseif value == 3 then
+			return "BROWSER_FLOW_STATUS_DENIED"
+		elseif value == 4 then
+			return "BROWSER_FLOW_STATUS_EXPIRED"
+		else
+			return nil
+		end
+	end,
+
+	toNumber = function(self: BrowserFlowStatus): number
+		if self == "BROWSER_FLOW_STATUS_UNSPECIFIED" then
+			return 0
+		elseif self == "BROWSER_FLOW_STATUS_PENDING" then
+			return 1
+		elseif self == "BROWSER_FLOW_STATUS_COMPLETE" then
+			return 2
+		elseif self == "BROWSER_FLOW_STATUS_DENIED" then
+			return 3
+		elseif self == "BROWSER_FLOW_STATUS_EXPIRED" then
+			return 4
+		else
+			return self
+		end
+	end,
+
+	fromName = function(name: string): BrowserFlowStatus?
+		if name == "BROWSER_FLOW_STATUS_UNSPECIFIED" then
+			return "BROWSER_FLOW_STATUS_UNSPECIFIED"
+		elseif name == "BROWSER_FLOW_STATUS_PENDING" then
+			return "BROWSER_FLOW_STATUS_PENDING"
+		elseif name == "BROWSER_FLOW_STATUS_COMPLETE" then
+			return "BROWSER_FLOW_STATUS_COMPLETE"
+		elseif name == "BROWSER_FLOW_STATUS_DENIED" then
+			return "BROWSER_FLOW_STATUS_DENIED"
+		elseif name == "BROWSER_FLOW_STATUS_EXPIRED" then
+			return "BROWSER_FLOW_STATUS_EXPIRED"
+		else
+			return nil
+		end
+	end,
+}
+
 return {
 	TelemetryRequest = messages.TelemetryRequest,
 	PluginLoaded = messages.PluginLoaded,
@@ -1959,5 +2624,10 @@ return {
 	ProfileSelected = messages.ProfileSelected,
 	SessionError = messages.SessionError,
 	PluginUnloaded = messages.PluginUnloaded,
+	BrowserFlowStartRequest = messages.BrowserFlowStartRequest,
+	BrowserFlowStartResponse = messages.BrowserFlowStartResponse,
+	BrowserFlowPollRequest = messages.BrowserFlowPollRequest,
+	BrowserFlowPollResponse = messages.BrowserFlowPollResponse,
 	AccountLinkFlow = messages.AccountLinkFlow,
+	BrowserFlowStatus = messages.BrowserFlowStatus,
 }

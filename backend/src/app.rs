@@ -43,6 +43,19 @@ pub fn build_router() -> Router<AppState> {
         .route("/", get(routes::gh_redirect))
         .route("/health", get(routes::health))
         .route("/v1/telemetry", post(routes::telemetry))
+        .route("/start/{token}", get(routes::oauth_browser::start_redirect))
+        .route(
+            "/v1/oauth/browser/start",
+            post(routes::oauth_browser::start_session),
+        )
+        .route(
+            "/v1/oauth/browser/poll",
+            post(routes::oauth_browser::poll_session),
+        )
+        .route(
+            "/v1/oauth/browser/callback",
+            get(routes::oauth_browser::discord_callback),
+        )
 }
 
 pub async fn handle(

@@ -12,6 +12,7 @@ worker = { version = "0.7", features = ['http', 'axum'] }
 worker-macros = { version = "0.7", features = ['http'] }
 axum = { version = "0.8", features = [
     'json',
+    'query',
     'tracing',
 ], default-features = false }
 tower-service = "0.3.3"
@@ -28,6 +29,9 @@ thiserror = "2.0.17"
 http = "1.4.0"
 once_cell = "1.21.4"
 uuid = { version = "1.23.0", features = ["js", "v4"] }
+nanoid = "0.4"
+url = "2"
+getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

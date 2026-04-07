@@ -77,11 +77,10 @@ function codegen.run(options_: Options?): boolean
 	end
 
 	if options.generateProtos then
-		local result = process.exec("npm", {
-			"run",
-			"proto:generate",
+		local result = process.exec("buf", {
+			"generate",
 		}, {
-			cwd = "backend",
+			cwd = "protos",
 		})
 
 		if not result.ok then

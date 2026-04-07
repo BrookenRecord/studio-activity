@@ -43,8 +43,12 @@ export type SlowDownProblem = { type: "slow_down" }
 export type ExpiredTokenProblem = { type: "expired_token" }
 export type AccessDeniedProblem = { type: "access_denied" }
 
--- OAuth2 token endpoint (refresh)
+-- OAuth2 token endpoint (refresh, code exchange)
 export type InvalidGrantProblem = { type: "invalid_grant" }
+
+-- OAuth2 token endpoint (authorization code exchange)
+export type InvalidRequestProblem = { type: "invalid_request", description: string? }
+export type InvalidClientProblem = { type: "invalid_client" }
 
 -- OAuth2 token endpoint (device code request)
 export type InvalidScopeProblem = { type: "invalid_scope", description: string? }
@@ -70,6 +74,13 @@ export type DeviceCodeExchangeProblem =
 	| UnexpectedProblem
 
 export type RefreshProblem = InvalidGrantProblem | NetworkProblem | UnexpectedProblem
+
+export type AuthCodeExchangeProblem =
+	| InvalidGrantProblem
+	| InvalidRequestProblem
+	| InvalidClientProblem
+	| NetworkProblem
+	| UnexpectedProblem
 
 export type AuthenticatedProblem = UnauthorizedProblem | RateLimitedProblem | NetworkProblem | UnexpectedProblem
 
@@ -425,6 +436,68 @@ local function new(config: Config)
 		return Result.err(unexpected(res.value))
 	end
 
+	--[[
+		Exchange an authorization code (from the browser PKCE flow)
+		for tokens.
+
+		POST /oauth2/token
+
+		Discord receives `code + code_verifier + client_id + redirect_uri`.
+		The redirect_uri must be byte-identical to the one passed to the
+		authorize endpoint, so the caller must use the value the backend
+		handed back from /v1/oauth/browser/start.
+
+		The backend never sees the verifier or the resulting tokens —
+		this request goes directly to Discord.
+	]]
+	local function exchangeAuthorizationCodeAsync(
+		code: string,
+		codeVerifier: string,
+		redirectUri: string
+	): Result.Result<TokenResult, AuthCodeExchangeProblem>
+		local params = baseParams()
+		params.grant_type = "authorization_code"
+		params.code = code
+		params.code_verifier = codeVerifier
+		params.redirect_uri = redirectUri
+
+		local res = postFormAsync(`{apiBase}/oauth2/token`, params)
+		if not res.ok then
+			-- Network error
+			return Result.err(res.error)
+		end
+
+		if res.value.statusCode == 200 and type(res.value.body) == "table" then
+			local body = res.value.body
+			return Result.ok<<TokenResult>>({
+				accessToken = body.access_token,
+				refreshToken = body.refresh_token,
+				expiresAt = os.time() + (body.expires_in or 604800),
+				scope = body.scope,
+				tokenType = body.token_type,
+			})
+		end
+
+		if res.value.statusCode == 400 or res.value.statusCode == 401 then
+			local err = oauthError(res.value.body)
+
+			if err == "invalid_grant" then
+				return Result.err<<InvalidGrantProblem>>({ type = "invalid_grant" })
+			end
+			if err == "invalid_request" then
+				return Result.err<<InvalidRequestProblem>>({
+					type = "invalid_request",
+					description = if type(res.value.body) == "table" then res.value.body.error_description else nil,
+				})
+			end
+			if err == "invalid_client" then
+				return Result.err<<InvalidClientProblem>>({ type = "invalid_client" })
+			end
+		end
+
+		return Result.err(unexpected(res.value))
+	end
+
 	-- ────────────────────────────────────────────────────────
 	-- OAuth2: Token refresh
 	-- ────────────────────────────────────────────────────────
@@ -738,6 +811,7 @@ local function new(config: Config)
 	return table.freeze({
 		requestDeviceCodeAsync = requestDeviceCodeAsync,
 		exchangeDeviceCodeAsync = exchangeDeviceCodeAsync,
+		exchangeAuthorizationCodeAsync = exchangeAuthorizationCodeAsync,
 		refreshTokenAsync = refreshTokenAsync,
 		getCurrentUserAsync = getCurrentUserAsync,
 		getUserAvatarAsync = getUserAvatarAsync,
