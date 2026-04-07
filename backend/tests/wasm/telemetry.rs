@@ -4,10 +4,9 @@ use tower::ServiceExt;
 use wasm_bindgen_test::*;
 
 use backend::posthog::decompose_event;
-use backend::proto::api::v1::{
-    telemetry_request, AccountLinked, BrowserFlowFailed, DeviceCodeFlowFailed,
-    OnboardingCompleted, PluginLoaded, PresenceToggled, ProfileSelected, SessionError,
-    TelemetryRequest,
+use backend::proto::{
+    telemetry_request, AccountLinked, BrowserFlowFailed, DeviceCodeFlowFailed, OnboardingCompleted,
+    PluginLoaded, PresenceToggled, ProfileSelected, SessionError, TelemetryRequest,
 };
 
 use crate::helpers::{inject_edge, mock_edge_context, test_router};
