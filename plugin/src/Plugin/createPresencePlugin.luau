@@ -6,8 +6,9 @@ local ReactRoblox = require(Packages.ReactRoblox)
 
 local ContextProviders = require(Plugin.Source.Common.ContextProviders)
 local Logger = require(Plugin.Source.Logger)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 local createPluginLoader = require(Plugin.Bin.createPluginLoader)
-local fireEvent = require(Plugin.Source.Telemetry.fireEventAsync)
 
 local PluginApp = require(script.Parent.PluginApp)
 
@@ -48,7 +49,7 @@ local function createPresencePlugin(plugin: Plugin, pluginLoaderContext: createP
 		end)
 		Logger:Info(`mounted app in {elapsedMs}`)
 
-		fireEvent({ eventName = "UiOpened" })
+		Telemetry.fireEvent({ type = "uiOpened", value = Types.UiOpened.new() })
 	end
 
 	local function destroy()

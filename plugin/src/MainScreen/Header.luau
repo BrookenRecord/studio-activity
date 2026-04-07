@@ -8,6 +8,8 @@ local ReactUtils = require(Packages.ReactUtils)
 
 local PluginWordmark = require(Plugin.Source.Common.PluginWordmark)
 local PresenceManager = require(Plugin.Source.PresenceManager)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 
 local View = Foundation.View
 local Text = Foundation.Text
@@ -34,7 +36,12 @@ local function Header(props: Props)
 	local isActive = useSignalState(presenceManager.getIsActive)
 
 	local toggleActive = useCallback(function()
-		presenceManager.setIsActive(not presenceManager.getIsActive())
+		local newState = not presenceManager.getIsActive()
+		presenceManager.setIsActive(newState)
+		Telemetry.fireEvent({
+			type = "presenceToggled",
+			value = Types.PresenceToggled.new({ isActive = newState }),
+		})
 	end, { presenceManager })
 
 	return e(View, {

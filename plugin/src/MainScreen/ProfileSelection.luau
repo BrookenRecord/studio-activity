@@ -9,6 +9,8 @@ local ReactUtils = require(Packages.ReactUtils)
 
 local ProfileStore = require(Plugin.Source.PresenceManager.ProfileStore)
 local Section = require(script.Parent.Section)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 
 local View = Foundation.View
 local Dropdown = Foundation.Dropdown
@@ -117,6 +119,10 @@ local function ProfileSelection(props: Props)
 					onItemChanged = function(id)
 						if type(id) == "string" then
 							profileStore.setActiveProfile(id)
+							Telemetry.fireEvent({
+								type = "profileSelected",
+								value = Types.ProfileSelected.new({ profile = id }),
+							})
 						end
 					end,
 					LayoutOrder = nextOrder(),

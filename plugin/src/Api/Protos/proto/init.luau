@@ -308,8 +308,41 @@ function proto.writeBuffer(output: buffer, cursor: number, input: buffer, length
 	return output, cursor + length
 end
 
+-- U+FFFD REPLACEMENT CHARACTER in UTF-8
+-- selene: allow(bad_string_escape)
+local UNICODE_REPLACEMENT_CHARACTER = "\xEF\xBF\xBD"
+
+-- This puts in more Unicode replacement characters than it should, or at least more than Rust does.
+-- fn main() {
+--    let x = String::from_utf8_lossy(b"\xE0\xA0");
+--    println!("{x}");
+--}
+-- ...only prints one replacement character, which is apparently more correct.
+local function sanitizeUtf8(input: string): string
+	while true do
+		local length, invalidBytePosition = utf8.len(input)
+		if length ~= nil then
+			return input
+		end
+
+		if invalidBytePosition == nil then
+			-- Entire string is bad
+			return string.rep(UNICODE_REPLACEMENT_CHARACTER, #input)
+		else
+			input = input:sub(1, invalidBytePosition - 1)
+				.. UNICODE_REPLACEMENT_CHARACTER
+				.. input:sub(invalidBytePosition + 1)
+		end
+	end
+end
+
 function proto.writeString(output: buffer, cursor: number, text: string): (buffer, number)
+	text = sanitizeUtf8(text)
 	return proto.writeBuffer(output, cursor, buffer.fromstring(text), #text)
+end
+
+function proto.decodeString(input: buffer): string
+	return sanitizeUtf8(buffer.tostring(input))
 end
 
 proto.json = {}

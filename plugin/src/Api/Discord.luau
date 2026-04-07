@@ -748,7 +748,7 @@ local function new(config: Config)
 	})
 end
 
-export type DiscordApi = typeof(new(nil :: any))
+export type DiscordApi = typeof(new(...))
 
 return table.freeze({
 	new = new,

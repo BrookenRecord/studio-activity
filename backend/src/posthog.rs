@@ -25,7 +25,7 @@ use serde_json::{json, Value};
 use worker::wasm_bindgen::JsValue;
 use worker::{Fetch, Headers, Method, Request, RequestInit};
 
-use crate::proto::api::v1::{telemetry_request::Event, TelemetryRequest};
+use crate::proto::{telemetry_request::Event, TelemetryRequest};
 
 const POSTHOG_CAPTURE_PATH: &str = "/i/v0/e/";
 const LIB_NAME: &str = "studio-activity-backend";

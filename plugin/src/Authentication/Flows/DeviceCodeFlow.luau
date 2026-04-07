@@ -32,6 +32,8 @@ local Charm = require(Packages.Charm)
 
 local AccountStore = require(script.Parent.Parent.AccountStore)
 local DiscordApi = require(Plugin.Source.Api.Discord)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 
 local signal = Charm.signal
 local batch = Charm.batch
@@ -107,6 +109,11 @@ local function create(config: Config)
 				message = `Request failed ({err.statusCode})`
 			end
 
+			Telemetry.fireEvent({
+				type = "deviceCodeFlowFailed",
+				value = Types.DeviceCodeFlowFailed.new({ error = err.type :: string }),
+			})
+
 			batch(function()
 				setStatus("error")
 				setErrorMessage(message)
@@ -144,11 +151,15 @@ local function create(config: Config)
 					accessToken = token.accessToken,
 					refreshToken = token.refreshToken or "",
 					expiresAt = token.expiresAt,
-				})
+				}, "ACCOUNT_LINK_FLOW_DEVICE_CODE")
 
 				if addOk then
 					setStatus("authorized")
 				else
+					Telemetry.fireEvent({
+						type = "deviceCodeFlowFailed",
+						value = Types.DeviceCodeFlowFailed.new({ error = "add_user_failed" }),
+					})
 					batch(function()
 						setStatus("error")
 						setErrorMessage("Failed to link account")
@@ -169,6 +180,10 @@ local function create(config: Config)
 			end
 
 			if errType == "expired_token" then
+				Telemetry.fireEvent({
+					type = "deviceCodeFlowFailed",
+					value = Types.DeviceCodeFlowFailed.new({ error = "expired" }),
+				})
 				batch(function()
 					setStatus("expired")
 					setSessionInfo(nil)
@@ -177,6 +192,10 @@ local function create(config: Config)
 			end
 
 			if errType == "access_denied" then
+				Telemetry.fireEvent({
+					type = "deviceCodeFlowFailed",
+					value = Types.DeviceCodeFlowFailed.new({ error = "denied" }),
+				})
 				batch(function()
 					setStatus("denied")
 					setSessionInfo(nil)
@@ -191,6 +210,11 @@ local function create(config: Config)
 			else
 				message = `Polling failed ({(pollResult.error :: DiscordApi.UnexpectedProblem).statusCode})`
 			end
+
+			Telemetry.fireEvent({
+				type = "deviceCodeFlowFailed",
+				value = Types.DeviceCodeFlowFailed.new({ error = errType }),
+			})
 
 			batch(function()
 				setStatus("error")

@@ -4,7 +4,7 @@ use worker::send::SendFuture;
 use crate::error::AppError;
 use crate::extractors::{AppJson, Edge, WorkerContext, WorkerEnv};
 use crate::posthog;
-use crate::proto::api::v1::TelemetryRequest;
+use crate::proto::TelemetryRequest;
 
 const DEFAULT_POSTHOG_HOST: &str = "https://us.i.posthog.com";
 const MAX_DISTINCT_IDS_PER_IP: usize = 3;

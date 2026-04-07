@@ -2,3 +2,5 @@ version: v2
 plugins:
   - local: protoc-gen-luau
     out: ../plugin/src/Api/Protos
+    opt:
+      - field_name_case=camel

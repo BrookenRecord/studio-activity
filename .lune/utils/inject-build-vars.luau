@@ -40,7 +40,7 @@ local function injectBuildVars(config: Config)
 
 		api = {
 			secure = isProd,
-			host = if isProd then "presence.brooke.sh" else "localhost:8787",
+			host = if isProd then "activity.brooke.sh" else "localhost:8787",
 		},
 
 		discord = {

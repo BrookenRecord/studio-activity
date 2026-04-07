@@ -8,12 +8,16 @@ local effect = Charm.effect
 local peek = Charm.peek
 
 local DiscordApi = require(Plugin.Source.Api.Discord)
+local api = require(Plugin.Source.Api.Protos.api.v1.api)
 type ApiUser = DiscordApi.User
 type AvatarImage = DiscordApi.AvatarImage
+type AccountLinkFlow = api.AccountLinkFlow
 
 local AuthStore = require(script.Parent.Parent.AuthStore)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 
 export type LocalUser =
 	| {
@@ -41,7 +45,7 @@ export type AccountStore = {
 	cachedUsers: () -> { [string]: LocalUser },
 	cachedUserImages: () -> { [string]: AvatarImage },
 
-	addUserAsync: (account: AuthStore.Account) -> boolean,
+	addUserAsync: (account: AuthStore.Account, linkFlow: AccountLinkFlow) -> boolean,
 	removeUser: (id: string) -> (),
 	destroy: () -> (),
 }
@@ -234,7 +238,7 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		end)
 	end)
 
-	local function addUserAsync(account: AuthStore.Account): boolean
+	local function addUserAsync(account: AuthStore.Account, linkFlow: AccountLinkFlow): boolean
 		-- This is a duplicate API call but we need to do it to get the user ID.
 		-- It's only a duplicate in the adding a new user case.
 		local detailsResult = discord.getCurrentUserAsync(account.accessToken)
@@ -252,6 +256,20 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		end)
 
 		NotificationStore.get().push("info", `Linked account {detailsResult.value.username}`)
+
+		local accountCount = 0
+		for _ in auth.getStorage().accounts do
+			accountCount += 1
+		end
+		Telemetry.fireEvent({
+			type = "accountLinked",
+			value = Types.AccountLinked.new({
+				accountCount = accountCount,
+				isFirstAccount = accountCount == 1,
+				linkFlow = linkFlow :: any,
+			}),
+		})
+
 		return true
 	end
 
@@ -262,6 +280,15 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			new.accounts[id] = nil
 			return new
 		end)
+
+		local accountCount = 0
+		for _ in auth.getStorage().accounts do
+			accountCount += 1
+		end
+		Telemetry.fireEvent({
+			type = "accountRemoved",
+			value = Types.AccountRemoved.new({ accountCount = accountCount }),
+		})
 	end
 
 	local function destroy()

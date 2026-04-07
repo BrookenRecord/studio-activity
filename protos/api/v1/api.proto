@@ -22,7 +22,8 @@ message TelemetryRequest {
     OnboardingCompleted onboarding_completed = 12;
     AccountLinkStarted account_link_started = 13;
     AccountLinked account_linked = 14;
-    AccountLinkFailed account_link_failed = 15;
+    DeviceCodeFlowFailed device_code_flow_failed = 15;
+    BrowserFlowFailed browser_flow_failed = 21;
     AccountRemoved account_removed = 16;
     PresenceToggled presence_toggled = 17;
     ProfileSelected profile_selected = 18;
@@ -50,14 +51,27 @@ message OnboardingCompleted {
 // User opened the Add Account sheet.
 message AccountLinkStarted {}
 
+// Which OAuth linking flow completed successfully.
+enum AccountLinkFlow {
+  ACCOUNT_LINK_FLOW_UNSPECIFIED = 0;
+  ACCOUNT_LINK_FLOW_DEVICE_CODE = 1;
+  ACCOUNT_LINK_FLOW_BROWSER = 2;
+}
+
 // A Discord account was successfully linked.
 message AccountLinked {
   int32 account_count = 1;
   bool is_first_account = 2;
+  AccountLinkFlow link_flow = 3;
 }
 
-// The account linking auth flow ended in error.
-message AccountLinkFailed {
+// The device code (QR / user code) auth flow ended in error.
+message DeviceCodeFlowFailed {
+  string error = 1;
+}
+
+// The browser-based auth flow ended in error.
+message BrowserFlowFailed {
   string error = 1;
 }
 

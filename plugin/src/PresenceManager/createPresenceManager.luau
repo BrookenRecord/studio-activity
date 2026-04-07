@@ -13,6 +13,8 @@ local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 
 local signal = Charm.signal
 local computed = Charm.computed
@@ -187,6 +189,10 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			if errorType == "unauthorized" then
 				Logger:Warn(`{context}: unauthorized (attempt {attempt}/{MAX_RETRIES})`)
 				NotificationStore.get().push("error", "Discord session expired — re-link your account")
+				Telemetry.fireEvent({
+					type = "sessionError",
+					value = Types.SessionError.new({ error = "session_expired" }),
+				})
 				return result
 			end
 
@@ -194,6 +200,10 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			if attempt == MAX_RETRIES then
 				Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
 				NotificationStore.get().push("error", "Failed to update Discord presence")
+				Telemetry.fireEvent({
+					type = "sessionError",
+					value = Types.SessionError.new({ error = "max_retries" }),
+				})
 				return result
 			end
 
@@ -266,6 +276,10 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 		if err.type == "invalid_grant" then
 			Logger:Warn(`Refresh token invalid for account {accountId} — user needs to re-link`)
 			NotificationStore.get().push("error", "Discord session expired — re-link your account")
+			Telemetry.fireEvent({
+				type = "sessionError",
+				value = Types.SessionError.new({ error = "refresh_invalid" }),
+			})
 			return nil
 		end
 
@@ -351,6 +365,10 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					if err.type == "unauthorized" then
 						Logger:Warn(`PresenceManager: auth token expired for account {id}, skipping session create`)
 						NotificationStore.get().push("error", "Discord session expired — re-link your account")
+						Telemetry.fireEvent({
+							type = "sessionError",
+							value = Types.SessionError.new({ error = "session_expired" }),
+						})
 					else
 						Logger:Warn(
 							`PresenceManager: update failed for account {id} ({err.type}), attempting new session`
@@ -503,6 +521,10 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 					if err.type == "unauthorized" then
 						Logger:Warn(`PresenceManager: auth token expired for account {id}, removing session`)
 						NotificationStore.get().push("error", "Discord session expired — re-link your account")
+						Telemetry.fireEvent({
+							type = "sessionError",
+							value = Types.SessionError.new({ error = "session_expired" }),
+						})
 						sessionTokens[id] = nil
 					end
 				end

@@ -16,21 +16,34 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Rerun if protos change
     println!("cargo:rerun-if-changed={}", proto_root.display());
     for proto in &protos {
         println!("cargo:rerun-if-changed={}", proto.display());
     }
 
+    // Step 1: Generate prost types into a known directory
+    let descriptor_path =
+        std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("proto_descriptor.bin");
+
     let mut config = prost_build::Config::new();
-    config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
+    config.file_descriptor_set_path(&descriptor_path);
+    config.compile_well_known_types();
+
+    // Give the oneof enum a plain serde Serialize so decompose_event()
+    // can split it into (event_name, properties) via the externally-tagged
+    // representation. pbjson handles everything else.
     config.type_attribute(
-        ".",
-        "#[serde(rename_all(serialize = \"snake_case\", deserialize = \"camelCase\"))]",
+        ".api.v1.TelemetryRequest.event",
+        "#[derive(serde::Serialize)]",
     );
-    config.message_attribute(".", "#[serde(default, deny_unknown_fields)]");
 
     config.compile_protos(&protos, &[proto_root])?;
+
+    // Step 2: Generate pbjson serde impls from the descriptor
+    let descriptor_set = std::fs::read(&descriptor_path)?;
+    pbjson_build::Builder::new()
+        .register_descriptors(&descriptor_set)?
+        .build(&[".api"])?;
 
     Ok(())
 }

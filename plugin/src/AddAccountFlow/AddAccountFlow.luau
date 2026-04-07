@@ -5,6 +5,9 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
+
 local AuthContext = require(script.Parent.AuthContext)
 local StartPage = require(script.Parent.StartPage.StartPage)
 local Title = require(script.Parent.Title)
@@ -13,6 +16,7 @@ local Sheet = Foundation.Sheet
 local DialogSize = Foundation.Enums.DialogSize
 
 local createNextOrder = ReactUtils.createNextOrder
+local useEffect = React.useEffect
 
 local e = React.createElement
 
@@ -23,6 +27,12 @@ type Props = {
 
 local function AddAccountFlow(props: Props)
 	local nextOrder = createNextOrder()
+
+	useEffect(function()
+		if props.isOpen then
+			Telemetry.fireEvent({ type = "accountLinkStarted", value = Types.AccountLinkStarted.new() })
+		end
+	end, { props.isOpen })
 
 	return e(Sheet.Root, {
 		isOpen = props.isOpen,

@@ -1,88 +1,43 @@
--- The events in this file mirror the TelemetryRequest oneof in the backend.
--- The backend must be updated first before adding new events.
+--[[
+	Re-exports protobuf-generated telemetry event constructors.
 
-export type PluginLoaded = {
-	eventName: "PluginLoaded",
-	properties: {
-		accountCount: number,
-		isPresenceActive: boolean,
-		activeProfile: string,
-	},
-}
+	Callers use this module instead of importing from the codegen path directly:
 
-export type UiOpened = {
-	eventName: "UiOpened",
-}
+		local Types = require(Telemetry.Types)
+		local event = { type = "pluginLoaded", value = Types.PluginLoaded.new({ ... }) }
+]]
 
-export type OnboardingCompleted = {
-	eventName: "OnboardingCompleted",
-	properties: {
-		optedIntoTelemetry: boolean,
-	},
-}
+local Plugin = script:FindFirstAncestor("StudioActivity")
+local api = require(Plugin.Source.Api.Protos.api.v1.api)
 
-export type AccountLinkStarted = {
-	eventName: "AccountLinkStarted",
-}
-
-export type AccountLinked = {
-	eventName: "AccountLinked",
-	properties: {
-		accountCount: number,
-		isFirstAccount: boolean,
-	},
-}
-
-export type AccountLinkFailed = {
-	eventName: "AccountLinkFailed",
-	properties: {
-		error: string,
-	},
-}
-
-export type AccountRemoved = {
-	eventName: "AccountRemoved",
-	properties: {
-		accountCount: number,
-	},
-}
-
-export type PresenceToggled = {
-	eventName: "PresenceToggled",
-	properties: {
-		isActive: boolean,
-	},
-}
-
-export type ProfileSelected = {
-	eventName: "ProfileSelected",
-	properties: {
-		profile: string,
-	},
-}
-
-export type SessionError = {
-	eventName: "SessionError",
-	properties: {
-		error: string,
-	},
-}
-
-export type PluginUnloaded = {
-	eventName: "PluginUnloaded",
-}
+export type AccountLinkFlow = api.AccountLinkFlow
 
 export type TelemetryEvent =
-	| PluginLoaded
-	| UiOpened
-	| OnboardingCompleted
-	| AccountLinkStarted
-	| AccountLinked
-	| AccountLinkFailed
-	| AccountRemoved
-	| PresenceToggled
-	| ProfileSelected
-	| SessionError
-	| PluginUnloaded
+	{ type: "pluginLoaded", value: api.PluginLoaded }
+	| { type: "uiOpened", value: api.UiOpened }
+	| { type: "onboardingCompleted", value: api.OnboardingCompleted }
+	| { type: "accountLinkStarted", value: api.AccountLinkStarted }
+	| { type: "accountLinked", value: api.AccountLinked }
+	| { type: "deviceCodeFlowFailed", value: api.DeviceCodeFlowFailed }
+	| { type: "browserFlowFailed", value: api.BrowserFlowFailed }
+	| { type: "accountRemoved", value: api.AccountRemoved }
+	| { type: "presenceToggled", value: api.PresenceToggled }
+	| { type: "profileSelected", value: api.ProfileSelected }
+	| { type: "sessionError", value: api.SessionError }
+	| { type: "pluginUnloaded", value: api.PluginUnloaded }
 
-return nil
+return table.freeze({
+	AccountLinkFlow = api.AccountLinkFlow,
+	PluginLoaded = api.PluginLoaded,
+	UiOpened = api.UiOpened,
+	OnboardingCompleted = api.OnboardingCompleted,
+	AccountLinkStarted = api.AccountLinkStarted,
+	AccountLinked = api.AccountLinked,
+	DeviceCodeFlowFailed = api.DeviceCodeFlowFailed,
+	BrowserFlowFailed = api.BrowserFlowFailed,
+	AccountRemoved = api.AccountRemoved,
+	PresenceToggled = api.PresenceToggled,
+	ProfileSelected = api.ProfileSelected,
+	SessionError = api.SessionError,
+	PluginUnloaded = api.PluginUnloaded,
+})

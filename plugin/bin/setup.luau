@@ -3,6 +3,8 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 
+local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
+local Types = require(Plugin.Source.Telemetry.Types)
 local createPluginLoader = require(script.Parent.createPluginLoader)
 
 export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> () -> ()
@@ -34,6 +36,32 @@ local function setup(plugin: Plugin, main: PluginMain)
 	local disposeProfileEffect = Charm.effect(function()
 		presenceManager.setActivity(profileStore.getResolvedActivity())
 	end)
+
+	-- Fire PluginLoaded with current user state so PostHog can track
+	-- active users and keep person properties up to date each session.
+	local AuthStore = require(Plugin.Source.Authentication.AuthStore)
+	local authStorage = AuthStore.get().getStorage()
+	local accountCount = 0
+	for _ in authStorage.accounts do
+		accountCount += 1
+	end
+
+	-- We don't want to report custom profile names to telemetry, only built-in
+	-- profiles.
+	local activeProfile = profileStore.getActiveProfile()
+	local activeProfileName = if activeProfile == nil
+		then "unknown"
+		elseif activeProfile.isPreset then activeProfile.name
+		else "custom"
+
+	Telemetry.fireEvent({
+		type = "pluginLoaded",
+		value = Types.PluginLoaded.new({
+			accountCount = accountCount,
+			isPresenceActive = presenceManager.getIsActive(),
+			activeProfile = activeProfileName,
+		}),
+	})
 
 	local pluginLoaderContext = createPluginLoader({
 		plugin = plugin,
@@ -77,6 +105,12 @@ local function setup(plugin: Plugin, main: PluginMain)
 	local destroyMain: (() -> ())? = nil
 
 	plugin.Unloading:Connect(function()
+		Telemetry.fireEvent({
+			type = "pluginUnloaded",
+			value = Types.PluginUnloaded.new(),
+		})
+		Telemetry.flushAll()
+
 		if destroyMain then
 			destroyMain()
 		end

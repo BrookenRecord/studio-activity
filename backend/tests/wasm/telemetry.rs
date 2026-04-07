@@ -5,8 +5,9 @@ use wasm_bindgen_test::*;
 
 use backend::posthog::decompose_event;
 use backend::proto::api::v1::{
-    telemetry_request, AccountLinkFailed, AccountLinked, OnboardingCompleted, PluginLoaded,
-    PresenceToggled, ProfileSelected, SessionError, TelemetryRequest,
+    telemetry_request, AccountLinked, BrowserFlowFailed, DeviceCodeFlowFailed,
+    OnboardingCompleted, PluginLoaded, PresenceToggled, ProfileSelected, SessionError,
+    TelemetryRequest,
 };
 
 use crate::helpers::{inject_edge, mock_edge_context, test_router};
@@ -91,7 +92,11 @@ async fn deserialize_account_linked() {
     let json = r#"{
         "distinctId": "user-4",
         "event": {
-            "accountLinked": { "accountCount": 1, "isFirstAccount": true }
+            "accountLinked": {
+                "accountCount": 1,
+                "isFirstAccount": true,
+                "linkFlow": 1
+            }
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
@@ -100,24 +105,42 @@ async fn deserialize_account_linked() {
         Some(telemetry_request::Event::AccountLinked(AccountLinked {
             account_count: 1,
             is_first_account: true,
+            link_flow: 1,
         }))
     ));
 }
 
 #[wasm_bindgen_test]
-async fn deserialize_account_link_failed() {
+async fn deserialize_device_code_flow_failed() {
     let json = r#"{
         "distinctId": "user-5",
         "event": {
-            "accountLinkFailed": { "error": "expired" }
+            "deviceCodeFlowFailed": { "error": "expired" }
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
-        Some(telemetry_request::Event::AccountLinkFailed(AccountLinkFailed { error })) => {
+        Some(telemetry_request::Event::DeviceCodeFlowFailed(DeviceCodeFlowFailed { error })) => {
             assert_eq!(error, "expired");
         }
-        other => panic!("expected AccountLinkFailed, got {other:?}"),
+        other => panic!("expected DeviceCodeFlowFailed, got {other:?}"),
+    }
+}
+
+#[wasm_bindgen_test]
+async fn deserialize_browser_flow_failed() {
+    let json = r#"{
+        "distinctId": "user-5b",
+        "event": {
+            "browserFlowFailed": { "error": "timeout" }
+        }
+    }"#;
+    let req: TelemetryRequest = serde_json::from_str(json).unwrap();
+    match req.event {
+        Some(telemetry_request::Event::BrowserFlowFailed(BrowserFlowFailed { error })) => {
+            assert_eq!(error, "timeout");
+        }
+        other => panic!("expected BrowserFlowFailed, got {other:?}"),
     }
 }
 
@@ -248,11 +271,13 @@ async fn decompose_includes_event_properties() {
     let event = telemetry_request::Event::AccountLinked(AccountLinked {
         account_count: 2,
         is_first_account: false,
+        link_flow: 1,
     });
     let (name, props) = decompose_event(&event);
     assert_eq!(name, "account_linked");
     assert_eq!(props["account_count"], 2);
     assert_eq!(props["is_first_account"], false);
+    assert_eq!(props["link_flow"], 1);
 }
 
 #[wasm_bindgen_test]

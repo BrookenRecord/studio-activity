@@ -13,12 +13,14 @@ type _Messages = {
 	OnboardingCompleted: _OnboardingCompletedMessage,
 	AccountLinkStarted: _AccountLinkStartedMessage,
 	AccountLinked: _AccountLinkedMessage,
-	AccountLinkFailed: _AccountLinkFailedMessage,
+	DeviceCodeFlowFailed: _DeviceCodeFlowFailedMessage,
+	BrowserFlowFailed: _BrowserFlowFailedMessage,
 	AccountRemoved: _AccountRemovedMessage,
 	PresenceToggled: _PresenceToggledMessage,
 	ProfileSelected: _ProfileSelectedMessage,
 	SessionError: _SessionErrorMessage,
 	PluginUnloaded: _PluginUnloadedMessage,
+	AccountLinkFlow: _AccountLinkFlowMessage,
 }
 local messages: _Messages = {} :: _Messages
 
@@ -33,44 +35,46 @@ type _TelemetryRequestImpl = {
 }
 
 type _TelemetryRequestFields = {
-	distinct_id: string,
-	plugin_version: string,
-	plugin_channel: string,
-	plugin_hash: string,
-	session_id: string,
+	distinctId: string,
+	pluginVersion: string,
+	pluginChannel: string,
+	pluginHash: string,
+	sessionId: string,
 	event: (
-		{ type: "plugin_loaded", value: PluginLoaded }
-		| { type: "ui_opened", value: UiOpened }
-		| { type: "onboarding_completed", value: OnboardingCompleted }
-		| { type: "account_link_started", value: AccountLinkStarted }
-		| { type: "account_linked", value: AccountLinked }
-		| { type: "account_link_failed", value: AccountLinkFailed }
-		| { type: "account_removed", value: AccountRemoved }
-		| { type: "presence_toggled", value: PresenceToggled }
-		| { type: "profile_selected", value: ProfileSelected }
-		| { type: "session_error", value: SessionError }
-		| { type: "plugin_unloaded", value: PluginUnloaded }
+		{ type: "pluginLoaded", value: PluginLoaded }
+		| { type: "uiOpened", value: UiOpened }
+		| { type: "onboardingCompleted", value: OnboardingCompleted }
+		| { type: "accountLinkStarted", value: AccountLinkStarted }
+		| { type: "accountLinked", value: AccountLinked }
+		| { type: "deviceCodeFlowFailed", value: DeviceCodeFlowFailed }
+		| { type: "browserFlowFailed", value: BrowserFlowFailed }
+		| { type: "accountRemoved", value: AccountRemoved }
+		| { type: "presenceToggled", value: PresenceToggled }
+		| { type: "profileSelected", value: ProfileSelected }
+		| { type: "sessionError", value: SessionError }
+		| { type: "pluginUnloaded", value: PluginUnloaded }
 	)?,
 }
 
 type _TelemetryRequestPartialFields = {
-	distinct_id: string?,
-	plugin_version: string?,
-	plugin_channel: string?,
-	plugin_hash: string?,
-	session_id: string?,
+	distinctId: string?,
+	pluginVersion: string?,
+	pluginChannel: string?,
+	pluginHash: string?,
+	sessionId: string?,
 	event: (
-		{ type: "plugin_loaded", value: PluginLoaded }
-		| { type: "ui_opened", value: UiOpened }
-		| { type: "onboarding_completed", value: OnboardingCompleted }
-		| { type: "account_link_started", value: AccountLinkStarted }
-		| { type: "account_linked", value: AccountLinked }
-		| { type: "account_link_failed", value: AccountLinkFailed }
-		| { type: "account_removed", value: AccountRemoved }
-		| { type: "presence_toggled", value: PresenceToggled }
-		| { type: "profile_selected", value: ProfileSelected }
-		| { type: "session_error", value: SessionError }
-		| { type: "plugin_unloaded", value: PluginUnloaded }
+		{ type: "pluginLoaded", value: PluginLoaded }
+		| { type: "uiOpened", value: UiOpened }
+		| { type: "onboardingCompleted", value: OnboardingCompleted }
+		| { type: "accountLinkStarted", value: AccountLinkStarted }
+		| { type: "accountLinked", value: AccountLinked }
+		| { type: "deviceCodeFlowFailed", value: DeviceCodeFlowFailed }
+		| { type: "browserFlowFailed", value: BrowserFlowFailed }
+		| { type: "accountRemoved", value: AccountRemoved }
+		| { type: "presenceToggled", value: PresenceToggled }
+		| { type: "profileSelected", value: ProfileSelected }
+		| { type: "sessionError", value: SessionError }
+		| { type: "pluginUnloaded", value: PluginUnloaded }
 	)?,
 }
 
@@ -88,15 +92,15 @@ type _PluginLoadedImpl = {
 }
 
 type _PluginLoadedFields = {
-	account_count: number,
-	is_presence_active: boolean,
-	active_profile: string,
+	accountCount: number,
+	isPresenceActive: boolean,
+	activeProfile: string,
 }
 
 type _PluginLoadedPartialFields = {
-	account_count: number?,
-	is_presence_active: boolean?,
-	active_profile: string?,
+	accountCount: number?,
+	isPresenceActive: boolean?,
+	activeProfile: string?,
 }
 
 export type PluginLoaded = typeof(setmetatable({} :: _PluginLoadedFields, {} :: _PluginLoadedImpl))
@@ -130,11 +134,11 @@ type _OnboardingCompletedImpl = {
 }
 
 type _OnboardingCompletedFields = {
-	opted_into_telemetry: boolean,
+	optedIntoTelemetry: boolean,
 }
 
 type _OnboardingCompletedPartialFields = {
-	opted_into_telemetry: boolean?,
+	optedIntoTelemetry: boolean?,
 }
 
 export type OnboardingCompleted = typeof(setmetatable({} :: _OnboardingCompletedFields, {} :: _OnboardingCompletedImpl))
@@ -168,38 +172,64 @@ type _AccountLinkedImpl = {
 }
 
 type _AccountLinkedFields = {
-	account_count: number,
-	is_first_account: boolean,
+	accountCount: number,
+	isFirstAccount: boolean,
+	linkFlow: AccountLinkFlow,
 }
 
 type _AccountLinkedPartialFields = {
-	account_count: number?,
-	is_first_account: boolean?,
+	accountCount: number?,
+	isFirstAccount: boolean?,
+	linkFlow: AccountLinkFlow?,
 }
 
 export type AccountLinked = typeof(setmetatable({} :: _AccountLinkedFields, {} :: _AccountLinkedImpl))
 type _AccountLinkedMessage = proto.Message<AccountLinked, _AccountLinkedPartialFields>
 
-type _AccountLinkFailedImpl = {
-	__index: _AccountLinkFailedImpl,
-	new: (fields: _AccountLinkFailedPartialFields?) -> AccountLinkFailed,
-	encode: (self: AccountLinkFailed) -> buffer,
-	decode: (input: buffer) -> AccountLinkFailed,
-	jsonEncode: (self: AccountLinkFailed) -> { [string]: any },
-	jsonDecode: (input: { [string]: any }) -> AccountLinkFailed,
+type _DeviceCodeFlowFailedImpl = {
+	__index: _DeviceCodeFlowFailedImpl,
+	new: (fields: _DeviceCodeFlowFailedPartialFields?) -> DeviceCodeFlowFailed,
+	encode: (self: DeviceCodeFlowFailed) -> buffer,
+	decode: (input: buffer) -> DeviceCodeFlowFailed,
+	jsonEncode: (self: DeviceCodeFlowFailed) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> DeviceCodeFlowFailed,
 	descriptor: proto.Descriptor,
 }
 
-type _AccountLinkFailedFields = {
+type _DeviceCodeFlowFailedFields = {
 	error: string,
 }
 
-type _AccountLinkFailedPartialFields = {
+type _DeviceCodeFlowFailedPartialFields = {
 	error: string?,
 }
 
-export type AccountLinkFailed = typeof(setmetatable({} :: _AccountLinkFailedFields, {} :: _AccountLinkFailedImpl))
-type _AccountLinkFailedMessage = proto.Message<AccountLinkFailed, _AccountLinkFailedPartialFields>
+export type DeviceCodeFlowFailed = typeof(setmetatable(
+	{} :: _DeviceCodeFlowFailedFields,
+	{} :: _DeviceCodeFlowFailedImpl
+))
+type _DeviceCodeFlowFailedMessage = proto.Message<DeviceCodeFlowFailed, _DeviceCodeFlowFailedPartialFields>
+
+type _BrowserFlowFailedImpl = {
+	__index: _BrowserFlowFailedImpl,
+	new: (fields: _BrowserFlowFailedPartialFields?) -> BrowserFlowFailed,
+	encode: (self: BrowserFlowFailed) -> buffer,
+	decode: (input: buffer) -> BrowserFlowFailed,
+	jsonEncode: (self: BrowserFlowFailed) -> { [string]: any },
+	jsonDecode: (input: { [string]: any }) -> BrowserFlowFailed,
+	descriptor: proto.Descriptor,
+}
+
+type _BrowserFlowFailedFields = {
+	error: string,
+}
+
+type _BrowserFlowFailedPartialFields = {
+	error: string?,
+}
+
+export type BrowserFlowFailed = typeof(setmetatable({} :: _BrowserFlowFailedFields, {} :: _BrowserFlowFailedImpl))
+type _BrowserFlowFailedMessage = proto.Message<BrowserFlowFailed, _BrowserFlowFailedPartialFields>
 
 type _AccountRemovedImpl = {
 	__index: _AccountRemovedImpl,
@@ -212,11 +242,11 @@ type _AccountRemovedImpl = {
 }
 
 type _AccountRemovedFields = {
-	account_count: number,
+	accountCount: number,
 }
 
 type _AccountRemovedPartialFields = {
-	account_count: number?,
+	accountCount: number?,
 }
 
 export type AccountRemoved = typeof(setmetatable({} :: _AccountRemovedFields, {} :: _AccountRemovedImpl))
@@ -233,11 +263,11 @@ type _PresenceToggledImpl = {
 }
 
 type _PresenceToggledFields = {
-	is_active: boolean,
+	isActive: boolean,
 }
 
 type _PresenceToggledPartialFields = {
-	is_active: boolean?,
+	isActive: boolean?,
 }
 
 export type PresenceToggled = typeof(setmetatable({} :: _PresenceToggledFields, {} :: _PresenceToggledImpl))
@@ -302,17 +332,24 @@ type _PluginUnloadedPartialFields = {}
 export type PluginUnloaded = typeof(setmetatable({} :: _PluginUnloadedFields, {} :: _PluginUnloadedImpl))
 type _PluginUnloadedMessage = proto.Message<PluginUnloaded, _PluginUnloadedPartialFields>
 
+type _AccountLinkFlowMessage = proto.Enum<AccountLinkFlow>
+export type AccountLinkFlow =
+	"ACCOUNT_LINK_FLOW_UNSPECIFIED"
+	| "ACCOUNT_LINK_FLOW_DEVICE_CODE"
+	| "ACCOUNT_LINK_FLOW_BROWSER"
+	| number -- Unknown
+
 do
 	local _TelemetryRequestImpl = {}
 	_TelemetryRequestImpl.__index = _TelemetryRequestImpl
 
 	function _TelemetryRequestImpl.new(data: _TelemetryRequestPartialFields?): TelemetryRequest
 		return setmetatable({
-			distinct_id = if data == nil or data.distinct_id == nil then "" else data.distinct_id,
-			plugin_version = if data == nil or data.plugin_version == nil then "" else data.plugin_version,
-			plugin_channel = if data == nil or data.plugin_channel == nil then "" else data.plugin_channel,
-			plugin_hash = if data == nil or data.plugin_hash == nil then "" else data.plugin_hash,
-			session_id = if data == nil or data.session_id == nil then "" else data.session_id,
+			distinctId = if data == nil or data.distinctId == nil then "" else data.distinctId,
+			pluginVersion = if data == nil or data.pluginVersion == nil then "" else data.pluginVersion,
+			pluginChannel = if data == nil or data.pluginChannel == nil then "" else data.pluginChannel,
+			pluginHash = if data == nil or data.pluginHash == nil then "" else data.pluginHash,
+			sessionId = if data == nil or data.sessionId == nil then "" else data.sessionId,
 			event = if data == nil or data.event == nil then nil else data.event,
 		}, _TelemetryRequestImpl :: _TelemetryRequestImpl)
 	end
@@ -321,73 +358,77 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.distinct_id ~= nil and self.distinct_id ~= "" then
+		if self.distinctId ~= nil and self.distinctId ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.distinct_id)
+			output, cursor = proto.writeString(output, cursor, self.distinctId)
 		end
 
-		if self.plugin_version ~= nil and self.plugin_version ~= "" then
+		if self.pluginVersion ~= nil and self.pluginVersion ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.plugin_version)
+			output, cursor = proto.writeString(output, cursor, self.pluginVersion)
 		end
 
-		if self.plugin_channel ~= nil and self.plugin_channel ~= "" then
+		if self.pluginChannel ~= nil and self.pluginChannel ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 3, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.plugin_channel)
+			output, cursor = proto.writeString(output, cursor, self.pluginChannel)
 		end
 
-		if self.plugin_hash ~= nil and self.plugin_hash ~= "" then
+		if self.pluginHash ~= nil and self.pluginHash ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 4, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.plugin_hash)
+			output, cursor = proto.writeString(output, cursor, self.pluginHash)
 		end
 
-		if self.session_id ~= nil and self.session_id ~= "" then
+		if self.sessionId ~= nil and self.sessionId ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 5, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.session_id)
+			output, cursor = proto.writeString(output, cursor, self.sessionId)
 		end
 
 		if self.event ~= nil then
-			if self.event.type == "plugin_loaded" then
+			if self.event.type == "pluginLoaded" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 10, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "ui_opened" then
+			elseif self.event.type == "uiOpened" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 11, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "onboarding_completed" then
+			elseif self.event.type == "onboardingCompleted" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 12, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "account_link_started" then
+			elseif self.event.type == "accountLinkStarted" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 13, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "account_linked" then
+			elseif self.event.type == "accountLinked" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 14, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "account_link_failed" then
+			elseif self.event.type == "deviceCodeFlowFailed" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 15, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "account_removed" then
+			elseif self.event.type == "browserFlowFailed" then
+				local encoded = self.event.value:encode()
+				output, cursor = proto.writeTag(output, cursor, 21, proto.wireTypes.lengthDelimited)
+				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
+			elseif self.event.type == "accountRemoved" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 16, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "presence_toggled" then
+			elseif self.event.type == "presenceToggled" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 17, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "profile_selected" then
+			elseif self.event.type == "profileSelected" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 18, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "session_error" then
+			elseif self.event.type == "sessionError" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 19, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
-			elseif self.event.type == "plugin_unloaded" then
+			elseif self.event.type == "pluginUnloaded" then
 				local encoded = self.event.value:encode()
 				output, cursor = proto.writeTag(output, cursor, 20, proto.wireTypes.lengthDelimited)
 				output, cursor = proto.writeBuffer(output, cursor, encoded, buffer.len(encoded))
@@ -416,82 +457,87 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.distinct_id = buffer.tostring(value)
+					self.distinctId = proto.decodeString(value)
 					continue
 				elseif field == 2 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.plugin_version = buffer.tostring(value)
+					self.pluginVersion = proto.decodeString(value)
 					continue
 				elseif field == 3 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.plugin_channel = buffer.tostring(value)
+					self.pluginChannel = proto.decodeString(value)
 					continue
 				elseif field == 4 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.plugin_hash = buffer.tostring(value)
+					self.pluginHash = proto.decodeString(value)
 					continue
 				elseif field == 5 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.session_id = buffer.tostring(value)
+					self.sessionId = proto.decodeString(value)
 					continue
 				elseif field == 10 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "plugin_loaded", value = messages.PluginLoaded.decode(value) }
+					self.event = { type = "pluginLoaded", value = messages.PluginLoaded.decode(value) }
 					continue
 				elseif field == 11 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "ui_opened", value = messages.UiOpened.decode(value) }
+					self.event = { type = "uiOpened", value = messages.UiOpened.decode(value) }
 					continue
 				elseif field == 12 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "onboarding_completed", value = messages.OnboardingCompleted.decode(value) }
+					self.event = { type = "onboardingCompleted", value = messages.OnboardingCompleted.decode(value) }
 					continue
 				elseif field == 13 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "account_link_started", value = messages.AccountLinkStarted.decode(value) }
+					self.event = { type = "accountLinkStarted", value = messages.AccountLinkStarted.decode(value) }
 					continue
 				elseif field == 14 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "account_linked", value = messages.AccountLinked.decode(value) }
+					self.event = { type = "accountLinked", value = messages.AccountLinked.decode(value) }
 					continue
 				elseif field == 15 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "account_link_failed", value = messages.AccountLinkFailed.decode(value) }
+					self.event = { type = "deviceCodeFlowFailed", value = messages.DeviceCodeFlowFailed.decode(value) }
 					continue
 				elseif field == 16 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "account_removed", value = messages.AccountRemoved.decode(value) }
+					self.event = { type = "accountRemoved", value = messages.AccountRemoved.decode(value) }
 					continue
 				elseif field == 17 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "presence_toggled", value = messages.PresenceToggled.decode(value) }
+					self.event = { type = "presenceToggled", value = messages.PresenceToggled.decode(value) }
 					continue
 				elseif field == 18 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "profile_selected", value = messages.ProfileSelected.decode(value) }
+					self.event = { type = "profileSelected", value = messages.ProfileSelected.decode(value) }
 					continue
 				elseif field == 19 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "session_error", value = messages.SessionError.decode(value) }
+					self.event = { type = "sessionError", value = messages.SessionError.decode(value) }
 					continue
 				elseif field == 20 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.event = { type = "plugin_unloaded", value = messages.PluginUnloaded.decode(value) }
+					self.event = { type = "pluginUnloaded", value = messages.PluginUnloaded.decode(value) }
+					continue
+				elseif field == 21 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.event = { type = "browserFlowFailed", value = messages.BrowserFlowFailed.decode(value) }
 					continue
 				end
 
@@ -520,48 +566,50 @@ do
 	function _TelemetryRequestImpl.jsonEncode(self: TelemetryRequest): any
 		local output = {}
 
-		if self.distinct_id ~= nil and self.distinct_id ~= "" then
-			output.distinctId = self.distinct_id
+		if self.distinctId ~= nil and self.distinctId ~= "" then
+			output.distinctId = self.distinctId
 		end
 
-		if self.plugin_version ~= nil and self.plugin_version ~= "" then
-			output.pluginVersion = self.plugin_version
+		if self.pluginVersion ~= nil and self.pluginVersion ~= "" then
+			output.pluginVersion = self.pluginVersion
 		end
 
-		if self.plugin_channel ~= nil and self.plugin_channel ~= "" then
-			output.pluginChannel = self.plugin_channel
+		if self.pluginChannel ~= nil and self.pluginChannel ~= "" then
+			output.pluginChannel = self.pluginChannel
 		end
 
-		if self.plugin_hash ~= nil and self.plugin_hash ~= "" then
-			output.pluginHash = self.plugin_hash
+		if self.pluginHash ~= nil and self.pluginHash ~= "" then
+			output.pluginHash = self.pluginHash
 		end
 
-		if self.session_id ~= nil and self.session_id ~= "" then
-			output.sessionId = self.session_id
+		if self.sessionId ~= nil and self.sessionId ~= "" then
+			output.sessionId = self.sessionId
 		end
 
 		if self.event ~= nil then
-			if self.event.type == "plugin_loaded" then
+			if self.event.type == "pluginLoaded" then
 				output.pluginLoaded = self.event.value:jsonEncode()
-			elseif self.event.type == "ui_opened" then
+			elseif self.event.type == "uiOpened" then
 				output.uiOpened = self.event.value:jsonEncode()
-			elseif self.event.type == "onboarding_completed" then
+			elseif self.event.type == "onboardingCompleted" then
 				output.onboardingCompleted = self.event.value:jsonEncode()
-			elseif self.event.type == "account_link_started" then
+			elseif self.event.type == "accountLinkStarted" then
 				output.accountLinkStarted = self.event.value:jsonEncode()
-			elseif self.event.type == "account_linked" then
+			elseif self.event.type == "accountLinked" then
 				output.accountLinked = self.event.value:jsonEncode()
-			elseif self.event.type == "account_link_failed" then
-				output.accountLinkFailed = self.event.value:jsonEncode()
-			elseif self.event.type == "account_removed" then
+			elseif self.event.type == "deviceCodeFlowFailed" then
+				output.deviceCodeFlowFailed = self.event.value:jsonEncode()
+			elseif self.event.type == "browserFlowFailed" then
+				output.browserFlowFailed = self.event.value:jsonEncode()
+			elseif self.event.type == "accountRemoved" then
 				output.accountRemoved = self.event.value:jsonEncode()
-			elseif self.event.type == "presence_toggled" then
+			elseif self.event.type == "presenceToggled" then
 				output.presenceToggled = self.event.value:jsonEncode()
-			elseif self.event.type == "profile_selected" then
+			elseif self.event.type == "profileSelected" then
 				output.profileSelected = self.event.value:jsonEncode()
-			elseif self.event.type == "session_error" then
+			elseif self.event.type == "sessionError" then
 				output.sessionError = self.event.value:jsonEncode()
-			elseif self.event.type == "plugin_unloaded" then
+			elseif self.event.type == "pluginUnloaded" then
 				output.pluginUnloaded = self.event.value:jsonEncode()
 			end
 		end
@@ -572,152 +620,84 @@ do
 	function _TelemetryRequestImpl.jsonDecode(input: { [string]: any }): TelemetryRequest
 		local self = _TelemetryRequestImpl.new()
 
-		if input.distinct_id ~= nil then
-			self.distinct_id = input.distinct_id
-		end
-
 		if input.distinctId ~= nil then
-			self.distinct_id = input.distinctId
-		end
-
-		if input.plugin_version ~= nil then
-			self.plugin_version = input.plugin_version
+			self.distinctId = input.distinctId
 		end
 
 		if input.pluginVersion ~= nil then
-			self.plugin_version = input.pluginVersion
-		end
-
-		if input.plugin_channel ~= nil then
-			self.plugin_channel = input.plugin_channel
+			self.pluginVersion = input.pluginVersion
 		end
 
 		if input.pluginChannel ~= nil then
-			self.plugin_channel = input.pluginChannel
-		end
-
-		if input.plugin_hash ~= nil then
-			self.plugin_hash = input.plugin_hash
+			self.pluginChannel = input.pluginChannel
 		end
 
 		if input.pluginHash ~= nil then
-			self.plugin_hash = input.pluginHash
-		end
-
-		if input.session_id ~= nil then
-			self.session_id = input.session_id
+			self.pluginHash = input.pluginHash
 		end
 
 		if input.sessionId ~= nil then
-			self.session_id = input.sessionId
-		end
-
-		if input.plugin_loaded ~= nil then
-			self.event = { type = "plugin_loaded", value = messages.PluginLoaded.jsonDecode(input.plugin_loaded) }
+			self.sessionId = input.sessionId
 		end
 
 		if input.pluginLoaded ~= nil then
-			self.event = { type = "plugin_loaded", value = messages.PluginLoaded.jsonDecode(input.pluginLoaded) }
-		end
-
-		if input.ui_opened ~= nil then
-			self.event = { type = "ui_opened", value = messages.UiOpened.jsonDecode(input.ui_opened) }
+			self.event = { type = "pluginLoaded", value = messages.PluginLoaded.jsonDecode(input.pluginLoaded) }
 		end
 
 		if input.uiOpened ~= nil then
-			self.event = { type = "ui_opened", value = messages.UiOpened.jsonDecode(input.uiOpened) }
-		end
-
-		if input.onboarding_completed ~= nil then
-			self.event = {
-				type = "onboarding_completed",
-				value = messages.OnboardingCompleted.jsonDecode(input.onboarding_completed),
-			}
+			self.event = { type = "uiOpened", value = messages.UiOpened.jsonDecode(input.uiOpened) }
 		end
 
 		if input.onboardingCompleted ~= nil then
 			self.event = {
-				type = "onboarding_completed",
+				type = "onboardingCompleted",
 				value = messages.OnboardingCompleted.jsonDecode(input.onboardingCompleted),
-			}
-		end
-
-		if input.account_link_started ~= nil then
-			self.event = {
-				type = "account_link_started",
-				value = messages.AccountLinkStarted.jsonDecode(input.account_link_started),
 			}
 		end
 
 		if input.accountLinkStarted ~= nil then
 			self.event = {
-				type = "account_link_started",
+				type = "accountLinkStarted",
 				value = messages.AccountLinkStarted.jsonDecode(input.accountLinkStarted),
 			}
 		end
 
-		if input.account_linked ~= nil then
-			self.event = { type = "account_linked", value = messages.AccountLinked.jsonDecode(input.account_linked) }
-		end
-
 		if input.accountLinked ~= nil then
-			self.event = { type = "account_linked", value = messages.AccountLinked.jsonDecode(input.accountLinked) }
+			self.event = { type = "accountLinked", value = messages.AccountLinked.jsonDecode(input.accountLinked) }
 		end
 
-		if input.account_link_failed ~= nil then
+		if input.deviceCodeFlowFailed ~= nil then
 			self.event = {
-				type = "account_link_failed",
-				value = messages.AccountLinkFailed.jsonDecode(input.account_link_failed),
+				type = "deviceCodeFlowFailed",
+				value = messages.DeviceCodeFlowFailed.jsonDecode(input.deviceCodeFlowFailed),
 			}
 		end
 
-		if input.accountLinkFailed ~= nil then
+		if input.browserFlowFailed ~= nil then
 			self.event =
-				{ type = "account_link_failed", value = messages.AccountLinkFailed.jsonDecode(input.accountLinkFailed) }
-		end
-
-		if input.account_removed ~= nil then
-			self.event = { type = "account_removed", value = messages.AccountRemoved.jsonDecode(input.account_removed) }
+				{ type = "browserFlowFailed", value = messages.BrowserFlowFailed.jsonDecode(input.browserFlowFailed) }
 		end
 
 		if input.accountRemoved ~= nil then
-			self.event = { type = "account_removed", value = messages.AccountRemoved.jsonDecode(input.accountRemoved) }
-		end
-
-		if input.presence_toggled ~= nil then
-			self.event =
-				{ type = "presence_toggled", value = messages.PresenceToggled.jsonDecode(input.presence_toggled) }
+			self.event = { type = "accountRemoved", value = messages.AccountRemoved.jsonDecode(input.accountRemoved) }
 		end
 
 		if input.presenceToggled ~= nil then
 			self.event =
-				{ type = "presence_toggled", value = messages.PresenceToggled.jsonDecode(input.presenceToggled) }
-		end
-
-		if input.profile_selected ~= nil then
-			self.event =
-				{ type = "profile_selected", value = messages.ProfileSelected.jsonDecode(input.profile_selected) }
+				{ type = "presenceToggled", value = messages.PresenceToggled.jsonDecode(input.presenceToggled) }
 		end
 
 		if input.profileSelected ~= nil then
 			self.event =
-				{ type = "profile_selected", value = messages.ProfileSelected.jsonDecode(input.profileSelected) }
-		end
-
-		if input.session_error ~= nil then
-			self.event = { type = "session_error", value = messages.SessionError.jsonDecode(input.session_error) }
+				{ type = "profileSelected", value = messages.ProfileSelected.jsonDecode(input.profileSelected) }
 		end
 
 		if input.sessionError ~= nil then
-			self.event = { type = "session_error", value = messages.SessionError.jsonDecode(input.sessionError) }
-		end
-
-		if input.plugin_unloaded ~= nil then
-			self.event = { type = "plugin_unloaded", value = messages.PluginUnloaded.jsonDecode(input.plugin_unloaded) }
+			self.event = { type = "sessionError", value = messages.SessionError.jsonDecode(input.sessionError) }
 		end
 
 		if input.pluginUnloaded ~= nil then
-			self.event = { type = "plugin_unloaded", value = messages.PluginUnloaded.jsonDecode(input.pluginUnloaded) }
+			self.event = { type = "pluginUnloaded", value = messages.PluginUnloaded.jsonDecode(input.pluginUnloaded) }
 		end
 
 		return self
@@ -739,11 +719,9 @@ do
 
 	function _PluginLoadedImpl.new(data: _PluginLoadedPartialFields?): PluginLoaded
 		return setmetatable({
-			account_count = if data == nil or data.account_count == nil then 0 else data.account_count,
-			is_presence_active = if data == nil or data.is_presence_active == nil
-				then false
-				else data.is_presence_active,
-			active_profile = if data == nil or data.active_profile == nil then "" else data.active_profile,
+			accountCount = if data == nil or data.accountCount == nil then 0 else data.accountCount,
+			isPresenceActive = if data == nil or data.isPresenceActive == nil then false else data.isPresenceActive,
+			activeProfile = if data == nil or data.activeProfile == nil then "" else data.activeProfile,
 		}, _PluginLoadedImpl :: _PluginLoadedImpl)
 	end
 
@@ -751,19 +729,19 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, self.account_count)
+			output, cursor = proto.writeVarInt(output, cursor, self.accountCount)
 		end
 
-		if self.is_presence_active then
+		if self.isPresenceActive then
 			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, if self.is_presence_active then 1 else 0)
+			output, cursor = proto.writeVarInt(output, cursor, if self.isPresenceActive then 1 else 0)
 		end
 
-		if self.active_profile ~= nil and self.active_profile ~= "" then
+		if self.activeProfile ~= nil and self.activeProfile ~= "" then
 			output, cursor = proto.writeTag(output, cursor, 3, proto.wireTypes.lengthDelimited)
-			output, cursor = proto.writeString(output, cursor, self.active_profile)
+			output, cursor = proto.writeString(output, cursor, self.activeProfile)
 		end
 
 		local shrunkBuffer = buffer.create(cursor)
@@ -783,12 +761,12 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readVarIntI32(input, cursor)
-					self.account_count = value
+					self.accountCount = value
 					continue
 				elseif field == 2 then
 					local value
 					value, cursor = proto.readVarInt(input, cursor)
-					self.is_presence_active = value ~= 0
+					self.isPresenceActive = value ~= 0
 					continue
 				end
 
@@ -798,7 +776,7 @@ do
 				if field == 3 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.active_profile = buffer.tostring(value)
+					self.activeProfile = proto.decodeString(value)
 					continue
 				end
 
@@ -827,16 +805,16 @@ do
 	function _PluginLoadedImpl.jsonEncode(self: PluginLoaded): any
 		local output = {}
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
-			output.accountCount = self.account_count
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
+			output.accountCount = self.accountCount
 		end
 
-		if self.is_presence_active then
-			output.isPresenceActive = self.is_presence_active
+		if self.isPresenceActive then
+			output.isPresenceActive = self.isPresenceActive
 		end
 
-		if self.active_profile ~= nil and self.active_profile ~= "" then
-			output.activeProfile = self.active_profile
+		if self.activeProfile ~= nil and self.activeProfile ~= "" then
+			output.activeProfile = self.activeProfile
 		end
 
 		return output
@@ -845,28 +823,16 @@ do
 	function _PluginLoadedImpl.jsonDecode(input: { [string]: any }): PluginLoaded
 		local self = _PluginLoadedImpl.new()
 
-		if input.account_count ~= nil then
-			self.account_count = input.account_count
-		end
-
 		if input.accountCount ~= nil then
-			self.account_count = input.accountCount
-		end
-
-		if input.is_presence_active ~= nil then
-			self.is_presence_active = input.is_presence_active
+			self.accountCount = input.accountCount
 		end
 
 		if input.isPresenceActive ~= nil then
-			self.is_presence_active = input.isPresenceActive
-		end
-
-		if input.active_profile ~= nil then
-			self.active_profile = input.active_profile
+			self.isPresenceActive = input.isPresenceActive
 		end
 
 		if input.activeProfile ~= nil then
-			self.active_profile = input.activeProfile
+			self.activeProfile = input.activeProfile
 		end
 
 		return self
@@ -965,9 +931,9 @@ do
 
 	function _OnboardingCompletedImpl.new(data: _OnboardingCompletedPartialFields?): OnboardingCompleted
 		return setmetatable({
-			opted_into_telemetry = if data == nil or data.opted_into_telemetry == nil
+			optedIntoTelemetry = if data == nil or data.optedIntoTelemetry == nil
 				then false
-				else data.opted_into_telemetry,
+				else data.optedIntoTelemetry,
 		}, _OnboardingCompletedImpl :: _OnboardingCompletedImpl)
 	end
 
@@ -975,9 +941,9 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.opted_into_telemetry then
+		if self.optedIntoTelemetry then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, if self.opted_into_telemetry then 1 else 0)
+			output, cursor = proto.writeVarInt(output, cursor, if self.optedIntoTelemetry then 1 else 0)
 		end
 
 		local shrunkBuffer = buffer.create(cursor)
@@ -997,7 +963,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readVarInt(input, cursor)
-					self.opted_into_telemetry = value ~= 0
+					self.optedIntoTelemetry = value ~= 0
 					continue
 				end
 
@@ -1031,8 +997,8 @@ do
 	function _OnboardingCompletedImpl.jsonEncode(self: OnboardingCompleted): any
 		local output = {}
 
-		if self.opted_into_telemetry then
-			output.optedIntoTelemetry = self.opted_into_telemetry
+		if self.optedIntoTelemetry then
+			output.optedIntoTelemetry = self.optedIntoTelemetry
 		end
 
 		return output
@@ -1041,12 +1007,8 @@ do
 	function _OnboardingCompletedImpl.jsonDecode(input: { [string]: any }): OnboardingCompleted
 		local self = _OnboardingCompletedImpl.new()
 
-		if input.opted_into_telemetry ~= nil then
-			self.opted_into_telemetry = input.opted_into_telemetry
-		end
-
 		if input.optedIntoTelemetry ~= nil then
-			self.opted_into_telemetry = input.optedIntoTelemetry
+			self.optedIntoTelemetry = input.optedIntoTelemetry
 		end
 
 		return self
@@ -1145,8 +1107,11 @@ do
 
 	function _AccountLinkedImpl.new(data: _AccountLinkedPartialFields?): AccountLinked
 		return setmetatable({
-			account_count = if data == nil or data.account_count == nil then 0 else data.account_count,
-			is_first_account = if data == nil or data.is_first_account == nil then false else data.is_first_account,
+			accountCount = if data == nil or data.accountCount == nil then 0 else data.accountCount,
+			isFirstAccount = if data == nil or data.isFirstAccount == nil then false else data.isFirstAccount,
+			linkFlow = if data == nil or data.linkFlow == nil
+				then assert(messages.AccountLinkFlow.fromNumber(0), "Enum has no 0 default")
+				else data.linkFlow,
 		}, _AccountLinkedImpl :: _AccountLinkedImpl)
 	end
 
@@ -1154,14 +1119,22 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, self.account_count)
+			output, cursor = proto.writeVarInt(output, cursor, self.accountCount)
 		end
 
-		if self.is_first_account then
+		if self.isFirstAccount then
 			output, cursor = proto.writeTag(output, cursor, 2, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, if self.is_first_account then 1 else 0)
+			output, cursor = proto.writeVarInt(output, cursor, if self.isFirstAccount then 1 else 0)
+		end
+
+		if
+			self.linkFlow ~= nil
+			and (self.linkFlow ~= nil and self.linkFlow ~= 0 or self.linkFlow ~= messages.AccountLinkFlow.fromNumber(0))
+		then
+			output, cursor = proto.writeTag(output, cursor, 3, proto.wireTypes.varint)
+			output, cursor = proto.writeVarInt(output, cursor, messages.AccountLinkFlow.toNumber(self.linkFlow :: any))
 		end
 
 		local shrunkBuffer = buffer.create(cursor)
@@ -1181,12 +1154,17 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readVarIntI32(input, cursor)
-					self.account_count = value
+					self.accountCount = value
 					continue
 				elseif field == 2 then
 					local value
 					value, cursor = proto.readVarInt(input, cursor)
-					self.is_first_account = value ~= 0
+					self.isFirstAccount = value ~= 0
+					continue
+				elseif field == 3 then
+					local value
+					value, cursor = proto.readVarIntI32(input, cursor)
+					self.linkFlow = (messages.AccountLinkFlow.fromNumber(value) or value) :: any --[[ Luau: Enums are a string intersection which Luau is quick to dismantle ]]
 					continue
 				end
 
@@ -1220,12 +1198,21 @@ do
 	function _AccountLinkedImpl.jsonEncode(self: AccountLinked): any
 		local output = {}
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
-			output.accountCount = self.account_count
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
+			output.accountCount = self.accountCount
 		end
 
-		if self.is_first_account then
-			output.isFirstAccount = self.is_first_account
+		if self.isFirstAccount then
+			output.isFirstAccount = self.isFirstAccount
+		end
+
+		if
+			self.linkFlow ~= nil
+			and (self.linkFlow ~= nil and self.linkFlow ~= 0 or self.linkFlow ~= messages.AccountLinkFlow.fromNumber(0))
+		then
+			output.linkFlow = if typeof(self.linkFlow) == "number"
+				then self.linkFlow
+				else messages.AccountLinkFlow.toNumber(self.linkFlow :: any)
 		end
 
 		return output
@@ -1234,20 +1221,18 @@ do
 	function _AccountLinkedImpl.jsonDecode(input: { [string]: any }): AccountLinked
 		local self = _AccountLinkedImpl.new()
 
-		if input.account_count ~= nil then
-			self.account_count = input.account_count
-		end
-
 		if input.accountCount ~= nil then
-			self.account_count = input.accountCount
-		end
-
-		if input.is_first_account ~= nil then
-			self.is_first_account = input.is_first_account
+			self.accountCount = input.accountCount
 		end
 
 		if input.isFirstAccount ~= nil then
-			self.is_first_account = input.isFirstAccount
+			self.isFirstAccount = input.isFirstAccount
+		end
+
+		if input.linkFlow ~= nil then
+			self.linkFlow = if typeof(input.linkFlow) == "number"
+				then (messages.AccountLinkFlow.fromNumber(input.linkFlow) or input.linkFlow)
+				else (messages.AccountLinkFlow.fromName(input.linkFlow) or input.linkFlow)
 		end
 
 		return self
@@ -1264,16 +1249,16 @@ do
 end
 
 do
-	local _AccountLinkFailedImpl = {}
-	_AccountLinkFailedImpl.__index = _AccountLinkFailedImpl
+	local _DeviceCodeFlowFailedImpl = {}
+	_DeviceCodeFlowFailedImpl.__index = _DeviceCodeFlowFailedImpl
 
-	function _AccountLinkFailedImpl.new(data: _AccountLinkFailedPartialFields?): AccountLinkFailed
+	function _DeviceCodeFlowFailedImpl.new(data: _DeviceCodeFlowFailedPartialFields?): DeviceCodeFlowFailed
 		return setmetatable({
 			error = if data == nil or data.error == nil then "" else data.error,
-		}, _AccountLinkFailedImpl :: _AccountLinkFailedImpl)
+		}, _DeviceCodeFlowFailedImpl :: _DeviceCodeFlowFailedImpl)
 	end
 
-	function _AccountLinkFailedImpl.encode(self: AccountLinkFailed): buffer
+	function _DeviceCodeFlowFailedImpl.encode(self: DeviceCodeFlowFailed): buffer
 		local output = buffer.create(0)
 		local cursor = 0
 
@@ -1287,8 +1272,8 @@ do
 		return shrunkBuffer
 	end
 
-	function _AccountLinkFailedImpl.decode(input: buffer): AccountLinkFailed
-		local self = _AccountLinkFailedImpl.new()
+	function _DeviceCodeFlowFailedImpl.decode(input: buffer): DeviceCodeFlowFailed
+		local self = _DeviceCodeFlowFailedImpl.new()
 		local cursor = 0
 
 		while cursor < buffer.len(input) do
@@ -1304,7 +1289,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.error = buffer.tostring(value)
+					self.error = proto.decodeString(value)
 					continue
 				end
 
@@ -1330,7 +1315,7 @@ do
 		return self
 	end
 
-	function _AccountLinkFailedImpl.jsonEncode(self: AccountLinkFailed): any
+	function _DeviceCodeFlowFailedImpl.jsonEncode(self: DeviceCodeFlowFailed): any
 		local output = {}
 
 		if self.error ~= nil and self.error ~= "" then
@@ -1340,8 +1325,8 @@ do
 		return output
 	end
 
-	function _AccountLinkFailedImpl.jsonDecode(input: { [string]: any }): AccountLinkFailed
-		local self = _AccountLinkFailedImpl.new()
+	function _DeviceCodeFlowFailedImpl.jsonDecode(input: { [string]: any }): DeviceCodeFlowFailed
+		local self = _DeviceCodeFlowFailedImpl.new()
 
 		if input.error ~= nil then
 			self.error = input.error
@@ -1350,14 +1335,111 @@ do
 		return self
 	end
 
-	_AccountLinkFailedImpl.descriptor = {
-		name = "AccountLinkFailed",
-		fullName = "api.v1.AccountLinkFailed",
+	_DeviceCodeFlowFailedImpl.descriptor = {
+		name = "DeviceCodeFlowFailed",
+		fullName = "api.v1.DeviceCodeFlowFailed",
 	}
 
-	messages.AccountLinkFailed = _AccountLinkFailedImpl :: any -- Luau: Not sure why this intersection fails.
+	messages.DeviceCodeFlowFailed = _DeviceCodeFlowFailedImpl :: any -- Luau: Not sure why this intersection fails.
 
-	typeRegistry.default:register(messages.AccountLinkFailed)
+	typeRegistry.default:register(messages.DeviceCodeFlowFailed)
+end
+
+do
+	local _BrowserFlowFailedImpl = {}
+	_BrowserFlowFailedImpl.__index = _BrowserFlowFailedImpl
+
+	function _BrowserFlowFailedImpl.new(data: _BrowserFlowFailedPartialFields?): BrowserFlowFailed
+		return setmetatable({
+			error = if data == nil or data.error == nil then "" else data.error,
+		}, _BrowserFlowFailedImpl :: _BrowserFlowFailedImpl)
+	end
+
+	function _BrowserFlowFailedImpl.encode(self: BrowserFlowFailed): buffer
+		local output = buffer.create(0)
+		local cursor = 0
+
+		if self.error ~= nil and self.error ~= "" then
+			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeString(output, cursor, self.error)
+		end
+
+		local shrunkBuffer = buffer.create(cursor)
+		buffer.copy(shrunkBuffer, 0, output, 0, cursor)
+		return shrunkBuffer
+	end
+
+	function _BrowserFlowFailedImpl.decode(input: buffer): BrowserFlowFailed
+		local self = _BrowserFlowFailedImpl.new()
+		local cursor = 0
+
+		while cursor < buffer.len(input) do
+			local field, wireType
+			field, wireType, cursor = proto.readTag(input, cursor)
+
+			if wireType == proto.wireTypes.varint then
+				-- No fields
+
+				local _
+				_, cursor = proto.readVarInt(input, cursor)
+			elseif wireType == proto.wireTypes.lengthDelimited then
+				if field == 1 then
+					local value
+					value, cursor = proto.readBuffer(input, cursor)
+					self.error = proto.decodeString(value)
+					continue
+				end
+
+				local length
+				length, cursor = proto.readVarInt(input, cursor)
+
+				cursor += length
+			elseif wireType == proto.wireTypes.i32 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed32(input, cursor)
+			elseif wireType == proto.wireTypes.i64 then
+				-- No fields
+
+				local _
+				_, cursor = proto.readFixed64(input, cursor)
+			else
+				error("Unsupported wire type: " .. wireType)
+			end
+		end
+
+		return self
+	end
+
+	function _BrowserFlowFailedImpl.jsonEncode(self: BrowserFlowFailed): any
+		local output = {}
+
+		if self.error ~= nil and self.error ~= "" then
+			output.error = self.error
+		end
+
+		return output
+	end
+
+	function _BrowserFlowFailedImpl.jsonDecode(input: { [string]: any }): BrowserFlowFailed
+		local self = _BrowserFlowFailedImpl.new()
+
+		if input.error ~= nil then
+			self.error = input.error
+		end
+
+		return self
+	end
+
+	_BrowserFlowFailedImpl.descriptor = {
+		name = "BrowserFlowFailed",
+		fullName = "api.v1.BrowserFlowFailed",
+	}
+
+	messages.BrowserFlowFailed = _BrowserFlowFailedImpl :: any -- Luau: Not sure why this intersection fails.
+
+	typeRegistry.default:register(messages.BrowserFlowFailed)
 end
 
 do
@@ -1366,7 +1448,7 @@ do
 
 	function _AccountRemovedImpl.new(data: _AccountRemovedPartialFields?): AccountRemoved
 		return setmetatable({
-			account_count = if data == nil or data.account_count == nil then 0 else data.account_count,
+			accountCount = if data == nil or data.accountCount == nil then 0 else data.accountCount,
 		}, _AccountRemovedImpl :: _AccountRemovedImpl)
 	end
 
@@ -1374,9 +1456,9 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, self.account_count)
+			output, cursor = proto.writeVarInt(output, cursor, self.accountCount)
 		end
 
 		local shrunkBuffer = buffer.create(cursor)
@@ -1396,7 +1478,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readVarIntI32(input, cursor)
-					self.account_count = value
+					self.accountCount = value
 					continue
 				end
 
@@ -1430,8 +1512,8 @@ do
 	function _AccountRemovedImpl.jsonEncode(self: AccountRemoved): any
 		local output = {}
 
-		if self.account_count ~= nil and self.account_count ~= 0 then
-			output.accountCount = self.account_count
+		if self.accountCount ~= nil and self.accountCount ~= 0 then
+			output.accountCount = self.accountCount
 		end
 
 		return output
@@ -1440,12 +1522,8 @@ do
 	function _AccountRemovedImpl.jsonDecode(input: { [string]: any }): AccountRemoved
 		local self = _AccountRemovedImpl.new()
 
-		if input.account_count ~= nil then
-			self.account_count = input.account_count
-		end
-
 		if input.accountCount ~= nil then
-			self.account_count = input.accountCount
+			self.accountCount = input.accountCount
 		end
 
 		return self
@@ -1467,7 +1545,7 @@ do
 
 	function _PresenceToggledImpl.new(data: _PresenceToggledPartialFields?): PresenceToggled
 		return setmetatable({
-			is_active = if data == nil or data.is_active == nil then false else data.is_active,
+			isActive = if data == nil or data.isActive == nil then false else data.isActive,
 		}, _PresenceToggledImpl :: _PresenceToggledImpl)
 	end
 
@@ -1475,9 +1553,9 @@ do
 		local output = buffer.create(0)
 		local cursor = 0
 
-		if self.is_active then
+		if self.isActive then
 			output, cursor = proto.writeTag(output, cursor, 1, proto.wireTypes.varint)
-			output, cursor = proto.writeVarInt(output, cursor, if self.is_active then 1 else 0)
+			output, cursor = proto.writeVarInt(output, cursor, if self.isActive then 1 else 0)
 		end
 
 		local shrunkBuffer = buffer.create(cursor)
@@ -1497,7 +1575,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readVarInt(input, cursor)
-					self.is_active = value ~= 0
+					self.isActive = value ~= 0
 					continue
 				end
 
@@ -1531,8 +1609,8 @@ do
 	function _PresenceToggledImpl.jsonEncode(self: PresenceToggled): any
 		local output = {}
 
-		if self.is_active then
-			output.isActive = self.is_active
+		if self.isActive then
+			output.isActive = self.isActive
 		end
 
 		return output
@@ -1541,12 +1619,8 @@ do
 	function _PresenceToggledImpl.jsonDecode(input: { [string]: any }): PresenceToggled
 		local self = _PresenceToggledImpl.new()
 
-		if input.is_active ~= nil then
-			self.is_active = input.is_active
-		end
-
 		if input.isActive ~= nil then
-			self.is_active = input.isActive
+			self.isActive = input.isActive
 		end
 
 		return self
@@ -1603,7 +1677,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.profile = buffer.tostring(value)
+					self.profile = proto.decodeString(value)
 					continue
 				end
 
@@ -1700,7 +1774,7 @@ do
 				if field == 1 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
-					self.error = buffer.tostring(value)
+					self.error = proto.decodeString(value)
 					continue
 				end
 
@@ -1833,6 +1907,44 @@ do
 	typeRegistry.default:register(messages.PluginUnloaded)
 end
 
+messages.AccountLinkFlow = {
+	fromNumber = function(value: number): AccountLinkFlow?
+		if value == 0 then
+			return "ACCOUNT_LINK_FLOW_UNSPECIFIED"
+		elseif value == 1 then
+			return "ACCOUNT_LINK_FLOW_DEVICE_CODE"
+		elseif value == 2 then
+			return "ACCOUNT_LINK_FLOW_BROWSER"
+		else
+			return nil
+		end
+	end,
+
+	toNumber = function(self: AccountLinkFlow): number
+		if self == "ACCOUNT_LINK_FLOW_UNSPECIFIED" then
+			return 0
+		elseif self == "ACCOUNT_LINK_FLOW_DEVICE_CODE" then
+			return 1
+		elseif self == "ACCOUNT_LINK_FLOW_BROWSER" then
+			return 2
+		else
+			return self
+		end
+	end,
+
+	fromName = function(name: string): AccountLinkFlow?
+		if name == "ACCOUNT_LINK_FLOW_UNSPECIFIED" then
+			return "ACCOUNT_LINK_FLOW_UNSPECIFIED"
+		elseif name == "ACCOUNT_LINK_FLOW_DEVICE_CODE" then
+			return "ACCOUNT_LINK_FLOW_DEVICE_CODE"
+		elseif name == "ACCOUNT_LINK_FLOW_BROWSER" then
+			return "ACCOUNT_LINK_FLOW_BROWSER"
+		else
+			return nil
+		end
+	end,
+}
+
 return {
 	TelemetryRequest = messages.TelemetryRequest,
 	PluginLoaded = messages.PluginLoaded,
@@ -1840,10 +1952,12 @@ return {
 	OnboardingCompleted = messages.OnboardingCompleted,
 	AccountLinkStarted = messages.AccountLinkStarted,
 	AccountLinked = messages.AccountLinked,
-	AccountLinkFailed = messages.AccountLinkFailed,
+	DeviceCodeFlowFailed = messages.DeviceCodeFlowFailed,
+	BrowserFlowFailed = messages.BrowserFlowFailed,
 	AccountRemoved = messages.AccountRemoved,
 	PresenceToggled = messages.PresenceToggled,
 	ProfileSelected = messages.ProfileSelected,
 	SessionError = messages.SessionError,
 	PluginUnloaded = messages.PluginUnloaded,
+	AccountLinkFlow = messages.AccountLinkFlow,
 }

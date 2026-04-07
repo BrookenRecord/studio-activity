@@ -21,6 +21,8 @@ tracing-subscriber = { version = "0.3", features = ['time', 'json'] }
 time = { version = "0.3", features = ['wasm-bindgen'] }
 serde = { version = "1.0.228", features = ["derive"] }
 prost = "0.14"
+pbjson = "0.9"
+pbjson-types = "0.9"
 serde_json = "1.0"
 thiserror = "2.0.17"
 http = "1.4.0"
@@ -34,4 +36,5 @@ http-body-util = "0.1"
 
 [build-dependencies]
 prost-build = "0.14"
+pbjson-build = "0.9"
 walkdir = "2.5.0"

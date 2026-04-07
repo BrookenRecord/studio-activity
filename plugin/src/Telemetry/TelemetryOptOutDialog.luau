@@ -7,8 +7,9 @@ local ReactUtils = require(Packages.ReactUtils)
 local Sift = require(Packages.Sift)
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
+local Telemetry = require(script.Parent.fireEventAsync)
+local Types = require(script.Parent.Types)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
-local fireEvent = require(script.Parent.fireEventAsync)
 
 local View = Foundation.View
 local Dialog = Foundation.Dialog
@@ -32,11 +33,9 @@ local function WelcomeDialog(props: Props)
 	local isOptedIn, setIsOptedIn = useState(true)
 
 	local onClose = useCallback(function()
-		fireEvent({
-			eventName = "OnboardingCompleted",
-			properties = {
-				optedIntoTelemetry = isOptedIn,
-			},
+		Telemetry.fireEvent({
+			type = "onboardingCompleted",
+			value = Types.OnboardingCompleted.new({ optedIntoTelemetry = isOptedIn }),
 		})
 
 		localStorageStore.setStorage(function(prev)
