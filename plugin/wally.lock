@@ -3,8 +3,8 @@
 registry = "test"
 
 [[package]]
-name = "brhodes/studio-rich-presence"
-version = "0.1.0"
+name = "brhodes/studio-activity"
+version = "0.3.1"
 dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactFlow", "outofbears/react-flow@0.4.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.8.1"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
 
 [[package]]
