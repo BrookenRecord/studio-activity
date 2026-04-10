@@ -129,8 +129,17 @@ local function generatePatch(packagePath: string, packageDirName: string): boole
 		fs.writeDir(PATCHES_DIR)
 	end
 
-	-- Write the patch file
+	-- Find next available patch filename
 	local patchFilePath = `{PATCHES_DIR}/{packageDirName}.patch`
+	if fs.isFile(patchFilePath) then
+		local n = 2
+		while fs.isFile(`{PATCHES_DIR}/{packageDirName}_{n}.patch`) do
+			n += 1
+		end
+		patchFilePath = `{PATCHES_DIR}/{packageDirName}_{n}.patch`
+	end
+
+	-- Write the patch file
 	fs.writeFile(patchFilePath, diff)
 
 	print()

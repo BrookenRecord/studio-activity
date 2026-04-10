@@ -42,8 +42,15 @@ local function applyPatches(quiet: boolean?): boolean
 	table.sort(patchFiles)
 
 	for _, patchFile in patchFiles do
-		local targetDirName = patchFile:gsub("%.patch$", "")
+		local baseName = patchFile:gsub("%.patch$", "")
+		local targetDirName = baseName
 		local targetPath = `{PACKAGES_INDEX_DIR}/{targetDirName}`
+
+		-- If no directory matches the full name, strip sequence number suffix (e.g., "_2")
+		if not fs.isDir(targetPath) then
+			targetDirName = baseName:gsub("_%d+$", "")
+			targetPath = `{PACKAGES_INDEX_DIR}/{targetDirName}`
+		end
 
 		if not fs.isDir(targetPath) then
 			if not quiet then
