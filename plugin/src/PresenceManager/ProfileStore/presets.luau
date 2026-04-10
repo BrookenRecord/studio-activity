@@ -42,7 +42,10 @@ local presets: { [string]: PresetProfile } = {
 						smallImage = STUDIO_LOGO_ASSET,
 						smallText = "Studio Activity",
 					}
-					else nil,
+					else {
+						largeImage = STUDIO_LOGO_ASSET,
+						largeText = "Studio Activity",
+					},
 			}
 		end,
 	},
