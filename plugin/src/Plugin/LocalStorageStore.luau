@@ -9,21 +9,11 @@ local createPluginSettingsStore = require(script.Parent.createPluginSettingsStor
 local DiscordApi = require(Plugin.Source.Api.Discord)
 type ApiUser = DiscordApi.User
 
-type CustomProfileActivityAssets = {
-	largeImage: string?,
-	largeText: string?,
-	smallImage: string?,
-	smallText: string?,
-}
-
 type CustomProfileActivity = {
-	name: string,
 	details: string?,
-	detailsUrl: string?,
 	state: string?,
-	stateUrl: string?,
-	startedAt: number?,
-	assets: CustomProfileActivityAssets?,
+	showPlaceIcon: boolean?,
+	overridePlaceId: number?,
 }
 
 export type CustomProfileData = {
@@ -51,21 +41,11 @@ local defaultValue: LocalStorageStore = {
 	disabledAccountIds = {},
 }
 
-local validateActivityAssets = t.interface({
-	largeImage = t.optional(t.string),
-	largeText = t.optional(t.string),
-	smallImage = t.optional(t.string),
-	smallText = t.optional(t.string),
-})
-
 local validateActivity = t.interface({
-	name = t.string,
 	details = t.optional(t.string),
-	detailsUrl = t.optional(t.string),
 	state = t.optional(t.string),
-	stateUrl = t.optional(t.string),
-	startedAt = t.optional(t.number),
-	assets = t.optional(validateActivityAssets),
+	showPlaceIcon = t.optional(t.boolean),
+	overridePlaceId = t.optional(t.number),
 })
 
 local validateCustomProfile = t.interface({

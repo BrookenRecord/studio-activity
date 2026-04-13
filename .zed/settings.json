@@ -39,7 +39,7 @@
 					"sourcemap": {
 						"sourcemapFile": "plugin/generated/sourcemap.json",
 						"rojoProjectFile": "plugin/generated/sourcemap.project.jsonc",
-						"generatorCommand": "rojo sourcemap plugin/generated/sourcemap.project.jsonc --output plugin/generated/sourcemap.json --absolute --include-non-scripts"
+						"generatorCommand": "lute run codegen"
 					},
 					"completion": {
 						"enabled": true,

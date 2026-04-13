@@ -6,7 +6,7 @@ local Charm = require(Packages.Charm)
 local signal = Charm.signal
 local computed = Charm.computed
 
-export type ModalId = "addAccount" | "welcome" | "confirmation" | "settings"
+export type ModalId = "addAccount" | "welcome" | "confirmation" | "settings" | "customProfile"
 
 export type OpenOptions = {
 	priority: number?,

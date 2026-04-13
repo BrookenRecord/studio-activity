@@ -6,6 +6,7 @@ local ReactCharm = require(Packages.ReactCharm)
 
 local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local ConfirmationDialog = require(script.Parent.ConfirmationDialog)
+local CustomProfile = require(Plugin.Source.CustomProfile)
 local ModalStore = require(script.Parent.ModalStore)
 local SettingsModal = require(Plugin.Source.UserSettings.SettingsModal)
 local WelcomeDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
@@ -55,6 +56,17 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 		render = function(isOpen, onClose, _props)
 			return e(SettingsModal, {
 				isOpen = isOpen,
+				onClose = onClose,
+			})
+		end,
+	},
+
+	customProfile = {
+		type = "sheet",
+		render = function(isOpen, onClose, props)
+			return e(CustomProfile, {
+				isOpen = isOpen,
+				existingProfileId = props and props.existingProfileId,
 				onClose = onClose,
 			})
 		end,

@@ -36,7 +36,7 @@ local function Section(props: Props)
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		LayoutContainer = e(View, {
-			tag = "size-full-0 auto-y col gap-small padding-x-small padding-y-medium",
+			tag = "size-full-0 auto-y col gap-small  padding-y-medium",
 			LayoutOrder = nextOrder(),
 		}, {
 			HeaderBlock = e(View, {

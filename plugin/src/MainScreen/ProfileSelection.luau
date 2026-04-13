@@ -7,8 +7,9 @@ local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local ProfileStore = require(Plugin.Source.PresenceManager.ProfileStore)
-local Section = require(script.Parent.Section)
+local Section = require(Plugin.Source.Common.Section)
 local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
 local Types = require(Plugin.Source.Telemetry.Types)
 
@@ -27,6 +28,8 @@ local createNextOrder = ReactUtils.createNextOrder
 local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
+
+local CUSTOM_PROFILE_TRIGGER_ID = "__add-custom-profile"
 
 local profileDropdownItems = Charm.computed(function(): Foundation.DropdownItems
 	type Record = { id: string, name: string, icon: IconName }
@@ -79,6 +82,17 @@ local profileDropdownItems = Charm.computed(function(): Foundation.DropdownItems
 		table.insert(items, customItems)
 	end
 
+	-- Custom profile trigger
+	table.insert(items, {
+		items = {
+			{
+				id = CUSTOM_PROFILE_TRIGGER_ID,
+				text = "New Profile",
+				icon = IconName.PlusLarge,
+			},
+		},
+	})
+
 	return items
 end)
 
@@ -117,6 +131,11 @@ local function ProfileSelection(props: Props)
 					size = InputSize.Small,
 					width = UDim.new(1, 0),
 					onItemChanged = function(id)
+						if id == CUSTOM_PROFILE_TRIGGER_ID then
+							ModalStore.get().open("customProfile")
+							return
+						end
+
 						if type(id) == "string" then
 							profileStore.setActiveProfile(id)
 							Telemetry.fireEvent({

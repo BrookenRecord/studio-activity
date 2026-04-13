@@ -14,6 +14,7 @@ local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
+local buildCustomActivity = require(script.Parent.buildCustomActivity)
 local presets = require(script.Parent.presets)
 
 local IconName = Foundation.Enums.IconName
@@ -55,8 +56,8 @@ local function wrapCustomProfile(data: CustomProfileData): Profile
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
-		buildActivityAsync = function(_context: PlaceContext): ActivityConfig
-			return data.activity
+		buildActivityAsync = function(context: PlaceContext): ActivityConfig
+			return buildCustomActivity(context, data)
 		end,
 	}
 end

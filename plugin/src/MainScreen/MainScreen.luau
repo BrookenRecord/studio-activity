@@ -45,7 +45,7 @@ local function MainScreen()
 				sizeConstraint = {
 					MaxSize = Vector2.new(620, math.huge),
 				},
-				padding = Vector2.new(0, tokens.Padding.Medium),
+				padding = Vector2.new(tokens.Padding.Small, tokens.Padding.Medium),
 			}, {
 				PreviewBlock = e(PreviewBlock, {
 					LayoutOrder = nextOrder(),
