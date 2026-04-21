@@ -8,19 +8,23 @@ local computed = Charm.computed
 
 export type ModalId = "addAccount" | "welcome" | "confirmation" | "settings" | "customProfile"
 
+export type ModalStackEntry = {
+	id: ModalId,
+	priority: number,
+	props: { [string]: any }?,
+}
+
 export type OpenOptions = {
 	priority: number?,
 	props: { [string]: any }?,
 }
 
-type QueueEntry = {
-	id: ModalId,
-	priority: number,
-	props: { [string]: any }?,
+type QueueEntry = ModalStackEntry & {
 	waitingThread: thread?,
 }
 
 export type ModalStore = {
+	getModalStack: () -> { ModalStackEntry },
 	getActiveModal: () -> ModalId?,
 	getActiveProps: () -> { [string]: any }?,
 
@@ -31,6 +35,19 @@ export type ModalStore = {
 
 local function createModalStore(): ModalStore
 	local getQueue, setQueue = signal<<{ QueueEntry }>>({})
+
+	local getModalStack = computed(function(): { ModalStackEntry }
+		local queue = getQueue()
+		local stack = table.create(#queue)
+		for index, entry in queue do
+			stack[index] = {
+				id = entry.id,
+				priority = entry.priority,
+				props = entry.props,
+			}
+		end
+		return stack
+	end)
 
 	local getActiveModal = computed(function(): ModalId?
 		local queue = getQueue()
@@ -139,6 +156,7 @@ local function createModalStore(): ModalStore
 	end
 
 	return {
+		getModalStack = getModalStack,
 		getActiveModal = getActiveModal :: any,
 		getActiveProps = getActiveProps,
 

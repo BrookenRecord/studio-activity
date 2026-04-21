@@ -9,8 +9,8 @@ type IconName = Foundation.IconName
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
-local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
-type PlaceContext = PlaceContextStore.PlaceContext
+local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+type PlaceContext = PlaceDetailsStore.PlaceContext
 
 local STUDIO_LOGO_ASSET = "studio-logo"
 

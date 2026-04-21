@@ -23,23 +23,23 @@ local function ActivityDetails(props: Props)
 	local nextOrder = createNextOrder()
 
 	return e(View, {
-		tag = "auto-xy col gap-xxsmall",
+		tag = "size-full-0 auto-y col gap-xxsmall",
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		Name = e(Text, {
-			tag = "auto-xy text-title-medium content-emphasis",
+			tag = "size-full-0 auto-y text-align-x-left text-wrap text-title-medium content-emphasis",
 			Text = props.activity.name,
 			LayoutOrder = nextOrder(),
 		}),
 
 		Details = props.activity.details and e(Text, {
-			tag = "auto-xy text-body-small content-default",
+			tag = "size-full-0 auto-y text-align-x-left text-wrap text-body-small content-default",
 			Text = props.activity.details,
 			LayoutOrder = nextOrder(),
 		}),
 
 		State = props.activity.state and e(Text, {
-			tag = "auto-xy text-body-small content-default",
+			tag = "size-full-0 auto-y text-align-x-left text-wrap text-body-small content-default",
 			Text = props.activity.state,
 			LayoutOrder = nextOrder(),
 		}),

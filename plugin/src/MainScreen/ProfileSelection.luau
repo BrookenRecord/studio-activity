@@ -96,6 +96,12 @@ local profileDropdownItems = Charm.computed(function(): Foundation.DropdownItems
 	return items
 end)
 
+local function isPresetProfile(): boolean
+	local profileStore = ProfileStore.get()
+	local activeProfile = profileStore.getActiveProfile()
+	return if activeProfile then activeProfile.isPreset else true
+end
+
 type Props = {
 	LayoutOrder: number?,
 }
@@ -105,8 +111,24 @@ local function ProfileSelection(props: Props)
 
 	local profileStore = ProfileStore.get()
 	local activeProfileId = useSignalState(profileStore.getActiveProfileId)
-
 	local items = useSignalState(profileDropdownItems)
+	local isPreset = useSignalState(isPresetProfile)
+
+	local editBtn = e(Button, {
+		text = "Edit",
+		icon = IconName.Pencil,
+		size = InputSize.Small,
+		isDisabled = isPreset,
+		onActivated = function()
+			ModalStore.get().open("customProfile", {
+				props = {
+					existingProfileId = activeProfileId,
+				},
+			})
+		end,
+		-- just have to hard code this because we create the element early
+		LayoutOrder = 100,
+	})
 
 	return e(Section, {
 		title = "Profile",
@@ -148,21 +170,16 @@ local function ProfileSelection(props: Props)
 				}),
 			}),
 
-			Tooltip = e(Tooltip, {
-				title = "Custom profiles are coming soon!",
-				align = PopoverAlign.Center,
-				side = PopoverSide.Left,
-				LayoutOrder = nextOrder(),
-			}, {
-				EditBtn = e(Button, {
-					text = "Edit",
-					icon = IconName.Pencil,
-					size = InputSize.Small,
-					isDisabled = true,
-					onActivated = function() end,
+			EditBtn = if isPreset
+				then e(Tooltip, {
+					title = "You can't edit built-in profiles",
+					align = PopoverAlign.End,
+					side = PopoverSide.Top,
 					LayoutOrder = nextOrder(),
-				}),
-			}),
+				}, {
+					EditBtn = editBtn,
+				})
+				else editBtn,
 		}),
 	})
 end

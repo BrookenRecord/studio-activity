@@ -1,13 +1,13 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
-local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
+local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 local interpolate = require(Plugin.Source.Common.interpolate)
 
-type ActivityConfig = createPresenceManager.ActivityConfig
+export type ActivityConfig = createPresenceManager.ActivityConfig
 type CustomProfileData = LocalStorageStore.CustomProfileData
-type PlaceContext = PlaceContextStore.PlaceContext
+type PlaceContext = PlaceDetailsStore.PlaceContext
 
 local STUDIO_LOGO_ASSET = "studio-logo"
 

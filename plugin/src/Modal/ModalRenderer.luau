@@ -75,30 +75,40 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 
 local function ModalRenderer()
 	local modalStore = ModalStore.get()
-	local activeModal = useSignalState(modalStore.getActiveModal)
-	local activeProps = useSignalState(modalStore.getActiveProps)
+	local modalStack = useSignalState(modalStore.getModalStack)
 
-	local children: { [string]: React.ReactNode } = {}
+	local entriesById: { [ModalStore.ModalId]: ModalStore.ModalStackEntry } = {}
+	for _, entry in modalStack do
+		entriesById[entry.id] = entry
+	end
 
+	local children: { React.ReactNode } = {}
+	local function pushChild(key: string, node: React.ReactNode)
+		table.insert(children, e(React.Fragment, { key = key }, node))
+	end
+
+	-- Keep closed sheets mounted so they preserve state.
 	for id: ModalStore.ModalId, config in MODAL_REGISTRY do
-		local isOpen = (activeModal == id)
-
-		if config.type == "sheet" then
-			-- Sheet modals are always mounted; isOpen toggles visibility
+		if config.type == "sheet" and entriesById[id] == nil then
 			local function onClose(result: any?)
 				modalStore.close(id, result)
 			end
 
-			children[id] = config.render(isOpen, onClose, if isOpen then activeProps else nil)
-		elseif config.type == "dialog" then
-			-- Dialog modals are only mounted when active
-			if isOpen then
-				local function onClose(result: any?)
-					modalStore.close(id, result)
-				end
+			pushChild(id, config.render(false, onClose, nil))
+		end
+	end
 
-				children[id] = config.render(isOpen, onClose, activeProps)
+	-- Render open entries bottom-to-top so higher priority stacks above.
+	for index = #modalStack, 1, -1 do
+		local entry = modalStack[index]
+		local config = MODAL_REGISTRY[entry.id]
+
+		if config then
+			local function onClose(result: any?)
+				modalStore.close(entry.id, result)
 			end
+
+			pushChild(entry.id, config.render(true, onClose, entry.props))
 		end
 	end
 

@@ -7,8 +7,8 @@ local Foundation = require(Packages.Foundation)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
-local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
-type PlaceContext = PlaceContextStore.PlaceContext
+local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+type PlaceContext = PlaceDetailsStore.PlaceContext
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
@@ -33,6 +33,7 @@ export type Profile = {
 	name: string,
 	icon: Foundation.IconName,
 	isPreset: boolean,
+	overridePlaceId: number?,
 	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
 }
 
@@ -52,10 +53,12 @@ export type ProfileStore = {
 --- Wrap a CustomProfileData into a runtime Profile.
 --- The build function ignores context and returns the stored static activity.
 local function wrapCustomProfile(data: CustomProfileData): Profile
+	print("wrapCustomProfile", data)
 	return {
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
+		overridePlaceId = data.activity.overridePlaceId,
 		buildActivityAsync = function(context: PlaceContext): ActivityConfig
 			return buildCustomActivity(context, data)
 		end,
@@ -68,6 +71,7 @@ local function wrapPreset(preset: presets.PresetProfile): Profile
 		name = preset.name,
 		icon = preset.icon,
 		isPreset = true,
+		overridePlaceId = nil,
 		buildActivityAsync = preset.buildActivityAsync,
 	}
 end
@@ -106,6 +110,7 @@ end
 
 local function createProfileStore(): ProfileStore
 	local localStorage = LocalStorageStore.get()
+	local placeDetailsStore = PlaceDetailsStore.get()
 
 	local getActiveProfileId = computed(function(): string
 		return localStorage.getStorage().selectedProfileId or "default"
@@ -173,16 +178,21 @@ local function createProfileStore(): ProfileStore
 			pcall(task.cancel, buildThread)
 		end
 
-		local placeContextStore = PlaceContextStore.get()
-		local context = placeContextStore.getContext()
-
-		if context == nil then
+		local profile = getActiveProfile()
+		if not profile then
 			setResolvedActivity(nil)
 			return
 		end
 
-		local profile = getActiveProfile()
-		if not profile then
+		local context: PlaceContext?
+		if profile.overridePlaceId and profile.overridePlaceId > 0 then
+			placeDetailsStore.prefetchPlaceIds({ profile.overridePlaceId })
+			context = placeDetailsStore.getContextByPlaceId(profile.overridePlaceId)
+		else
+			context = placeDetailsStore.getCurrentContext()
+		end
+
+		if context == nil then
 			setResolvedActivity(nil)
 			return
 		end
@@ -192,6 +202,22 @@ local function createProfileStore(): ProfileStore
 			setResolvedActivity(activity)
 			buildThread = nil
 		end)
+	end)
+
+	local disposePrefetchEffect = effect(function()
+		local customProfiles: CustomProfiles = localStorage.getStorage().customProfiles or {}
+		local placeIds: { number } = {}
+
+		for _, custom in customProfiles do
+			local overridePlaceId = custom.activity.overridePlaceId
+			if overridePlaceId and overridePlaceId > 0 then
+				table.insert(placeIds, overridePlaceId)
+			end
+		end
+
+		if #placeIds > 0 then
+			placeDetailsStore.prefetchPlaceIds(placeIds)
+		end
 	end)
 
 	local function setCustomProfile(id: string, data: CustomProfileData)
@@ -222,6 +248,7 @@ local function createProfileStore(): ProfileStore
 	local function destroy()
 		disposeProfileFallbackEffect()
 		disposeBuildEffect()
+		disposePrefetchEffect()
 
 		if buildThread then
 			pcall(task.cancel, buildThread)

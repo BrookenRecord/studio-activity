@@ -18,7 +18,7 @@ local e = React.createElement
 local useState = React.useState
 
 type Props = {
-	title: string,
+	title: string?,
 	hasDivider: boolean,
 	canToggleExpand: boolean,
 	LayoutOrder: number?,
@@ -36,10 +36,10 @@ local function Section(props: Props)
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		LayoutContainer = e(View, {
-			tag = "size-full-0 auto-y col gap-small  padding-y-medium",
+			tag = "size-full-0 auto-y col gap-small padding-y-medium",
 			LayoutOrder = nextOrder(),
 		}, {
-			HeaderBlock = e(View, {
+			HeaderBlock = props.title and e(View, {
 				tag = "size-full-0 auto-y row radius-small align-y-center padding-x-small padding-y-xsmall",
 				LayoutOrder = nextOrder(),
 				onActivated = if props.canToggleExpand

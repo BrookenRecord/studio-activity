@@ -33,14 +33,12 @@ local function ActivityFields(props: Props)
 	local profileStore = ProfileContext.useProfile().profileStore
 
 	local profileBinding = useSignalBinding(profileStore.getProfile)
-	local showPlaceIcon = useSignalState(Charm.computed(function()
-		return profileStore.getProfile().activity.showPlaceIcon
-	end))
+	local showPlaceIcon = useSignalState(Charm.computed(function() end))
 
 	return e(Section, {
 		title = "Activity Fields",
 		canToggleExpand = true,
-		hasDivider = false,
+		hasDivider = true,
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		LayoutBlock = e(View, {
@@ -67,7 +65,7 @@ local function ActivityFields(props: Props)
 				text = profileBinding:map(function(profile: CustomProfileData)
 					return profile.activity.details or ""
 				end),
-				label = "Details (line 1)",
+				label = "Line 1",
 				size = InputSize.Small,
 				width = UDim.new(1, 0),
 				LayoutOrder = nextOrder(),
@@ -86,7 +84,7 @@ local function ActivityFields(props: Props)
 				text = profileBinding:map(function(profile: CustomProfileData)
 					return profile.activity.state or ""
 				end),
-				label = "State (line 2)",
+				label = "Line 2",
 				size = InputSize.Small,
 				width = UDim.new(1, 0),
 				LayoutOrder = nextOrder(),
