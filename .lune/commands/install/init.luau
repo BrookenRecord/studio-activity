@@ -55,6 +55,14 @@ local ROBLOX_PACKAGES = {
 	"Dash",
 }
 
+local function runLuteInstall(): (boolean, string)
+	local result = process.exec("lute", { "pkg", "install" })
+	if not result.ok then
+		return false, result.stderr
+	end
+	return true, result.stdout
+end
+
 local function runWallyInstall(): (boolean, string)
 	local result = process.exec("wally", { "install" }, {
 		cwd = "plugin",
@@ -93,6 +101,19 @@ export type Options = {
 function install.run(options_: Options?): boolean
 	local options: Options = options_ or {}
 	local quiet = if options.quiet ~= nil then options.quiet else false
+
+	if not quiet then
+		print(color.dim("Installing Lute packages..."))
+	end
+
+	local luteResult, luteStdout = runLuteInstall()
+	if not luteResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to install Lute packages")))
+			stdio.write(luteStdout)
+		end
+		return false
+	end
 
 	if not quiet then
 		print(color.dim("Installing Wally packages..."))
