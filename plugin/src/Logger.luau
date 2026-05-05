@@ -3,6 +3,8 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Log = require(Packages.Log)
 
+local BuildVars = require(Plugin.Source.BuildVars)
+
 local function stringToLogLevel(logLevel: string)
 	if logLevel == "info" then
 		return Log.LogLevel.Information
@@ -17,7 +19,7 @@ local function stringToLogLevel(logLevel: string)
 end
 
 local sinks = {}
-if _G.__DEV__ then
+if BuildVars.build.isDev then
 	table.insert(sinks, Log.Common.RobloxLogSink())
 end
 
@@ -28,7 +30,7 @@ local logger = Log.Logger.new(
 	},
 	sinks,
 	{
-		Log.Common.Filters.MinLevelFilter(stringToLogLevel(_G.__LOG_LEVEL__)),
+		Log.Common.Filters.MinLevelFilter(stringToLogLevel(if BuildVars.build.isDev then "info" else "warn")),
 	}
 )
 
