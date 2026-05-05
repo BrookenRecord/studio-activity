@@ -4,7 +4,7 @@
 
 **A privacy-friendly Roblox Studio plugin that shows your activity on Discord.**
 
-[![🔍 Static Code Analysis](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml) · [![🧪 Tests](https://github.com/grilme99/studio-activity/actions/workflows/test.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/test.yml)
+[![🔍 Static Code Analysis](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml) [![🧪 Tests](https://github.com/grilme99/studio-activity/actions/workflows/test.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/test.yml)
 
 [Download](https://github.com/grilme99/studio-activity/releases/latest) · [Report a bug](https://github.com/grilme99/studio-activity/issues)
 
