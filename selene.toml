@@ -1,9 +1,5 @@
 std = "roblox"
 
-[config]
-# Allow for `_G.__DEV__` (etc) with packages like React-lua
-global_usage = { ignore_pattern = "^__" }
-
 [rules]
 # We don't need this rule because the Luau analyzer already checks for this.
 incorrect_standard_library_use = "allow"

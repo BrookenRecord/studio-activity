@@ -24,8 +24,9 @@ local function setup(plugin: Plugin, main: PluginMain)
 
 	-- Derive dev-mode globals from BuildVars before any module that reads them
 	local BuildVars = require(Plugin.Source.BuildVars)
-	_G.__DEV__ = BuildVars.build.isDev
-	_G.__LOG_LEVEL__ = if BuildVars.build.isDev then "info" else "warn"
+
+	local ReactGlobals = require(Plugin.Packages.ReactGlobals)
+	ReactGlobals.__DEV__ = BuildVars.build.isDev
 
 	-- Set plugin instance early so settings stores can load auth from disk
 	local PluginStore = require(Plugin.Source.Plugin.PluginStore)
