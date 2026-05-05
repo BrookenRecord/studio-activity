@@ -77,10 +77,15 @@ index 559fb7f..4a377b5 100644
  							affordance = StateLayerAffordance.None,
  						},
 diff --git a/Foundation/Components/Sheet/Sheet.lua b/Foundation/Components/Sheet/Sheet.lua
-index 1546095..979e203 100644
+index 1546095..95d05c4 100644
 --- a/Foundation/Components/Sheet/Sheet.lua
 +++ b/Foundation/Components/Sheet/Sheet.lua
-@@ -31,7 +31,23 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -27,11 +27,27 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 	local props = withDefaults(sheetProps, defaultProps)
+ 	local isOpen, setIsOpen = React.useState(if props.isOpen == nil then true else props.isOpen)
+ 	local sheetRef = React.useRef(nil :: SheetRef?)
+-	local screen = if Flags.FoundationOverlayKeyboardAwarenessHardened then useScreen() else useOverlay()
++	local screen = useOverlay()
  
  	local isLandscape, setIsLandscape =
  		React.useState(if screen then screen.AbsoluteSize.X > screen.AbsoluteSize.Y else true)
