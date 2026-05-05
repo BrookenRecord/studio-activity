@@ -1,3 +1,5 @@
+local ScriptContext = game:GetService("ScriptContext")
+
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
@@ -15,12 +17,19 @@ local function runTests()
 	Charm.flags.strict = true
 	Charm.flags.frozen = true
 
+	ScriptContext:EnableCoverage(root)
 	local status, result = Jest.runCLI(root, {
 		verbose = false,
 		ci = false,
 		-- selene: allow(global_usage)
 		testPathPattern = _G.JEST_TEST_PATH_PATTERN,
 	}, { root }):awaitStatus()
+
+	local success, stats = pcall(function()
+		return ScriptContext:GetCoverageStats()
+	end)
+
+	print("COVERAGE", success, stats)
 
 	if status == "Rejected" then
 		print(result)
