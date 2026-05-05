@@ -4,20 +4,26 @@
 	Wally has no support for deduping packages published by different
 	authors, or for patching transitive dependency references after
 	install. This module fills that gap: it deletes a set of installed
-	package directories under `<packagesDir>/_Index/` and rewrites every
-	top-level `*.lua` shim so references to the removed names are
-	redirected to their replacements.
+	package directories under one or more `<packagesDir>/` indexes and
+	rewrites every top-level `*.lua` shim so references to the removed
+	names are redirected to their replacements.
+
+	The module operates on a *list* of package index directories so a
+	single redirect pass can converge shims across both `Packages/_Index`
+	and `DevPackages/_Index` (which share the same runtime `_Index`
+	folder via Wally's shared-packages config).
 
 	Two entry points:
 
-	  redirectPackages.apply(packagesDir, { ["old@1"] = "new@2" }, quiet)
+	  redirectPackages.apply(packageDirs, { ["old@1"] = "new@2" }, quiet)
 	    - Low-level primitive. Caller supplies the rename map directly.
 
-	  redirectPackages.byAuthor(packagesDir, "fromAuthor", "toAuthor", quiet)
+	  redirectPackages.byAuthor(packageDirs, "fromAuthor", "toAuthor", quiet)
 	    - Convenience. Discovers `<fromAuthor>_<name>@<v>` directories and
-	      pairs each with the unique `<toAuthor>_<name>@<v>` sibling, then
-	      delegates to `apply`. This matches the canonical case of
-	      converging two registries that publish overlapping packages.
+	      pairs each with the unique `<toAuthor>_<name>@<v>` sibling found
+	      anywhere in the union of `packageDirs`, then delegates to
+	      `apply`. This matches the canonical case of converging two
+	      registries that publish overlapping packages.
 ]]
 
 local fs = require("@lune/fs")
@@ -77,22 +83,30 @@ local redirectPackages = {}
 
 --[[
 	Applies an explicit rename map: deletes each `from` directory under
-	`packagesDir` and rewrites every shim to point at the `to` directory.
+	every `packageDirs` index where it exists, and rewrites every shim
+	in every index to point at the `to` directory.
 
-	@param packagesDir Path to the package index (e.g. "plugin/Packages/_Index")
+	@param packageDirs Paths to the package indexes (e.g.
+		{ "plugin/Packages/_Index", "plugin/DevPackages/_Index" })
 	@param renames Map of directory names to redirect (from -> to)
 	@param quiet Whether to suppress output
 	@return True on success, false on error
 ]]
-function redirectPackages.apply(packagesDir: string, renames: { [string]: string }, quiet: boolean?): boolean
+function redirectPackages.apply(packageDirs: { string }, renames: { [string]: string }, quiet: boolean?): boolean
 	if next(renames) == nil then
 		return true
 	end
 
-	if not fs.isDir(packagesDir) then
-		if not quiet then
-			print(color.yellow(`  Package directory not found: {packagesDir}`))
+	local existingDirs: { string } = {}
+	for _, dir in packageDirs do
+		if fs.isDir(dir) then
+			table.insert(existingDirs, dir)
+		elseif not quiet then
+			print(color.yellow(`  Package directory not found: {dir}`))
 		end
+	end
+
+	if #existingDirs == 0 then
 		return false
 	end
 
@@ -102,57 +116,83 @@ function redirectPackages.apply(packagesDir: string, renames: { [string]: string
 		end
 	end
 
-	-- Delete first, then rewrite. Walking the index after deletion means we
-	-- never try to read a shim inside a directory that no longer exists.
+	-- Delete first, then rewrite. Walking each index after deletion means
+	-- we never try to read a shim inside a directory that no longer
+	-- exists. A `from` directory may exist in zero, one, or several
+	-- indexes; remove every occurrence.
 	for from in renames do
-		local pkgPath = `{packagesDir}/{from}`
-		if fs.isDir(pkgPath) then
-			fs.removeDir(pkgPath)
+		for _, dir in existingDirs do
+			local pkgPath = `{dir}/{from}`
+			if fs.isDir(pkgPath) then
+				fs.removeDir(pkgPath)
+			end
 		end
 	end
 
-	rewriteAllShims(packagesDir, renames)
+	for _, dir in existingDirs do
+		rewriteAllShims(dir, renames)
+	end
 
 	return true
 end
 
 --[[
 	Builds a rename map by pairing every `<fromAuthor>_<name>@<v>` directory
-	in `packagesDir` with its unique `<toAuthor>_<name>@<v>` sibling, then
-	delegates to `redirectPackages.apply`.
+	found anywhere in `packageDirs` with its unique `<toAuthor>_<name>@<v>`
+	sibling found anywhere in `packageDirs`, then delegates to
+	`redirectPackages.apply`.
 
 	Authors without a matching sibling are left alone (no entry in the map).
 	Errors if more than one sibling matches a single from-author package.
 
-	@param packagesDir Path to the package index (e.g. "plugin/Packages/_Index")
+	@param packageDirs Paths to the package indexes
 	@param fromAuthor The author whose packages should be removed
 	@param toAuthor The author whose packages should be kept
 	@param quiet Whether to suppress output
 	@return True on success, false on error
 ]]
-function redirectPackages.byAuthor(packagesDir: string, fromAuthor: string, toAuthor: string, quiet: boolean?): boolean
-	if not fs.isDir(packagesDir) then
+function redirectPackages.byAuthor(
+	packageDirs: { string },
+	fromAuthor: string,
+	toAuthor: string,
+	quiet: boolean?
+): boolean
+	-- Union the directory entries from every existing index. We only
+	-- need the set of directory names for rename discovery; which index
+	-- each entry came from doesn't matter because the runtime `_Index`
+	-- is shared across them.
+	local entrySet: { [string]: true } = {}
+	local anyDirExists = false
+	for _, dir in packageDirs do
+		if not fs.isDir(dir) then
+			continue
+		end
+		anyDirExists = true
+		for _, entry in fs.readDir(dir) do
+			if fs.isDir(`{dir}/{entry}`) then
+				entrySet[entry] = true
+			end
+		end
+	end
+
+	if not anyDirExists then
 		return true
 	end
 
-	local entries = fs.readDir(packagesDir)
 	local fromPattern = `^{fromAuthor}_(.-)@`
 	local toPrefix = `{toAuthor}_`
 
 	local renames: { [string]: string } = {}
-	for _, entry in entries do
+	for entry in entrySet do
 		local depName = entry:match(fromPattern)
 		if depName == nil then
-			continue
-		end
-		if not fs.isDir(`{packagesDir}/{entry}`) then
 			continue
 		end
 
 		local siblingPrefix = `{toPrefix}{depName}@`
 		local matches: { string } = {}
-		for _, candidate in entries do
-			if candidate:sub(1, #siblingPrefix) == siblingPrefix and fs.isDir(`{packagesDir}/{candidate}`) then
+		for candidate in entrySet do
+			if candidate:sub(1, #siblingPrefix) == siblingPrefix then
 				table.insert(matches, candidate)
 			end
 		end
@@ -176,7 +216,7 @@ function redirectPackages.byAuthor(packagesDir: string, fromAuthor: string, toAu
 		renames[entry] = matches[1]
 	end
 
-	return redirectPackages.apply(packagesDir, renames, quiet)
+	return redirectPackages.apply(packageDirs, renames, quiet)
 end
 
 return redirectPackages
