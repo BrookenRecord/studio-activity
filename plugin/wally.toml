@@ -5,8 +5,8 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 private = true
 
-# [place]
-# shared-packages = "game.ReplicatedStorage.Packages"
+[place]
+shared-packages = "script.Parent.Parent.Parent.Parent"
 
 [dependencies]
 React = "haedrix/react@17.3.8"
@@ -22,7 +22,7 @@ Charm = "grilme99/charm@0.11.0-rc.3"
 ReactCharm = "grilme99/react-charm@0.4.0-rc.3"
 png = "grilme99/png-luau@0.2.1"
 
-# dev dependencies
+[dev-dependencies]
 Jest = "jsdotlua/jest@3.10.0"
 JestGlobals = "jsdotlua/jest-globals@3.10.0"
 Chalk = "jsdotlua/chalk@0.2.1"
