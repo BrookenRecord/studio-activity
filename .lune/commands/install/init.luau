@@ -55,6 +55,14 @@ local ROBLOX_PACKAGES = {
 	"Dash",
 }
 
+local function runLuteInstall(): (boolean, string)
+	local result = process.exec("lute", { "pkg", "install" })
+	if not result.ok then
+		return false, result.stderr
+	end
+	return true, result.stdout
+end
+
 local function runWallyInstall(): (boolean, string)
 	local result = process.exec("wally", { "install" }, {
 		cwd = "plugin",
@@ -93,6 +101,19 @@ export type Options = {
 function install.run(options_: Options?): boolean
 	local options: Options = options_ or {}
 	local quiet = if options.quiet ~= nil then options.quiet else false
+
+	if not quiet then
+		print(color.dim("Installing Lute packages..."))
+	end
+
+	local luteResult, luteStdout = runLuteInstall()
+	if not luteResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to install Lute packages")))
+			stdio.write(luteStdout)
+		end
+		return false
+	end
 
 	if not quiet then
 		print(color.dim("Installing Wally packages..."))
@@ -161,13 +182,21 @@ function install.run(options_: Options?): boolean
 
 	-- Wally has no support for deduping packages published by different
 	-- authors. We pull React from haedrix in plugin/wally.toml, but our
-	-- transitive deps (and Foundation's own React.lua shims) still point
-	-- at jsdotlua/react. Collapse the duplicates onto haedrix here so
-	-- there is a single canonical React across the package graph.
+	-- transitive deps (Foundation's React shims, ReactCharm/ReactFlow/
+	-- Storyteller, and jest's pretty-format -> react-is chain in
+	-- DevPackages) still point at jsdotlua/react. Both indexes resolve
+	-- shared transitives via the same runtime Packages._Index, so we
+	-- collapse duplicates across BOTH _Index dirs to land on a single
+	-- haedrix React identity.
 	if not quiet then
 		print(color.dim("Redirecting jsdotlua packages to haedrix..."))
 	end
-	local redirectResult = redirectPackages.byAuthor("plugin/Packages/_Index", "jsdotlua", "haedrix", quiet)
+	local redirectResult = redirectPackages.byAuthor(
+		{ "plugin/Packages/_Index", "plugin/DevPackages/_Index" },
+		"jsdotlua",
+		"haedrix",
+		quiet
+	)
 	if not redirectResult then
 		if not quiet then
 			print(color.bold(color.red("Failed to redirect packages")))

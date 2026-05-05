@@ -1,5 +1,6 @@
 coverage/
 node_modules/
+Packages/
 
 **/generated
 
@@ -8,3 +9,4 @@ node_modules/
 cspell.json
 .env
 *.rbxm
+*.rbxl
