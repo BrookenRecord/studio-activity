@@ -1,8 +1,32 @@
+diff --git a/Foundation/Components/Dialog/Dialog.lua b/Foundation/Components/Dialog/Dialog.lua
+index 7844af0..ca25f6c 100644
+--- a/Foundation/Components/Dialog/Dialog.lua
++++ b/Foundation/Components/Dialog/Dialog.lua
+@@ -297,6 +297,7 @@ local function Dialog(dialogProps: DialogInternalProps)
+ 					end)
+ 					else variants.backdrop.backgroundStyle,
+ 				ZIndex = 2,
++				InputSink = Enum.InputSink.All,
+ 				testId = `{props.testId}--backdrop`,
+ 			})
+ 			else nil,
+diff --git a/Foundation/Components/Popover/Content/PopoverContent.lua b/Foundation/Components/Popover/Content/PopoverContent.lua
+index 709467c..c91e3fe 100644
+--- a/Foundation/Components/Popover/Content/PopoverContent.lua
++++ b/Foundation/Components/Popover/Content/PopoverContent.lua
+@@ -205,6 +205,7 @@ local function PopoverContent(contentProps: PopoverContentProps, forwardedRef: R
+ 					Position = position:map(function(value: Vector2)
+ 						return UDim2.fromOffset(value.X, value.Y)
+ 					end),
++					InputSink = Enum.InputSink.All,
+ 					selection = props.selection,
+ 					selectionGroup = props.selectionGroup,
+ 					sizeConstraint = {
 diff --git a/Foundation/Components/Sheet/BottomSheet.lua b/Foundation/Components/Sheet/BottomSheet.lua
-index ad7336b..6e8ff45 100644
+index b70c89d..f3fd8fa 100644
 --- a/Foundation/Components/Sheet/BottomSheet.lua
 +++ b/Foundation/Components/Sheet/BottomSheet.lua
-@@ -462,6 +462,7 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
+@@ -507,6 +507,7 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
  					ClipsDescendants = false,
  					BackgroundTransparency = 1,
  					ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -10,68 +34,66 @@ index ad7336b..6e8ff45 100644
  					ScrollBarThickness = 0,
  					ref = outerScrollingRef,
  					[React.Change.CanvasPosition] = function(instance: ScrollingFrame)
-@@ -498,42 +499,8 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
+@@ -543,20 +544,8 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
  							-- Needed to sink the onActivated event to the backdrop
  							onActivated = Dash.noop,
  							testId = props.testId,
--							tag = "bg-surface-100 radius-large col items-center clip padding-top-small",
-+							tag = "bg-surface-100 radius-large col items-center clip",
+-							tag = if Flags.FoundationSheetFullBleed
+-								then {
+-									["col items-center radius-large clip bg-surface-100"] = true,
+-									["padding-top-medium"] = not hasFullBleed,
+-								}
+-								else "col items-center padding-top-small radius-large clip bg-surface-100",
++							tag = "col items-center radius-large clip bg-surface-100",
  						}, {
--							Gripper = React.createElement(View, {
--								ZIndex = 3,
--								backgroundStyle = tokens.Color.Content.Muted,
--								tag = "padding-y-small size-1000-100 radius-small align-y-center",
--								testId = `{props.testId}--gripper`,
--							}, {
--								TouchTarget = React.createElement(View, {
--									tag = "size-1000-600",
--									stateLayer = {
--										affordance = StateLayerAffordance.None,
--									},
--									onActivated = function()
--										-- Cancel input ended if the gripper is pressed
--										inputActive.current = false
--										if #snapPoints > 1 then
--											local nextIndex = currentSnapIndex.current % #snapPoints + 1
--											if Flags.FoundationSheetReducedMotion and reducedMotion then
--												jumpToSnapIndex(nextIndex)
--											else
--												springToSnapIndex(nextIndex)
--											end
--											if Flags.FoundationSheetFixClosingSwipe then
--												local isAtMaxSnapPoint = snapValueToPixels(snapPoints[nextIndex])
--													== maxSheetHeight
--												if isAtMaxSnapPoint then
--													setInnerScrollingEnabled(true)
--												end
--											end
--										else
--											closeSheet()
--										end
--									end,
--								}),
--							}),
+-							GripperContainer = if Flags.FoundationSheetFullBleed
+-								-- Wrap the gripper in a Folder so it stays out of the sheet's vertical layout
+-								-- and can overlay without reserving extra space above content.
+-								then React.createElement("Folder", nil, {
+-									Gripper = gripperElement,
+-								})
+-								else gripperElement,
  							Content = React.createElement(SheetContext.Provider, {
  								value = contextValue,
  							}, React.createElement(OwnerScope, { owner = elevation }, props.children)),
+@@ -579,6 +568,7 @@ local function BottomSheet(sheetProps: SheetProps, ref: React.Ref<Instance>)
+ 						Size = UDim2.fromScale(1, 2),
+ 						Position = UDim2.fromScale(0, -0.5),
+ 						ZIndex = 1,
++						InputSink = Enum.InputSink.All,
+ 						stateLayer = {
+ 							affordance = StateLayerAffordance.None,
+ 						},
+diff --git a/Foundation/Components/Sheet/CenterSheet.lua b/Foundation/Components/Sheet/CenterSheet.lua
+index 559fb7f..4a377b5 100644
+--- a/Foundation/Components/Sheet/CenterSheet.lua
++++ b/Foundation/Components/Sheet/CenterSheet.lua
+@@ -337,6 +337,7 @@ local function CenterSheet(centerSheetProps: CenterSheetProps, ref: React.Ref<Gu
+ 						Size = UDim2.fromScale(2, 2),
+ 						Position = UDim2.fromScale(-0.5, -0.5),
+ 						ZIndex = 1,
++						InputSink = Enum.InputSink.All,
+ 						stateLayer = {
+ 							affordance = StateLayerAffordance.None,
+ 						},
 diff --git a/Foundation/Components/Sheet/Sheet.lua b/Foundation/Components/Sheet/Sheet.lua
-index f5bd39e..f0ebe64 100644
+index 1546095..979e203 100644
 --- a/Foundation/Components/Sheet/Sheet.lua
 +++ b/Foundation/Components/Sheet/Sheet.lua
-@@ -30,7 +30,23 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -31,7 +31,23 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  
  	local isLandscape, setIsLandscape =
- 		React.useState(if overlay then overlay.AbsoluteSize.X > overlay.AbsoluteSize.Y else true)
+ 		React.useState(if screen then screen.AbsoluteSize.X > screen.AbsoluteSize.Y else true)
 -	local displaySize, setDisplaySize = React.useState(GuiService.ViewportDisplaySize)
 +
 +	local isSmallDisplay, setSmallDisplay = React.useState(false)
 +	React.useEffect(function()
-+		if overlay == nil then
++		if screen == nil then
 +			return
 +		end
 +
 +		local function update()
-+			setSmallDisplay(overlay.AbsoluteSize.X <= 500)
++			setSmallDisplay(screen.AbsoluteSize.X <= 500)
 +		end
 +		update()
 +
@@ -79,11 +101,11 @@ index f5bd39e..f0ebe64 100644
 +		return function()
 +			connection:Disconnect()
 +		end
-+	end, { overlay })
++	end, { screen })
  
  	React.useImperativeHandle(props.sheetRef, function()
  		return sheetRef.current
-@@ -50,10 +66,6 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -51,10 +67,6 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  		end
  	end, { isOpen })
  
@@ -93,8 +115,8 @@ index f5bd39e..f0ebe64 100644
 -
  	React.useLayoutEffect(function()
  		local connection
- 		if overlay then
-@@ -78,9 +90,9 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+ 		if screen then
+@@ -79,9 +91,9 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  	childProps.isOpen = nil
  	childProps.ref = ref
  	childProps.sheetRef = sheetRef
@@ -107,7 +129,7 @@ index f5bd39e..f0ebe64 100644
  	childProps.onClose = function()
  		if props.onClose then
  			props.onClose()
-@@ -88,7 +100,7 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -89,7 +101,7 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  		setIsOpen(false)
  	end
  
@@ -116,3 +138,40 @@ index f5bd39e..f0ebe64 100644
  		return React.createElement(BottomSheet, childProps)
  	elseif props.preferCenterSheet then
  		return React.createElement(CenterSheet, childProps)
+diff --git a/Foundation/Components/Sheet/SideSheet.lua b/Foundation/Components/Sheet/SideSheet.lua
+index 79ccd82..98b9ea0 100644
+--- a/Foundation/Components/Sheet/SideSheet.lua
++++ b/Foundation/Components/Sheet/SideSheet.lua
+@@ -288,6 +288,7 @@ local function SideSheet(sideSheetProps: SideSheetProps, ref: React.Ref<GuiObjec
+ 					Size = UDim2.fromScale(2, 2),
+ 					Position = UDim2.fromScale(-0.5, -0.5),
+ 					ZIndex = 1,
++					InputSink = Enum.InputSink.All,
+ 					stateLayer = {
+ 						affordance = StateLayerAffordance.None,
+ 					},
+diff --git a/Foundation/Utility/withGuiObjectProps.lua b/Foundation/Utility/withGuiObjectProps.lua
+index 1f3f3a3..11e8553 100644
+--- a/Foundation/Utility/withGuiObjectProps.lua
++++ b/Foundation/Utility/withGuiObjectProps.lua
+@@ -17,9 +17,6 @@ type CommonProps = Types.CommonProps
+ type NativeCommonProps = Types.NativeCommonProps
+ type SelectionGroup = Types.SelectionGroup
+ 
+-local hasInputSink = Flags.FoundationGuiObjectInputSinkProperty
+-	and (pcall(game.GetEngineFeature, game, "GuiObjectInputSink"))
+-
+ type ReactRefGuiObject = React.Ref<GuiObject>
+ 
+ -- Since GuiObjectProps is in a different form than what's actually applied, we need to manually define the applied props
+@@ -63,9 +60,7 @@ local function withGuiObjectProps<T>(props: GuiObjectProps & CommonProps, basePr
+ 		baseProps.BorderColor3 = props.BorderColor3
+ 		baseProps.BorderMode = props.BorderMode
+ 		baseProps.ClipsDescendants = props.ClipsDescendants
+-		if hasInputSink then
+-			baseProps.InputSink = props.InputSink
+-		end
++		baseProps.InputSink = props.InputSink
+ 		baseProps.Rotation = props.Rotation
+ 		baseProps.SizeConstraint = props.SizeConstraint
+ 
