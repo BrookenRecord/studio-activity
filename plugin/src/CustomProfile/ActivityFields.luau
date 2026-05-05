@@ -33,7 +33,7 @@ local function ActivityFields(props: Props)
 	local profileStore = ProfileContext.useProfile().profileStore
 
 	local profileBinding = useSignalBinding(profileStore.getProfile)
-	local showPlaceIcon = useSignalState(Charm.computed(function(): any
+	local showPlaceIcon = useSignalState(Charm.computed(function(): boolean?
 		return profileStore.getProfile().activity.showPlaceIcon
 	end))
 
