@@ -33,7 +33,9 @@ local function ActivityFields(props: Props)
 	local profileStore = ProfileContext.useProfile().profileStore
 
 	local profileBinding = useSignalBinding(profileStore.getProfile)
-	local showPlaceIcon = useSignalState(Charm.computed(function() end))
+	local showPlaceIcon = useSignalState(Charm.computed(function(): any
+		return profileStore.getProfile().activity.showPlaceIcon
+	end))
 
 	return e(Section, {
 		title = "Activity Fields",

@@ -178,16 +178,30 @@ local function createProfileStore(): ProfileStore
 			pcall(task.cancel, buildThread)
 		end
 
-		local profile = getActiveProfile()
-		if not profile then
+		local activeProfileId = getActiveProfileId()
+		local storage = localStorage.getStorage()
+		local customProfiles: CustomProfiles = storage.customProfiles or {}
+		local activeCustomProfile = customProfiles[activeProfileId]
+
+		local profile: Profile?
+		if presets[activeProfileId] then
+			profile = wrapPreset(presets[activeProfileId])
+		elseif activeCustomProfile then
+			profile = wrapCustomProfile(activeCustomProfile)
+		else
+			profile = wrapPreset(presets.default)
+		end
+
+		local overridePlaceId = if activeCustomProfile then activeCustomProfile.activity.overridePlaceId else nil
+		if profile == nil then
 			setResolvedActivity(nil)
 			return
 		end
 
 		local context: PlaceContext?
-		if profile.overridePlaceId and profile.overridePlaceId > 0 then
-			placeDetailsStore.prefetchPlaceIds({ profile.overridePlaceId })
-			context = placeDetailsStore.getContextByPlaceId(profile.overridePlaceId)
+		if overridePlaceId and overridePlaceId > 0 then
+			placeDetailsStore.prefetchPlaceIds({ overridePlaceId })
+			context = placeDetailsStore.getContextByPlaceId(overridePlaceId)
 		else
 			context = placeDetailsStore.getCurrentContext()
 		end

@@ -61,8 +61,9 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 	local placeDetailsStore = PlaceDetailsStore.get()
 
 	local originalOverride = getProfile().activity.overridePlaceId
+	local initialInput = if originalOverride and originalOverride > 0 then tostring(originalOverride) else ""
 
-	local getLookupInput, setLookupInput = signal(if originalOverride then tostring(originalOverride) else nil)
+	local getLookupInput, setLookupInput = signal(initialInput)
 	local getLookupPlaceId, setLookupPlaceId = signal(originalOverride)
 	local getLookupError, setLookupError = signal(nil :: string?)
 
@@ -83,8 +84,9 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 	end)
 
 	local function setOverrideLookupInput(input: string)
-		setLookupInput(input)
-		local trimmed = input:match("^%s*(.-)%s*$")
+		local normalizedInput = if input == "0" then "" else input
+		setLookupInput(normalizedInput)
+		local trimmed = normalizedInput:match("^%s*(.-)%s*$")
 
 		if trimmed == "" then
 			debouncedLookup.cancel()
@@ -98,6 +100,7 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 		if not placeId or placeId <= 0 then
 			debouncedLookup.cancel()
 			setLookupPlaceId(nil)
+			setLookupError("invalid_place_id")
 			persistPlaceOverride(nil)
 			return
 		end
@@ -183,6 +186,7 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 	end
 
 	local function save()
+		debouncedLookup.flush()
 		LocalStorageStore.get().setStorage(function(prev)
 			local new = table.clone(prev)
 
