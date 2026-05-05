@@ -38,7 +38,7 @@ local SOURCEMAP_PATH = "plugin/generated/sourcemap.json"
 local VERSION_PIN = "0.719.0.7191339"
 local PACKAGE_DIRS = {
 	"Packages",
-	-- "DevPackages",
+	"DevPackages",
 }
 local ROBLOX_PACKAGES = {
 	"Foundation",

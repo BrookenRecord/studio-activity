@@ -26,10 +26,19 @@ build.arguments = {
 			aliases = { "o" },
 		},
 	},
+	{
+		name = "release",
+		kind = "flag",
+		options = {
+			help = "Is this a release build? (default: false)",
+			aliases = { "r" },
+		},
+	},
 }
 
 export type Options = {
 	output: string?,
+	release: boolean?,
 }
 
 --[[
@@ -40,6 +49,7 @@ export type Options = {
 function build.run(options_: Options?)
 	local options: Options = options_ or {}
 	local output = options.output or "StudioActivity.rbxm"
+	local release = if options.release ~= nil then options.release else false
 
 	print(color.bold(color.white("Building for production...\n")))
 
@@ -53,8 +63,9 @@ function build.run(options_: Options?)
 
 	print()
 
+	local projectFile = if release then "release.project.json" else "default.project.json"
 	local buildResult = rojo.build({
-		projectFile = "plugin/default.project.jsonc",
+		projectFile = `plugin/{projectFile}`,
 		output = output,
 		stdio = "inherit",
 	})

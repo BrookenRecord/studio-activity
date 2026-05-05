@@ -13,10 +13,7 @@
 			"$path": "resources/"
 		},
 		"Packages": {
-			"$path": "Packages/",
-			"Dev": {
-				"$path": "DevPackages/"
-			}
+			"$path": "Packages/"
 		}
 	}
 }

@@ -2,7 +2,10 @@
 	Wally Package Patching
 
 	Discovers git-format patch files in plugin/patches/ and applies them
-	to the corresponding packages in plugin/Packages/_Index/.
+	to the corresponding packages in any of the configured package index
+	directories (plugin/Packages/_Index/, plugin/DevPackages/_Index/, etc.).
+	The first index directory that contains a directory matching the
+	patch's basename wins.
 
 	Application is resilient to upstream drift:
 	  1. First try a strict `git apply` -- the cheap, atomic happy path.
@@ -15,8 +18,8 @@
 	Note: `git apply --3way` would be nicer (inline conflict markers)
 	but it requires the patch's recorded blob hashes to be present in
 	the local object database. Our patches are generated in an ephemeral
-	`git init` repo that is deleted after `git diff --cached`, and
-	plugin/Packages/_Index is gitignored, so those blobs are never
+	`git init` repo that is deleted after `git diff --cached`, and the
+	package index directories are gitignored, so those blobs are never
 	available at apply time. `--reject` gives equivalent recoverability
 	via sidecar `.rej` files.
 ]]
@@ -27,7 +30,13 @@ local process = require("@lune/process")
 local color = require("../../utils/color")
 
 local PATCHES_DIR = "plugin/patches"
-local PACKAGES_INDEX_DIR = "plugin/Packages/_Index"
+-- Ordered list of package index directories to search for patch targets.
+-- First-match-wins; if a package name happens to live in multiple indexes,
+-- place the preferred one first.
+local PACKAGE_INDEX_DIRS = {
+	"plugin/Packages/_Index",
+	"plugin/DevPackages/_Index",
+}
 
 --[[
 	Recursively collects any `*.rej` files under a directory.
@@ -95,11 +104,40 @@ local function applyPatch(patchFilePath: string, targetPath: string): (string, s
 end
 
 --[[
+	Resolves the target package directory for a patch by searching each
+	configured index directory in order. First match wins. Falls back to
+	stripping a `_<n>` sequence suffix from the basename (so patches like
+	`Foundation_2.patch` still resolve to the `Foundation` package).
+]]
+local function resolveTargetPath(baseName: string): string?
+	local fallbackName = baseName:gsub("_%d+$", "")
+
+	for _, indexDir in PACKAGE_INDEX_DIRS do
+		local candidate = `{indexDir}/{baseName}`
+		if fs.isDir(candidate) then
+			return candidate
+		end
+		if fallbackName ~= baseName then
+			candidate = `{indexDir}/{fallbackName}`
+			if fs.isDir(candidate) then
+				return candidate
+			end
+		end
+	end
+
+	return nil
+end
+
+--[[
 	Applies all patches from plugin/patches/ to installed Wally packages.
 
-	Patch filenames must match _Index directory names exactly:
+	Patch filenames must match an `_Index` directory name in one of the
+	configured index dirs:
 	  plugin/patches/jsdotlua_jest-runtime@3.10.0.patch
-	  → applies to plugin/Packages/_Index/jsdotlua_jest-runtime@3.10.0/
+	    -> plugin/Packages/_Index/jsdotlua_jest-runtime@3.10.0/, OR
+	    -> plugin/DevPackages/_Index/jsdotlua_jest-runtime@3.10.0/
+	A `_<n>` suffix on the basename (e.g. `Foundation_2.patch`) strips off
+	for the lookup so multiple patches can target the same package.
 
 	@param quiet Whether to suppress output
 	@return True if all patches applied without unrecoverable failures.
@@ -129,19 +167,12 @@ local function applyPatches(quiet: boolean?): boolean
 
 	for _, patchFile in patchFiles do
 		local baseName = patchFile:gsub("%.patch$", "")
-		local targetDirName = baseName
-		local targetPath = `{PACKAGES_INDEX_DIR}/{targetDirName}`
+		local targetPath = resolveTargetPath(baseName)
 
-		-- If no directory matches the full name, strip sequence number suffix (e.g., "_2")
-		if not fs.isDir(targetPath) then
-			targetDirName = baseName:gsub("_%d+$", "")
-			targetPath = `{PACKAGES_INDEX_DIR}/{targetDirName}`
-		end
-
-		if not fs.isDir(targetPath) then
+		if targetPath == nil then
 			if not quiet then
 				print(color.yellow(`  Warning: Package directory not found for patch: {patchFile}`))
-				print(color.yellow(`  Expected: {targetPath}`))
+				print(color.yellow(`  Searched: {table.concat(PACKAGE_INDEX_DIRS, ", ")}`))
 			end
 			continue
 		end
@@ -179,7 +210,7 @@ local function applyPatches(quiet: boolean?): boolean
 			print(color.yellow(`  - {entry.patch}`))
 		end
 		print(color.dim("  Resolve the conflicts (or apply the .rej hunks by hand), then run"))
-		print(color.dim("  `lune run patch plugin/Packages/_Index/<pkg>` twice to regenerate."))
+		print(color.dim("  `lune run patch <packages>/_Index/<pkg>` twice to regenerate."))
 	end
 
 	return #failedPatches == 0
