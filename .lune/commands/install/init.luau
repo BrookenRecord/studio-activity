@@ -11,6 +11,7 @@ local applyPatches = require("./install/patches")
 local color = require("../utils/color")
 local exec = require("../lib/process/exec")
 local installFoundation = require("./install/foundation")
+local redirectPackages = require("./install/redirectPackages")
 local rojo = require("../lib/project/rojo")
 
 local install = {}
@@ -158,6 +159,22 @@ function install.run(options_: Options?): boolean
 		print(color.bold(color.white("Successfully installed Foundation packages!")))
 	end
 
+	-- Wally has no support for deduping packages published by different
+	-- authors. We pull React from haedrix in plugin/wally.toml, but our
+	-- transitive deps (and Foundation's own React.lua shims) still point
+	-- at jsdotlua/react. Collapse the duplicates onto haedrix here so
+	-- there is a single canonical React across the package graph.
+	if not quiet then
+		print(color.dim("Redirecting jsdotlua packages to haedrix..."))
+	end
+	local redirectResult = redirectPackages.byAuthor("plugin/Packages/_Index", "jsdotlua", "haedrix", quiet)
+	if not redirectResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to redirect packages")))
+		end
+		return false
+	end
+
 	-- Apply patches to Wally packages
 	if not quiet then
 		print(color.dim("Applying package patches..."))
@@ -173,6 +190,19 @@ function install.run(options_: Options?): boolean
 
 	if not quiet then
 		print(color.bold(color.white("Successfully applied package patches!")))
+	end
+
+	local sourcemapResult2, sourcemapStdout2 = rojo.sourcemap({
+		projectFile = PROJECT_FILE,
+		output = SOURCEMAP_PATH,
+		includeNonScripts = true,
+	})
+	if not sourcemapResult2 then
+		if not quiet then
+			print(color.bold(color.red("Failed to generate project sourcemap")))
+			stdio.write(sourcemapStdout2)
+		end
+		return false
 	end
 
 	return true

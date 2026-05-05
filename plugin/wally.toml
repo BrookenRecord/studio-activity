@@ -9,8 +9,9 @@ private = true
 # shared-packages = "game.ReplicatedStorage.Packages"
 
 [dependencies]
-React = "jsdotlua/react@17.2.1"
-ReactRoblox = "jsdotlua/react-roblox@17.2.1"
+React = "haedrix/react@17.3.8"
+ReactRoblox = "haedrix/react-roblox@17.3.8"
+ReactGlobals = "haedrix/react-globals@17.3.8"
 ReactFlow = "outofbears/react-flow@0.4.0"
 Log = "realthx1/luaulog@0.3.0"
 Sift = "csqrl/sift@0.0.8"
