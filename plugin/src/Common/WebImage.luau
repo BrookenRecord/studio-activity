@@ -37,52 +37,55 @@ local function WebImage(props: Props)
 	local isBig = props.size == "big"
 
 	useEffect(function()
-		if imageData == nil then
-			setHasError(true)
-			return
-		end
-
 		local editableImage
-		local success, err = pcall(function()
-			local decoded = png.decode(imageData)
+		local thread = task.spawn(function()
+			if imageData == nil then
+				setHasError(true)
+				return
+			end
 
-			local size = Vector2.new(decoded.width, decoded.height)
-			editableImage = AssetService:CreateEditableImage({
-				Size = size,
-			})
+			local success, err = pcall(function()
+				local decoded = png.decode(imageData)
 
-			editableImage:WritePixelsBuffer(Vector2.zero, size, decoded.pixels)
+				local size = Vector2.new(decoded.width, decoded.height)
+				editableImage = AssetService:CreateEditableImage({
+					Size = size,
+				})
 
-			local editableImageContent = Content.fromObject(editableImage)
-			if Flags.isDataModelContentApiAvailable then
-				-- TODO: Remove the type cast when this API has proper types
-				local result, content = (AssetService :: any):CreateDataModelContentAsync(editableImageContent)
-				-- TODO Luau: This enum is too new for the LSP to type check
-				if result == (Enum :: any).CreateContentResult.Success then
-					setImageContent(content)
-					editableImage:Destroy()
-					editableImage = nil :: any
+				editableImage:WritePixelsBuffer(Vector2.zero, size, decoded.pixels)
+
+				local editableImageContent = Content.fromObject(editableImage)
+				if Flags.isDataModelContentApiAvailable then
+					-- TODO: Remove the type cast when this API has proper types
+					local result, content = (AssetService :: any):CreateDataModelContentAsync(editableImageContent)
+					-- TODO Luau: This enum is too new for the LSP to type check
+					if result == (Enum :: any).CreateContentResult.Success then
+						setImageContent(content)
+						editableImage:Destroy()
+						editableImage = nil :: any
+					else
+						setImageContent(editableImageContent)
+					end
 				else
 					setImageContent(editableImageContent)
 				end
-			else
-				setImageContent(editableImageContent)
-			end
 
-			-- TODO: Migrate to the static content API once available. Should save
-			-- a bit of memory.
+				-- TODO: Migrate to the static content API once available. Should save
+				-- a bit of memory.
+			end)
+
+			if not success then
+				setHasError(true)
+				Logger:Warn("Error while rendering web image", {
+					error = err,
+				})
+			else
+				setHasError(false)
+			end
 		end)
 
-		if not success then
-			setHasError(true)
-			Logger:Warn("Error while rendering web image", {
-				error = err,
-			})
-		else
-			setHasError(false)
-		end
-
 		return function()
+			task.cancel(thread)
 			if editableImage then
 				editableImage:Destroy()
 			end

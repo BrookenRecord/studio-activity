@@ -5,11 +5,7 @@ registry = "test"
 [[package]]
 name = "brhodes/studio-activity"
 version = "0.3.1"
-<<<<<<< HEAD
-dependencies = [["Chalk", "jsdotlua/chalk@0.2.1"], ["Charm", "grilme99/charm@0.11.0-rc.3"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "jsdotlua/react@17.2.1"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactFlow", "outofbears/react-flow@0.4.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.2.1"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["Storyteller", "flipbook-labs/storyteller@1.8.1"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"]]
-=======
 dependencies = [["Charm", "grilme99/charm@0.11.0-rc.3"], ["Log", "realthx1/luaulog@0.3.0"], ["React", "haedrix/react@17.3.8"], ["ReactCharm", "grilme99/react-charm@0.4.0-rc.3"], ["ReactFlow", "outofbears/react-flow@0.4.0"], ["ReactGlobals", "haedrix/react-globals@17.3.8"], ["ReactRoblox", "haedrix/react-roblox@17.3.8"], ["Sift", "csqrl/sift@0.0.8"], ["Signal", "stravant/goodsignal@0.3.1"], ["png", "grilme99/png-luau@0.2.1"], ["sha256", "dekkonot/sha256@1.0.1"], ["t", "osyrisrblx/t@3.1.1"], ["Chalk", "jsdotlua/chalk@0.2.1"], ["Jest", "jsdotlua/jest@3.10.0"], ["JestGlobals", "jsdotlua/jest-globals@3.10.0"], ["Storyteller", "flipbook-labs/storyteller@1.10.0"]]
->>>>>>> main
 
 [[package]]
 name = "corecii/greentea"
