@@ -9,7 +9,7 @@
 		},
 		"ReplicatedStorage": {
 			"StudioActivity": {
-				"$path": "default.project.jsonc"
+				"$path": "default.project.json"
 			}
 		}
 	}

@@ -38,8 +38,8 @@
 				"luau-lsp": {
 					"sourcemap": {
 						"sourcemapFile": "plugin/generated/sourcemap.json",
-						"rojoProjectFile": "plugin/generated/sourcemap.project.jsonc",
-						"generatorCommand": "rojo sourcemap plugin/generated/sourcemap.project.jsonc --output plugin/generated/sourcemap.json --absolute --include-non-scripts"
+						"rojoProjectFile": "plugin/generated/sourcemap.project.json",
+						"generatorCommand": "rojo sourcemap plugin/generated/sourcemap.project.json --output plugin/generated/sourcemap.json --absolute --include-non-scripts"
 					},
 					"completion": {
 						"enabled": true,

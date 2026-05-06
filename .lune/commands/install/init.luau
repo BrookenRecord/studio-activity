@@ -33,7 +33,7 @@ install.arguments = {
 	},
 }
 
-local PROJECT_FILE = "plugin/default.project.jsonc"
+local PROJECT_FILE = "plugin/default.project.json"
 local SOURCEMAP_PATH = "plugin/generated/sourcemap.json"
 local VERSION_PIN = "0.719.0.7191339"
 local PACKAGE_DIRS = {

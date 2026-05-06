@@ -1,6 +1,6 @@
 --[[
 	Rojo Operations
-	
+
 	Provides common Rojo-related operations used across multiple commands.
 ]]
 
@@ -25,7 +25,7 @@ export type BuildResult = {
 
 --[[
 	Builds a Rojo project to a place file.
-	
+
 	@param options Build options
 	@return Build result with success status and any error info
 ]]
@@ -67,7 +67,7 @@ export type ServeOptions = {
 
 --[[
 	Starts a Rojo serve session.
-	
+
 	@param options Serve options
 	@return Serve result with success status and exit code
 ]]
@@ -95,13 +95,13 @@ export type SourcemapOptions = {
 
 --[[
 	Generates a Rojo sourcemap.
-	
+
 	@param options Sourcemap options
 	@return success, error message
 ]]
 function rojo.sourcemap(options_: SourcemapOptions?): (boolean, string)
 	local options: SourcemapOptions = options_ or {}
-	local projectFile = if options.projectFile ~= nil then options.projectFile else "default.project.jsonc"
+	local projectFile = if options.projectFile ~= nil then options.projectFile else "default.project.json"
 	local output = if options.output ~= nil then options.output else "sourcemap.json"
 	local includeNonScripts = if options.includeNonScripts ~= nil then options.includeNonScripts else true
 	local absolute = if options.absolute ~= nil then options.absolute else true

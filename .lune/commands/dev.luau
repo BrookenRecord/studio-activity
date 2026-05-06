@@ -44,7 +44,7 @@ function dev.run(_options: Options)
 	-- Build plugin with Rojo
 	task.spawn(function()
 		local buildResult = rojo.build({
-			projectFile = "plugin/default.project.jsonc",
+			projectFile = "plugin/default.project.json",
 			plugin = "StudioActivity.rbxm",
 			watch = true,
 			stdio = "inherit",

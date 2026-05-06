@@ -4,7 +4,7 @@
 	"luau-lsp.completion.imports.suggestRequires": true,
 	"luau-lsp.completion.imports.separateGroupsWithLine": true,
 	"luau-lsp.sourcemap.useVSCodeWatcher": true,
-	"luau-lsp.sourcemap.rojoProjectFile": "plugin/generated/sourcemap.project.jsonc",
+	"luau-lsp.sourcemap.rojoProjectFile": "plugin/generated/sourcemap.project.json",
 	"luau-lsp.sourcemap.sourcemapFile": "plugin/generated/sourcemap.json",
 	"luau-lsp.sourcemap.generatorCommand": "lune run codegen",
 	"editor.formatOnSave": true
