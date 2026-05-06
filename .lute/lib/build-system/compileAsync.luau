@@ -3,6 +3,7 @@ local path = require("@std/path")
 
 local copyInto = require("@scripts/lib/copyInto")
 local project = require("@repo/project")
+local run = require("@scripts/lib/run")
 local runBuildGroupAsync = require("@scripts/lib/build-system/runBuildGroupAsync")
 local types = require("@scripts/lib/build-system/types")
 local writeBuildVarsAsync = require("@scripts/lib/build-system/writeBuildVarsAsync")
@@ -41,6 +42,17 @@ local function compileAsync(context: BuildContext)
 	})
 
 	if context.channel == "prod" then
+		runBuildGroupAsync({
+			name = `✂️ prune build`,
+			paths = { context.dest },
+			context = context,
+			step = function()
+				for _, pattern in project.PROD_CONFIG.prunedFiles do
+					run("find", { context.dest, "-type", "f", "-name", `"{pattern}"`, "-delete" })
+				end
+			end,
+		})
+
 		for _, dir in project.PROD_CONFIG.prunedDirs do
 			local relativePath = path.relative(project.PLUGIN_PATH, dir)
 

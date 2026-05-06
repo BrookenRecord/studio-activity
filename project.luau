@@ -15,13 +15,6 @@ return {
 	ROJO_BUILD_PROJECT = path.resolve("./plugin/default.project.json"),
 	ROJO_TESTS_PROJECT = path.resolve("./plugin/tests.project.json"),
 
-	FOLDERS_TO_LINT = {
-		".lune",
-		".lute",
-		"plugin/bin",
-		"plugin/src",
-	},
-
 	PROD_CONFIG = {
 		prunedDirs = {
 			path.resolve("./plugin/DevPackages"),
