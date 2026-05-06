@@ -1,5 +1,8 @@
 local path = require("@std/path")
 
+local BuildVars = require("@repo/plugin/src/BuildVars/Types")
+type BuildVars = BuildVars.BuildVars
+
 export type Channel = "prod" | "dev"
 export type Target = "creator-store" | "local"
 
@@ -12,7 +15,7 @@ export type BuildContext = {
 	channel: Channel,
 	target: Target,
 	dest: path.Path,
-	env: { [string]: string },
+	vars: BuildVars,
 	shouldRebuild: boolean,
 	cache: BuildCache,
 }

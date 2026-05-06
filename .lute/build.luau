@@ -9,12 +9,10 @@ local toml = require("@batteries/toml")
 
 local buildSystem = require("@scripts/lib/build-system")
 local copyInto = require("@scripts/lib/copyInto")
-local createRojoProjectAsync = require("@scripts/lib/createRojoProjectAsync")
 local getStudioPluginsPath = require("@scripts/lib/getStudioPluginsPath")
 local project = require("@repo/project")
--- local dotenv = require("@scripts/lib/dotenv")
 local run = require("@scripts/lib/run")
--- local watch = require("@scripts/lib/watch")
+local watch = require("@scripts/lib/watch")
 
 local WALLY_MANIFEST_PATH = path.resolve("plugin/wally.toml")
 
@@ -79,7 +77,7 @@ end
 -- This environment variable comes from `.env` and is required to be set. This
 -- condition just makes sure if it's _not_ set that the user will then go and
 -- get their `.env` file in order
-if not process.env.BASE_URL then
+if not process.env.API_HOST then
 	error(table.concat({
 		"One or more critical environment variables are not set.",
 		"Please make sure to copy `.env.template` to `.env`. If you already have a `.env` file, make sure the environment variables from the template match your local copy",
@@ -91,13 +89,22 @@ local context: BuildContext = {
 	target = target,
 	shouldRebuild = args:has("clean"),
 	dest = path.join(project.BUILD_PATH, channel, target),
-	env = {
-		BUILD_VERSION = (readWallyManifestAsync() :: any).package.version,
-		BUILD_CHANNEL = if channel == "prod" then "production" else "development",
-		BUILD_TARGET = target,
-		BUILD_HASH = getCommitHash(),
-		BASE_URL = process.env.BASE_URL,
-		LOG_LEVEL = process.env.LOG_LEVEL,
+	vars = {
+		build = {
+			version = (readWallyManifestAsync() :: any).package.version,
+			channel = channel,
+			isDev = channel ~= "prod",
+			hash = getCommitHash(),
+		},
+
+		api = {
+			secure = channel == "prod",
+			host = process.env.API_HOST,
+		},
+
+		discord = {
+			clientId = process.env.DISCORD_CLIENT_ID,
+		},
 	},
 	cache = buildSystem.readBuildCacheAsync(),
 }
@@ -108,14 +115,8 @@ local function buildPluginBinary()
 		paths = { context.dest },
 		context = context,
 		step = function()
-			local projectPath = path.resolve(path.join(context.dest, "../default.project.json"))
-
-			createRojoProjectAsync(projectPath, {
-				name = "StudioActivity",
-				tree = {
-					["$path"] = tostring(path.resolve(context.dest)),
-				},
-			})
+			local projectPath = path.resolve(path.join(context.dest, "default.project.json"))
+			copyInto(project.ROJO_BUILD_PROJECT, projectPath)
 
 			local dest = path.resolve(path.join(context.dest, "..", project.PLUGIN_FILENAME))
 
@@ -155,3 +156,27 @@ local function build()
 end
 
 build()
+
+if args:has("watch") then
+	local function onChanged(filePath: path.Path)
+		print("change?", filePath)
+		if tostring(filePath):match(tostring(project.PLUGIN_PATH)) then
+			buildSystem.writeBuildCacheAsync(context.cache)
+			buildPluginBinary()
+		else
+			build()
+		end
+	end
+
+	watch({
+		roots = {
+			"./plugin",
+			"./protos",
+		},
+		excludedFilePatterns = {
+			".*Packages",
+			"build",
+		},
+		onChanged = onChanged,
+	})
+end

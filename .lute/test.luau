@@ -1,15 +1,13 @@
 local cli = require("@batteries/cli")
+local dotenv = require("@dotenv")
 local path = require("@std/path")
 local process = require("@std/process")
-local run = require("./lib/run")
 local system = require("@std/system")
 
-local dotenv = require("@dotenv")
+local project = require("@repo/project")
+local run = require("./lib/run")
+
 pcall(dotenv.config)
-
-local UNIVERSE_ID = 10128045586
-local PLACE_ID = 137718969043315
-
 local args = cli.parser()
 
 args:add("apiKey", "option", {
@@ -36,11 +34,11 @@ run("rocale", {
 	"--script",
 	".lute/tasks/run-tests.luau",
 	"--load.project",
-	"plugin/tests.project.json",
+	tostring(project.ROJO_TESTS_PROJECT),
 	"--universeId",
-	UNIVERSE_ID,
+	process.env.ROBLOX_UNIT_TESTING_UNIVERSE_ID,
 	"--placeId",
-	PLACE_ID,
+	process.env.ROBLOX_UNIT_TESTING_PLACE_ID,
 	"--output",
 	tostring(path.join(system.tmpdir(), "tests.rbxl")),
 }, {
