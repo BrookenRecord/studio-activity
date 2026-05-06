@@ -93,6 +93,7 @@ local context: BuildContext = {
 		build = {
 			version = (readWallyManifestAsync() :: any).package.version,
 			channel = channel,
+			target = target,
 			isDev = channel ~= "prod",
 			hash = getCommitHash(),
 		},
