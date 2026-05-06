@@ -2,7 +2,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local React = require(Packages.React)
-local Storyteller = require(Packages.Storyteller)
+local Storyteller = require(Packages.Dev.Storyteller)
 
 local AddAccountFlow = require(script.Parent.AddAccountFlow)
 

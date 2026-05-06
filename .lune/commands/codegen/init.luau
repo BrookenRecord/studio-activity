@@ -59,7 +59,7 @@ function codegen.run(options_: Options?): boolean
 
 		-- Generate sourcemap
 		local sourcemapSuccess, sourcemapError = rojo.sourcemap({
-			projectFile = "plugin/default.project.jsonc",
+			projectFile = "plugin/default.project.json",
 			output = "plugin/generated/sourcemap.json",
 			absolute = true,
 		})

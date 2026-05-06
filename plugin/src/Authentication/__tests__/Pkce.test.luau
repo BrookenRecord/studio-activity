@@ -2,7 +2,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Authentication = Plugin.Source.Authentication
 local Packages = Plugin.Packages
-local JestGlobals = require(Packages.JestGlobals)
+local JestGlobals = require(Packages.Dev.JestGlobals)
 
 local describe = JestGlobals.describe
 local expect = JestGlobals.expect

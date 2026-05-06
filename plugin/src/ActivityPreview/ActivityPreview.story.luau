@@ -3,7 +3,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
-local Storyteller = require(Packages.Storyteller)
+local Storyteller = require(Packages.Dev.Storyteller)
 
 local ActivityPreview = require(script.Parent.ActivityPreview)
 

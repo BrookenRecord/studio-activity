@@ -11,6 +11,7 @@ local applyPatches = require("./install/patches")
 local color = require("../utils/color")
 local exec = require("../lib/process/exec")
 local installFoundation = require("./install/foundation")
+local redirectPackages = require("./install/redirectPackages")
 local rojo = require("../lib/project/rojo")
 
 local install = {}
@@ -32,12 +33,12 @@ install.arguments = {
 	},
 }
 
-local PROJECT_FILE = "plugin/default.project.jsonc"
+local PROJECT_FILE = "plugin/default.project.json"
 local SOURCEMAP_PATH = "plugin/generated/sourcemap.json"
-local VERSION_PIN = "0.712.0.7120913"
+local VERSION_PIN = "0.719.0.7191339"
 local PACKAGE_DIRS = {
 	"Packages",
-	-- "DevPackages",
+	"DevPackages",
 }
 local ROBLOX_PACKAGES = {
 	"Foundation",
@@ -53,6 +54,14 @@ local ROBLOX_PACKAGES = {
 	"Promise",
 	"Dash",
 }
+
+local function runLuteInstall(): (boolean, string)
+	local result = process.exec("lute", { "pkg", "install" })
+	if not result.ok then
+		return false, result.stderr
+	end
+	return true, result.stdout
+end
 
 local function runWallyInstall(): (boolean, string)
 	local result = process.exec("wally", { "install" }, {
@@ -92,6 +101,19 @@ export type Options = {
 function install.run(options_: Options?): boolean
 	local options: Options = options_ or {}
 	local quiet = if options.quiet ~= nil then options.quiet else false
+
+	if not quiet then
+		print(color.dim("Installing Lute packages..."))
+	end
+
+	local luteResult, luteStdout = runLuteInstall()
+	if not luteResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to install Lute packages")))
+			stdio.write(luteStdout)
+		end
+		return false
+	end
 
 	if not quiet then
 		print(color.dim("Installing Wally packages..."))
@@ -158,6 +180,30 @@ function install.run(options_: Options?): boolean
 		print(color.bold(color.white("Successfully installed Foundation packages!")))
 	end
 
+	-- Wally has no support for deduping packages published by different
+	-- authors. We pull React from haedrix in plugin/wally.toml, but our
+	-- transitive deps (Foundation's React shims, ReactCharm/ReactFlow/
+	-- Storyteller, and jest's pretty-format -> react-is chain in
+	-- DevPackages) still point at jsdotlua/react. Both indexes resolve
+	-- shared transitives via the same runtime Packages._Index, so we
+	-- collapse duplicates across BOTH _Index dirs to land on a single
+	-- haedrix React identity.
+	if not quiet then
+		print(color.dim("Redirecting jsdotlua packages to haedrix..."))
+	end
+	local redirectResult = redirectPackages.byAuthor(
+		{ "plugin/Packages/_Index", "plugin/DevPackages/_Index" },
+		"jsdotlua",
+		"haedrix",
+		quiet
+	)
+	if not redirectResult then
+		if not quiet then
+			print(color.bold(color.red("Failed to redirect packages")))
+		end
+		return false
+	end
+
 	-- Apply patches to Wally packages
 	if not quiet then
 		print(color.dim("Applying package patches..."))
@@ -173,6 +219,19 @@ function install.run(options_: Options?): boolean
 
 	if not quiet then
 		print(color.bold(color.white("Successfully applied package patches!")))
+	end
+
+	local sourcemapResult2, sourcemapStdout2 = rojo.sourcemap({
+		projectFile = PROJECT_FILE,
+		output = SOURCEMAP_PATH,
+		includeNonScripts = true,
+	})
+	if not sourcemapResult2 then
+		if not quiet then
+			print(color.bold(color.red("Failed to generate project sourcemap")))
+			stdio.write(sourcemapStdout2)
+		end
+		return false
 	end
 
 	return true

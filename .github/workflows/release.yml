@@ -2,8 +2,8 @@ name: 🚀 Release Plugin
 
 on:
   pull_request:
-    types: [ closed ]
-    branches: [ main ]
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: write
@@ -11,7 +11,8 @@ permissions:
 jobs:
   release:
     if: >-
-      github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/v')
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -47,7 +48,7 @@ jobs:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
 
       - name: 🛠️ Build plugin
-        run: lune run build
+        run: lune run build --release
         env:
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
 

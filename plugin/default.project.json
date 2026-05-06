@@ -1,0 +1,22 @@
+{
+	"name": "StudioActivity",
+	"emitLegacyScripts": false,
+	"tree": {
+		"$className": "Folder",
+		"Bin": {
+			"$path": "bin/"
+		},
+		"Source": {
+			"$path": "src/"
+		},
+		"Resources": {
+			"$path": "resources/"
+		},
+		"Packages": {
+			"$path": "Packages/",
+			"Dev": {
+				"$path": "DevPackages/"
+			}
+		}
+	}
+}

@@ -1,0 +1,16 @@
+{
+	"name": "StudioActivity",
+	"tree": {
+		"$className": "DataModel",
+		"ServerScriptService": {
+			"$properties": {
+				"LoadStringEnabled": true
+			}
+		},
+		"ReplicatedStorage": {
+			"StudioActivity": {
+				"$path": "default.project.json"
+			}
+		}
+	}
+}
