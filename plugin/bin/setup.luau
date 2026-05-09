@@ -105,7 +105,7 @@ local function setup(plugin: Plugin, main: PluginMain)
 				200 --minSize.Y
 			),
 			getDockTitle = function(localize): string
-				return localize("Plugin", "Name")
+				return localize("Plugin", "Name") .. if BuildVars.build.isDev then ` [{BuildVars.build.hash}]` else ""
 			end,
 			zIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		},

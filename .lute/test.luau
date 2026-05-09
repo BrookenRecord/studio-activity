@@ -29,6 +29,9 @@ if not apiKey then
 	)
 end
 
+local filter = args:get("filter")
+local testPathPattern = if filter then filter else "__null__"
+
 run("rocale", {
 	"run",
 	"--script",
@@ -41,6 +44,8 @@ run("rocale", {
 	process.env.ROBLOX_UNIT_TESTING_PLACE_ID,
 	"--output",
 	tostring(path.join(system.tmpdir(), "tests.rbxl")),
+	"--lua.globals",
+	`JEST_TEST_PATH_PATTERN={testPathPattern}`,
 }, {
 	env = {
 		ROBLOX_API_KEY = apiKey,
