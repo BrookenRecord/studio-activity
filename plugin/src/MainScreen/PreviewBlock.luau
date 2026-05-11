@@ -26,8 +26,6 @@ local function PreviewBlock(props: Props)
 	local profileStore = ProfileStore.get()
 	local currentActivity = useSignalState(profileStore.getResolvedActivity)
 
-	print("resolved", currentActivity)
-
 	return e(View, {
 		tag = "size-full-0 auto-y col align-x-center",
 		LayoutOrder = props.LayoutOrder,

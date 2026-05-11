@@ -53,7 +53,6 @@ export type ProfileStore = {
 --- Wrap a CustomProfileData into a runtime Profile.
 --- The build function ignores context and returns the stored static activity.
 local function wrapCustomProfile(data: CustomProfileData): Profile
-	print("wrapCustomProfile", data)
 	return {
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
