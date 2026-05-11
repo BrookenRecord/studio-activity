@@ -33,6 +33,7 @@ local function CustomProfile(props: Props)
 	local isNewProfile = props.existingProfileId == nil
 
 	return e(ProfileContext.Provider, {
+		isOpen = props.isOpen,
 		existingProfileId = props.existingProfileId,
 	}, {
 		Sheet = e(Sheet.Root, {

@@ -56,6 +56,7 @@ local function OverridePreview(props: Props)
 				and e(Icon, {
 					name = if override.status == "idle"
 						then IconName.EyeSlash
+						elseif override.status == "error" then IconName.TriangleExclamation
 						elseif iconWebUrl == nil then IconName.CameraSlash
 						else IconName.TriangleExclamation,
 					size = IconSize.Small,

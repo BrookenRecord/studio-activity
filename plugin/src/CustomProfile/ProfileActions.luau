@@ -37,7 +37,7 @@ local function ProfileActions(props: Props)
 			fillBehavior = FillBehavior.Fill,
 			LayoutOrder = nextOrder(),
 			onActivated = function()
-				profile.profileStore.save()
+				profile.profileStore.save({ activate = props.isNewProfile })
 				props.onClose(true)
 			end,
 		}),

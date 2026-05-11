@@ -11,6 +11,7 @@ local e = React.createElement
 local useState = React.useState
 local useEffect = React.useEffect
 local useMemo = React.useMemo
+local useRef = React.useRef
 local useContext = React.useContext
 
 export type ProfileContext = {
@@ -21,6 +22,7 @@ local ProfileContext = React.createContext<<ProfileContext?>>(nil)
 ProfileContext.displayName = "ProfileContext"
 
 local function ProfileContextProvider(props: {
+	isOpen: boolean,
 	existingProfileId: string?,
 	children: React.ReactNode,
 })
@@ -29,15 +31,46 @@ local function ProfileContextProvider(props: {
 		return createCustomProfileStore(props.existingProfileId)
 	end)
 
+	-- Track the most recently committed store so we can dispose of it before
+	-- swapping in a new one, even across the React render/commit boundary.
+	local activeStoreRef = useRef(profileStore)
+	-- Track whether the sheet was previously open so we can recreate the store
+	-- only on a closed -> open transition, not on every prop change.
+	local prevIsOpenRef = useRef(props.isOpen)
+
 	useEffect(function()
-		setProfileStore(createCustomProfileStore(props.existingProfileId))
-	end, { props.existingProfileId })
+		local isOpening = props.isOpen and not prevIsOpenRef.current
+		prevIsOpenRef.current = props.isOpen
+
+		if not isOpening then
+			return
+		end
+
+		local nextStore = createCustomProfileStore(props.existingProfileId)
+		local previousStore = activeStoreRef.current
+		activeStoreRef.current = nextStore
+		setProfileStore(nextStore)
+
+		if previousStore and previousStore ~= nextStore then
+			previousStore.destroy()
+		end
+	end, { props.isOpen :: any, props.existingProfileId })
+
+	useEffect(function()
+		return function()
+			local store = activeStoreRef.current
+			if store then
+				store.destroy()
+				activeStoreRef.current = nil :: any
+			end
+		end
+	end, {})
 
 	local value = useMemo(function(): ProfileContext
 		return {
 			profileStore = profileStore,
 		}
-	end)
+	end, { profileStore })
 
 	return e(ProfileContext.Provider, {
 		value = value,

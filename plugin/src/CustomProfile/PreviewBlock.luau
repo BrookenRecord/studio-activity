@@ -18,6 +18,7 @@ local View = Foundation.View
 
 local createNextOrder = ReactUtils.createNextOrder
 local useSignalState = ReactCharm.useSignalState
+local useMemo = React.useMemo
 
 local e = React.createElement
 
@@ -30,19 +31,23 @@ local function PreviewBlock(props: Props)
 	local profile = ProfileContext.useProfile()
 	local placeDetailsStore = PlaceDetailsStore.get()
 
-	local currentActivity = useSignalState(Charm.computed(function(): ActivityConfig?
-		local customProfile = profile.profileStore.getProfile()
-		local overridePlaceId = customProfile.activity.overridePlaceId
-		local placeContext = if overridePlaceId and overridePlaceId > 0
-			then placeDetailsStore.getContextByPlaceId(overridePlaceId)
-			else placeDetailsStore.getCurrentContext()
+	local currentActivityComputed = useMemo(function()
+		return Charm.computed(function(): ActivityConfig?
+			local customProfile = profile.profileStore.getProfile()
+			local overridePlaceId = customProfile.activity.overridePlaceId
+			local placeContext = if overridePlaceId and overridePlaceId > 0
+				then placeDetailsStore.getContextByPlaceId(overridePlaceId)
+				else placeDetailsStore.getCurrentContext()
 
-		if placeContext == nil then
-			return nil
-		end
+			if placeContext == nil then
+				return nil
+			end
 
-		return buildCustomActivity(placeContext, customProfile)
-	end))
+			return buildCustomActivity(placeContext, customProfile)
+		end)
+	end, { profile.profileStore :: any, placeDetailsStore })
+
+	local currentActivity = useSignalState(currentActivityComputed)
 
 	return e(View, {
 		tag = "size-full-0 auto-y col align-x-center padding-bottom-small",

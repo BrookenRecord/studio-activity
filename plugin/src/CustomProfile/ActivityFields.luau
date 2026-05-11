@@ -1,7 +1,6 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
@@ -32,10 +31,11 @@ local function ActivityFields(props: Props)
 	local nextOrder = createNextOrder()
 	local profileStore = ProfileContext.useProfile().profileStore
 
+	local currentProfile = useSignalState(profileStore.getProfile)
 	local profileBinding = useSignalBinding(profileStore.getProfile)
-	local showPlaceIcon = useSignalState(Charm.computed(function(): boolean?
-		return profileStore.getProfile().activity.showPlaceIcon
-	end))
+	local showPlaceIcon = if currentProfile.activity.showPlaceIcon == nil
+		then true
+		else currentProfile.activity.showPlaceIcon
 
 	return e(Section, {
 		title = "Activity Fields",
@@ -54,9 +54,12 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 				onActivated = function()
 					profileStore.setProfile(function(prev)
+						-- Read from `prev` so concurrent updates don't desync; treat
+						-- the absence of an explicit value as the default (true).
+						local current = if prev.activity.showPlaceIcon == nil then true else prev.activity.showPlaceIcon
 						return Sift.Dictionary.mergeDeep(prev, {
 							activity = {
-								showPlaceIcon = not showPlaceIcon,
+								showPlaceIcon = not current,
 							},
 						})
 					end)

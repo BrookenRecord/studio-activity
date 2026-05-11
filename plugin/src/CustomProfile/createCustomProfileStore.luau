@@ -38,6 +38,10 @@ export type OverrideLookupState = {
 	error: string?,
 }
 
+export type SaveOptions = {
+	activate: boolean?,
+}
+
 export type CustomProfileStore = {
 	getProfile: () -> CustomProfileData,
 	setProfile: (CustomProfileData | (CustomProfileData) -> CustomProfileData) -> CustomProfileData,
@@ -45,8 +49,9 @@ export type CustomProfileStore = {
 	setOverrideLookupInput: (input: string) -> (),
 
 	isChanged: () -> boolean,
-	save: () -> (),
+	save: (options: SaveOptions?) -> (),
 	delete: () -> (),
+	destroy: () -> (),
 }
 
 local function createCustomProfileStore(existingProfileId: string?): CustomProfileStore
@@ -62,6 +67,12 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 
 	local originalOverride = getProfile().activity.overridePlaceId
 	local initialInput = if originalOverride and originalOverride > 0 then tostring(originalOverride) else ""
+
+	-- Kick off a fetch for the saved override so the UI doesn't sit in a
+	-- "loading" state when the editor reopens before the entry is cached.
+	if originalOverride and originalOverride > 0 then
+		placeDetailsStore.prefetchPlaceIds({ originalOverride })
+	end
 
 	local getLookupInput, setLookupInput = signal(initialInput)
 	local getLookupPlaceId, setLookupPlaceId = signal(originalOverride)
@@ -84,11 +95,11 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 	end)
 
 	local function setOverrideLookupInput(input: string)
-		local normalizedInput = if input == "0" then "" else input
+		local trimmed = input:match("^%s*(.-)%s*$") or ""
+		local normalizedInput = if trimmed == "0" then "" else trimmed
 		setLookupInput(normalizedInput)
-		local trimmed = normalizedInput:match("^%s*(.-)%s*$")
 
-		if trimmed == "" then
+		if normalizedInput == "" then
 			debouncedLookup.cancel()
 			setLookupPlaceId(nil)
 			setLookupError(nil)
@@ -96,7 +107,7 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 			return
 		end
 
-		local placeId = tonumber(trimmed)
+		local placeId = tonumber(normalizedInput)
 		if not placeId or placeId <= 0 then
 			debouncedLookup.cancel()
 			setLookupPlaceId(nil)
@@ -185,37 +196,25 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 		return not Sift.Dictionary.equalsDeep(profile, customProfiles[profileId])
 	end
 
-	local function save()
+	local function save(options: SaveOptions?)
 		debouncedLookup.flush()
-		LocalStorageStore.get().setStorage(function(prev)
-			local new = table.clone(prev)
 
-			local customProfiles: LocalStorageStore.CustomProfiles = if new.customProfiles
-				then table.clone(new.customProfiles)
-				else {}
+		local profileStore = ProfileStore.get()
+		profileStore.setCustomProfile(profileId, getProfile())
 
-			customProfiles[profileId] = getProfile()
-
-			new.customProfiles = customProfiles
-			return new
-		end)
-
-		ProfileStore.get().setActiveProfile(profileId)
+		local shouldActivate = if options and options.activate ~= nil then options.activate else false
+		if shouldActivate then
+			profileStore.setActiveProfile(profileId)
+		end
 	end
 
 	local function delete()
-		LocalStorageStore.get().setStorage(function(prev)
-			local new = table.clone(prev)
+		debouncedLookup.cancel()
+		ProfileStore.get().removeCustomProfile(profileId)
+	end
 
-			local customProfiles: LocalStorageStore.CustomProfiles = if new.customProfiles
-				then table.clone(new.customProfiles)
-				else {}
-
-			customProfiles[profileId] = nil
-
-			new.customProfiles = customProfiles
-			return new
-		end)
+	local function destroy()
+		debouncedLookup.cancel()
 	end
 
 	return {
@@ -227,6 +226,7 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 		isChanged = isChanged,
 		save = save,
 		delete = delete,
+		destroy = destroy,
 	}
 end
 
