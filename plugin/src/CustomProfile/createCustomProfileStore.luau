@@ -117,7 +117,10 @@ local function createCustomProfileStore(existingProfileId: string?): CustomProfi
 		end
 
 		setLookupError(nil)
-		setLookupPlaceId(nil)
+
+		-- Intentionally do NOT clear lookupPlaceId here; the previously-resolved
+		-- place stays visible in the preview until the new lookup resolves,
+		-- avoiding a 1s "loading" flash on every keystroke.
 		debouncedLookup.call(placeId)
 	end
 

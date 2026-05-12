@@ -13,10 +13,8 @@ export type PlaceContext = createPlaceDetailsStore.PlaceContext
 export type PlaceEntry = createPlaceDetailsStore.PlaceEntry
 export type PlaceDetailsStore = createPlaceDetailsStore.PlaceDetailsStore
 
-local sharedStore = createPlaceDetailsStore()
-
 return table.freeze({
 	get = Charm.computed(function()
-		return sharedStore
+		return createPlaceDetailsStore()
 	end),
 })

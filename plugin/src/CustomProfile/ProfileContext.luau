@@ -86,7 +86,6 @@ local function useProfile(): ProfileContext
 end
 
 return {
-	Context = ProfileContextProvider,
 	Provider = ProfileContextProvider,
 	useProfile = useProfile,
 }

@@ -272,8 +272,17 @@ local function createPlaceDetailsStore(): PlaceDetailsStore
 		}
 	end
 
-	local currentPlaceId = game.PlaceId
+	local getCurrentPlaceId, setCurrentPlaceId = signal(game.PlaceId)
+	local placeIdConnection = game:GetPropertyChangedSignal("PlaceId"):Connect(function()
+		local placeId = game.PlaceId
+		setCurrentPlaceId(placeId)
+		if placeId > 0 then
+			ensurePlaceEntry(placeId, false)
+		end
+	end)
+
 	local getCurrentContext = computed(function(): PlaceContext?
+		local currentPlaceId = getCurrentPlaceId()
 		if currentPlaceId == 0 then
 			return {
 				placeType = "offline",
@@ -288,13 +297,14 @@ local function createPlaceDetailsStore(): PlaceDetailsStore
 		return getContextByPlaceId(currentPlaceId)
 	end)
 
-	if currentPlaceId > 0 then
-		prefetchPlaceIds({ currentPlaceId }, {
+	if game.PlaceId > 0 then
+		prefetchPlaceIds({ game.PlaceId }, {
 			showNotification = true,
 		})
 	end
 
 	local function destroy()
+		placeIdConnection:Disconnect()
 		for placeId, thread in fetchThreads do
 			pcall(task.cancel, thread)
 			fetchThreads[placeId] = nil
