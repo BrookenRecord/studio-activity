@@ -20,7 +20,11 @@ export type OpenOptions = {
 }
 
 type QueueEntry = ModalStackEntry & {
-	waitingThread: thread?,
+	-- Multiple callers can `openAsync` the same modal id (e.g. a discard prompt
+	-- racing with a delete prompt). We keep them all in a single queue entry --
+	-- the first caller's props win, and every waiter resumes with the same
+	-- result when the modal closes.
+	waitingThreads: { thread }?,
 }
 
 export type ModalStore = {
@@ -100,10 +104,22 @@ local function createModalStore(): ModalStore
 		local callingThread = coroutine.running()
 
 		setQueue(function(prev)
-			-- No-op if already queued
-			for _, entry in prev do
+			-- If the modal is already queued, attach our thread to its waiter
+			-- list so we resume with the same result when it closes. The first
+			-- caller's props/priority continue to drive the rendered modal.
+			for index, entry in prev do
 				if entry.id == id then
-					return prev
+					local waiters = if entry.waitingThreads then table.clone(entry.waitingThreads) else {}
+					table.insert(waiters, callingThread)
+
+					local new = table.clone(prev)
+					new[index] = {
+						id = entry.id,
+						priority = entry.priority,
+						props = entry.props,
+						waitingThreads = waiters,
+					}
+					return new
 				end
 			end
 
@@ -116,7 +132,7 @@ local function createModalStore(): ModalStore
 				id = id,
 				priority = priority,
 				props = props,
-				waitingThread = callingThread,
+				waitingThreads = { callingThread },
 			})
 			return new
 		end)
@@ -126,7 +142,7 @@ local function createModalStore(): ModalStore
 	end
 
 	local function close(id: ModalId?, result: any?)
-		local threadToResume: thread? = nil
+		local threadsToResume: { thread } = {}
 
 		setQueue(function(prev)
 			local targetId = id
@@ -141,7 +157,11 @@ local function createModalStore(): ModalStore
 			local new = {}
 			for _, entry in prev do
 				if entry.id == targetId then
-					threadToResume = entry.waitingThread
+					if entry.waitingThreads then
+						for _, thread in entry.waitingThreads do
+							table.insert(threadsToResume, thread)
+						end
+					end
 				else
 					table.insert(new, entry)
 				end
@@ -150,8 +170,8 @@ local function createModalStore(): ModalStore
 			return new
 		end)
 
-		if threadToResume then
-			task.spawn(threadToResume, result)
+		for _, thread in threadsToResume do
+			task.spawn(thread, result)
 		end
 	end
 
