@@ -14,6 +14,8 @@ local View = Foundation.View
 local NumberInput = Foundation.NumberInput
 local InputSize = Foundation.Enums.InputSize
 local NumberInputControlsVariant = Foundation.Enums.NumberInputControlsVariant
+local OnChangeCallbackReason = Foundation.Enums.OnChangeCallbackReason
+type OnChangeCallbackReason = Foundation.OnChangeCallbackReason
 
 local createNextOrder = ReactUtils.createNextOrder
 local useSignalState = ReactCharm.useSignalState
@@ -44,7 +46,15 @@ local function GameOverride(props: Props)
 				label = "Place ID",
 				hint = "Optionally override the game displayed on your activity. If unset, the place you're currently editing will be used instead.",
 				value = override.placeId or 0,
-				onChanged = function(placeId: number)
+				onChanged = function(placeId: number, reason: OnChangeCallbackReason)
+					-- NumberInput re-fires onChanged with its `value` prop on focus loss.
+					-- While our lookup debounce is in flight `value` collapses to 0,
+					-- which would normalise to "" and wipe the override. Keyboard
+					-- events already capture every real edit, so we can safely
+					-- ignore FocusLost.
+					if reason == OnChangeCallbackReason.FocusLost then
+						return
+					end
 					profile.profileStore.setOverrideLookupInput(if placeId == 0 then "" else tostring(placeId))
 				end,
 				formatAsString = function(placeId: number)
