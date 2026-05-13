@@ -1,12 +1,12 @@
 <div align="center">
 
-# `✨ Studio Activity`
+# 📡 `Studio Activity`
 
-**A privacy-friendly Roblox Studio plugin that shows your activity on Discord.**
+**Show what you're building in Studio, live on your Discord profile.**
 
-[![Static Code Analysis](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/analyze.yml) [![Tests](https://github.com/grilme99/studio-activity/actions/workflows/test.yml/badge.svg)](https://github.com/grilme99/studio-activity/actions/workflows/test.yml)
+[![Creator Store](./.github/assets/link-creator-store-full.svg)](https://create.roblox.com/store/asset/127703833967745/Studio-Activity) [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/grilme99/studio-activity/releases/latest)
 
-[Download](https://github.com/grilme99/studio-activity/releases/latest) · [Report a bug](https://github.com/grilme99/studio-activity/issues)
+[Report a bug](https://github.com/grilme99/studio-activity/issues)
 
 </div>
 
@@ -16,27 +16,48 @@ https://github.com/user-attachments/assets/0a7771f5-42ee-46dc-8fdb-9f7ad2bbc748
 
 ## What it does
 
-Studio Activity shows your current Roblox Studio session as a Discord activity on your profile, including the place name and how long you've been working on it. It's for creators who want to share what they're building without leaving Studio. The plugin posts directly to Discord's Headless Sessions API over HTTPS, so it works inside Studio's sandboxed plugin environment with no extra desktop app required.
+Studio Activity mirrors your current Roblox Studio session to Discord so your profile shows what you're building in real time. It can show your place name, session timer, and game metadata while letting you control how much detail you share. The plugin updates presence directly from Studio through Discord's API, so no extra desktop companion app is required.
+
+### Features
+
+- Pick from built-in presets, including **Confidential** when you don't want place details shown.
+- Create custom profiles to control how your activity appears on Discord.
+- Share place-aware activity when you want context, or keep it generic when you don't.
+- Link multiple Discord accounts and choose which ones receive updates.
+- Pause or resume presence anytime with a single toggle.
 
 ## Installation
 
-Studio Activity isn't on the Creator Marketplace right now, so installation is a one-time manual step:
+The easiest way to install Studio Activity is from the Creator Store:
 
-1. Download `StudioActivity.rbxm` from the [latest release](https://github.com/grilme99/studio-activity/releases/latest).
+1. Open the [Studio Activity listing](https://create.roblox.com/store/asset/127703833967745/Studio-Activity).
+2. Click to install the plugin in Roblox Studio.
+4. Click the plugin icon, follow the in-Studio onboarding flow, and link your Discord account.
+
+### Manual install (`.rbxm`)
+
+Prefer to sideload the latest build directly? Download `StudioActivity.rbxm` from the [latest GitHub release](https://github.com/grilme99/studio-activity/releases/latest) and add it to your Plugins folder.
+
+<details>
+<summary>Manual install steps</summary>
+
+1. Download `StudioActivity.rbxm` from the latest release.
 2. Open Roblox Studio.
 3. Open the **Plugins** tab and click **Plugins Folder**. Studio opens the plugins directory in your file manager.
 4. Drag `StudioActivity.rbxm` into that folder.
 5. Restart Studio. The plugin appears in the **Plugins** tab as **Studio Activity**.
 6. Click the plugin icon, follow the in-Studio onboarding flow, and link your Discord account.
 
-To update later, download the new `.rbxm` and replace the existing file in your Plugins folder.
+To update later, download the newer `.rbxm` and replace the existing file in your Plugins folder.
+
+</details>
 
 > [!WARNING]
-> **Be careful what other local plugins you install.** Studio Activity stores your Discord access token in its local plugin settings. Roblox Studio doesn't sandbox locally-installed (`.rbxm`) plugins from each other, so any other local plugin you have installed can read those settings and exfiltrate the token. Combined with the broad `sdk.social_layer_presence` scope (see [below](#why-does-the-plugin-ask-for-so-many-discord-permissions)), a malicious local plugin could use the stolen token to read or modify your Discord friends list. Only install local plugins from sources you trust.
+> **If you sideload Studio Activity as a local `.rbxm`, be careful what other local plugins you install.** Studio Activity stores your Discord access token in its local plugin settings. Roblox Studio doesn't sandbox locally-installed (`.rbxm`) plugins from each other, so any other local plugin you have installed can read those settings and exfiltrate the token. Combined with the broad `sdk.social_layer_presence` scope (see [below](#why-does-the-plugin-ask-for-so-many-discord-permissions)), a malicious local plugin could use the stolen token to read or modify your Discord friends list. Only install local plugins from sources you trust.
 
 ## Privacy & telemetry
 
-Studio Activity collects **anonymous, opt-in usage data**. You're asked during onboarding whether to enable it, and you can toggle it off whenever you want from plugin settings.
+Studio Activity supports **anonymous, opt-in usage data**. You're asked during onboarding whether to enable it, and you can toggle it off anytime from plugin settings.
 
 **Why I collect it.** I maintain Studio Activity on my own in my spare time. Telemetry is my only way to find out when an OAuth flow breaks for some chunk of users, or when a Studio update regresses presence updates. Without it, bugs that break onboarding can sit in a release for weeks before anyone files an issue. I keep the event list narrow on purpose: only what I need to spot regressions and prioritize fixes.
 
@@ -57,7 +78,7 @@ If you'd rather not contribute telemetry, leave the toggle off in plugin setting
 
 ## Why does the plugin ask for so many Discord permissions?
 
-When you link your Discord account, Discord will ask you to authorize the **`sdk.social_layer_presence`** scope. That scope is broader than what the plugin actually uses. Here's why.
+When you link your Discord account, Discord asks you to authorize the **`sdk.social_layer_presence`** scope. That scope is broader than what the plugin actually uses. Here's why.
 
 Roblox Studio plugins run in a sandbox and can't speak Discord's local RPC protocol that desktop apps use. The only way to update Discord activity from inside Studio is to POST to Discord's **Headless Sessions API**. To call that API, Discord requires the `sdk.social_layer_presence` OAuth scope, which is an umbrella scope for the Social SDK. It grants more than activity writes: it also lets an app connect to Discord's gateway on your behalf and read and write your relationships (your friends list).
 
