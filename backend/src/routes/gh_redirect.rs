@@ -68,15 +68,22 @@ pub fn gh_redirect(
             .map(ToOwned::to_owned);
 
         // Optional secret salt for deterministic anonymous distinct ids.
-        // Falls back to API key when unset so no new config is required.
-        let distinct_id_salt = env
-            .secret("POSTHOG_DISTINCT_ID_SALT")
-            .map_or_else(|_| api_key.clone(), |value| value.to_string());
+        // If unset, we intentionally use per-request random IDs.
+        let distinct_id_salt = match env.secret("POSTHOG_DISTINCT_ID_SALT") {
+            Ok(value) => Some(value.to_string()),
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "POSTHOG_DISTINCT_ID_SALT not configured; using per-request random anonymous distinct_id"
+                );
+                None
+            }
+        };
 
         let client_ip = edge.client_ip;
         let payload = posthog::build_pageview_payload(
             &api_key,
-            Some(&distinct_id_salt),
+            distinct_id_salt.as_deref(),
             &current_url,
             referrer.as_deref(),
             user_agent.as_deref(),

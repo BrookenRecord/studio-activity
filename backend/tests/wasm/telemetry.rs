@@ -303,9 +303,7 @@ async fn telemetry_missing_content_type_returns_error() {
     let app = test_router();
     let req = inject_edge(
         Request::post("/v1/telemetry")
-            .body(Body::from(
-                r#"{"distinctId":"u","pluginLoaded":{}}"#,
-            ))
+            .body(Body::from(r#"{"distinctId":"u","pluginLoaded":{}}"#))
             .unwrap(),
         mock_edge_context(),
     );

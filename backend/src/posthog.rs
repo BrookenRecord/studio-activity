@@ -377,8 +377,13 @@ pub fn build_pageview_payload(
         properties.insert("$ip".into(), json!(value));
     }
 
-    let distinct_id =
-        stable_pageview_distinct_id(distinct_id_salt.unwrap_or(api_key), client_ip, user_agent);
+    let distinct_id = distinct_id_salt
+        .map(str::trim)
+        .filter(|salt| !salt.is_empty())
+        .map_or_else(
+            || Uuid::new_v4().to_string(),
+            |salt| stable_pageview_distinct_id(salt, client_ip, user_agent),
+        );
 
     json!({
         "api_key": api_key,
