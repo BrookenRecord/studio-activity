@@ -21,6 +21,9 @@
 //! We do **not** collect: Roblox usernames, place names or IDs, game
 //! content, file paths, system information, or any free-form text.
 
+use once_cell::sync::Lazy;
+use prost::Message;
+use prost_reflect::{DescriptorPool, DynamicMessage, SerializeOptions};
 use serde_json::{json, Value};
 use worker::wasm_bindgen::JsValue;
 use worker::{Fetch, Headers, Method, Request, RequestInit};
@@ -30,24 +33,67 @@ use crate::proto::{telemetry_request::Event, TelemetryRequest};
 const POSTHOG_CAPTURE_PATH: &str = "/i/v0/e/";
 const LIB_NAME: &str = "studio-activity-backend";
 const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
+const TELEMETRY_REQUEST_DESCRIPTOR_NAME: &str = "api.v1.TelemetryRequest";
+
+static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
+    DescriptorPool::decode(include_bytes!(concat!(env!("OUT_DIR"), "/proto_descriptor.bin")).as_ref())
+        .expect("api.v1 descriptor pool")
+});
+
+fn posthog_serialize_options() -> SerializeOptions {
+    SerializeOptions::new()
+        .use_proto_field_name(true)
+        // Keep enum values in their canonical proto JSON string form.
+        .skip_default_fields(false)
+}
 
 /// Decomposes a proto `Event` into its snake_case event name and a flat
-/// properties JSON object by leveraging the serde `Serialize` derive.
+/// properties JSON object by using `prost-reflect`'s JSON serializer.
 ///
-/// The `Event` enum serializes as an externally-tagged enum, e.g.
-/// `{"auth_started": {"has_existing_credentials": true}}`. We split
-/// that into `("auth_started", {"has_existing_credentials": true})`.
+/// We serialize via reflection so we can apply PostHog-specific options
+/// without changing the plugin-facing pbjson wire format:
+/// - `use_proto_field_name(true)` for snake_case keys
+/// - `skip_default_fields(false)` so false/0/"" are preserved
 ///
 /// Null values (from unset `optional` proto fields) are stripped so
 /// only properties that were actually provided are forwarded.
 pub fn decompose_event(event: &Event) -> (String, Value) {
-    let serialized = serde_json::to_value(event).unwrap_or_default();
+    let descriptor = match DESCRIPTOR_POOL.get_message_by_name(TELEMETRY_REQUEST_DESCRIPTOR_NAME) {
+        Some(descriptor) => descriptor,
+        None => return (String::new(), json!({})),
+    };
 
-    let Value::Object(map) = serialized else {
+    // Wrap in TelemetryRequest so the oneof field name itself gives us
+    // the event name in proto snake_case.
+    let mut request = TelemetryRequest::default();
+    request.event = Some(event.clone());
+
+    let encoded = request.encode_to_vec();
+    let dynamic = match DynamicMessage::decode(descriptor.clone(), encoded.as_slice()) {
+        Ok(dynamic) => dynamic,
+        Err(_) => return (String::new(), json!({})),
+    };
+
+    let mut serializer = serde_json::Serializer::new(Vec::new());
+    if dynamic
+        .serialize_with_options(&mut serializer, &posthog_serialize_options())
+        .is_err()
+    {
+        return (String::new(), json!({}));
+    }
+
+    let serialized: Value = serde_json::from_slice(&serializer.into_inner()).unwrap_or_default();
+    let Value::Object(mut map) = serialized else {
         return (String::new(), json!({}));
     };
 
-    let Some((name, mut properties)) = map.into_iter().next() else {
+    let Some(event_oneof) = descriptor.oneofs().find(|oneof| oneof.name() == "event") else {
+        return (String::new(), json!({}));
+    };
+    let Some((name, mut properties)) = event_oneof
+        .fields()
+        .find_map(|field| map.remove(field.name()).map(|value| (field.name().to_owned(), value)))
+    else {
         return (String::new(), json!({}));
     };
 
