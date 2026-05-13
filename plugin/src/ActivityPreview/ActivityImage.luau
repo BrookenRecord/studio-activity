@@ -7,7 +7,7 @@ local ReactCharm = require(Packages.ReactCharm)
 
 local AppAssetsStore = require(Plugin.Source.Api.AppAssetsStore)
 local Types = require(script.Parent.Types)
-local WebImage = require(script.Parent.WebImage)
+local WebImage = require(Plugin.Source.Common.WebImage)
 
 local View = Foundation.View
 local Tooltip = Foundation.Tooltip

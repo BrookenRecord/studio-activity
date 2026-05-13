@@ -9,7 +9,7 @@ local AccountEntry = require(script.Parent.AccountEntry)
 local AccountStore = require(Plugin.Source.Authentication.AccountStore)
 local LinkAccountEntry = require(script.Parent.LinkAccountEntry)
 local NoneLinkedBlock = require(script.Parent.NoneLinkedBlock)
-local Section = require(script.Parent.Parent.Section)
+local Section = require(Plugin.Source.Common.Section)
 
 local createAccountStore = require(Plugin.Source.Authentication.AccountStore.createAccountStore)
 type LocalUser = createAccountStore.LocalUser

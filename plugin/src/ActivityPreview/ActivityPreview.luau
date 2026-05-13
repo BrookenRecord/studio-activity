@@ -27,7 +27,7 @@ local function ActivityPreview(props: Props)
 	local nextOrder = createNextOrder()
 
 	return e(View, {
-		tag = "size-full-0 auto-y bg-surface-300 col padding-small gap-medium radius-small stroke-emphasis stroke-thick",
+		tag = "size-full-0 auto-y bg-surface-300 clip col padding-small gap-medium radius-small stroke-emphasis stroke-thick",
 		LayoutOrder = props.LayoutOrder,
 	}, {
 		Shadow = Flags.isShadowAvailable and e("UIShadow", {
@@ -42,7 +42,10 @@ local function ActivityPreview(props: Props)
 		}),
 
 		Activity = e(View, {
-			tag = "auto-xy row gap-large padding-x-xsmall align-y-center",
+			tag = "size-full-0 auto-y row gap-large padding-x-xsmall align-y-top",
+			sizeConstraint = {
+				MaxSize = Vector2.new(math.huge, 300),
+			},
 			LayoutOrder = nextOrder(),
 		}, {
 			ActivityImage = e(ActivityImage, {
@@ -51,7 +54,7 @@ local function ActivityPreview(props: Props)
 			}),
 
 			DetailsBlock = e(View, {
-				tag = "auto-xy col gap-xsmall",
+				tag = "grow auto-y col gap-xsmall",
 				LayoutOrder = nextOrder(),
 			}, {
 				ActivityDetails = e(ActivityDetails, {

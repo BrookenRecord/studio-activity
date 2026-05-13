@@ -8,8 +8,8 @@ authors = ["Brooke Rhodes <hello@brooke.sh>"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-worker = { version = "0.7", features = ['http', 'axum'] }
-worker-macros = { version = "0.7", features = ['http'] }
+worker = { version = "0.8", features = ['http', 'axum'] }
+worker-macros = { version = "0.8", features = ['http'] }
 axum = { version = "0.8", features = [
     'json',
     'query',
