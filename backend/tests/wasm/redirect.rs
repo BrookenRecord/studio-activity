@@ -6,7 +6,7 @@ use wasm_bindgen_test::*;
 use crate::helpers::{inject_edge, mock_edge_context, test_router};
 
 #[wasm_bindgen_test]
-async fn root_returns_permanent_redirect() {
+async fn root_returns_temporary_redirect() {
     let app = test_router();
     let req = inject_edge(
         Request::get("/").body(Body::empty()).unwrap(),
@@ -14,7 +14,14 @@ async fn root_returns_permanent_redirect() {
     );
 
     let resp = app.oneshot(req).await.unwrap();
-    assert_eq!(resp.status(), StatusCode::PERMANENT_REDIRECT);
+    assert_eq!(resp.status(), StatusCode::TEMPORARY_REDIRECT);
+    let cache_control = resp
+        .headers()
+        .get("cache-control")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(cache_control, "no-store");
 }
 
 #[wasm_bindgen_test]
