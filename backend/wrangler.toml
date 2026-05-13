@@ -3,7 +3,7 @@ main = "build/index.js"
 compatibility_date = "2026-04-05"
 
 [build]
-command = "cargo install -q \"worker-build@^0.7\" && worker-build --release"
+command = "cargo install -q \"worker-build@^0.8\" && worker-build --release"
 
 [vars]
 POSTHOG_HOST = "https://us.i.posthog.com"
