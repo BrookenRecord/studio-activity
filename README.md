@@ -4,8 +4,8 @@
 
 **Show what you're building in Studio, live on your Discord profile.**
 
-<a href="https://create.roblox.com/store/asset/127703833967745/Studio-Activity"><img src="./.github/assets/link-creator-store-full.svg" alt="Creator Store" height="48" /></a>
-<a href="https://github.com/grilme99/studio-activity/releases/latest"><img src="./.github/assets/link-github-releases.svg" alt="GitHub Releases" height="48" /></a>
+<a href="https://create.roblox.com/store/asset/127703833967745/Studio-Activity"><img src="./.github/assets/link-creator-store-full.svg" alt="Creator Store" width="239" /></a>
+<a href="https://github.com/grilme99/studio-activity/releases/latest"><img src="./.github/assets/link-github-releases.svg" alt="GitHub Releases" width="224" /></a>
 
 [Report a bug](https://github.com/grilme99/studio-activity/issues)
 
