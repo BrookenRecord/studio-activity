@@ -15,5 +15,8 @@ async fn missing_edge_context_returns_500() {
 
     let json = body_json(resp).await;
     assert_eq!(json["type"], "/errors/internal");
-    assert!(json.get("detail").is_none(), "internal context must not leak");
+    assert!(
+        json.get("detail").is_none(),
+        "internal context must not leak"
+    );
 }

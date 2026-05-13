@@ -23,3 +23,6 @@ pub mod routing;
 
 #[path = "wasm/telemetry.rs"]
 pub mod telemetry;
+
+#[path = "wasm/posthog_pageview.rs"]
+pub mod posthog_pageview;
