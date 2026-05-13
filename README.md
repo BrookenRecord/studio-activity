@@ -11,8 +11,6 @@
   [![Creator Store](./.github/assets/link-creator-store.svg)](https://create.roblox.com/store/asset/127703833967745/Studio-Activity)
   [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/grilme99/studio-activity/releases/latest)
 
-[Report a bug](https://github.com/grilme99/studio-activity/issues)
-
 </div>
 
 ## Demo
