@@ -12,6 +12,8 @@
 
 ## Demo
 
+Preview of Studio Activity updating your Discord status while you work in Roblox Studio:
+
 https://github.com/user-attachments/assets/0a7771f5-42ee-46dc-8fdb-9f7ad2bbc748
 
 ## What it does
@@ -26,12 +28,21 @@ Studio Activity mirrors your current Roblox Studio session to Discord so your pr
 - Link multiple Discord accounts and choose which ones receive updates.
 - Pause or resume presence anytime with a single toggle.
 
+### Trust at a glance
+
+- Requires Roblox Studio and a Discord account.
+- Your Discord access token stays local in Studio; my backend never receives it.
+- Telemetry is anonymous and opt-in, and you can disable it anytime in plugin settings.
+- Creator Store is recommended; local `.rbxm` installs have extra plugin-isolation risk.
+- You can inspect the exact Discord calls in [`plugin/src/Api/Discord.luau`](plugin/src/Api/Discord.luau) and [`plugin/src/PresenceManager/createPresenceManager.luau`](plugin/src/PresenceManager/createPresenceManager.luau).
+
 ## Installation
 
 The easiest way to install Studio Activity is from the Creator Store:
 
 1. Open the [Studio Activity listing](https://create.roblox.com/store/asset/127703833967745/Studio-Activity).
 2. Click to install the plugin in Roblox Studio.
+3. Open Roblox Studio. Studio Activity appears in the **Plugins** tab.
 4. Click the plugin icon, follow the in-Studio onboarding flow, and link your Discord account.
 
 ### Manual install (`.rbxm`)
