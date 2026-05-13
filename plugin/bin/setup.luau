@@ -88,7 +88,7 @@ local function setup(plugin: Plugin, main: PluginMain)
 			getDescription = function(localize): string
 				return localize("Plugin", "Description")
 			end,
-			icon = "",
+			icon = "rbxassetid://120871425172435",
 			enabled = true,
 			clickableWhenViewportHidden = true,
 		},
