@@ -3,13 +3,14 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 
+local Constants = require(Plugin.Source.Common.Constants)
+local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
+
 local IconName = Foundation.Enums.IconName
 type IconName = Foundation.IconName
 
-local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
-
-local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
 type PlaceContext = PlaceDetailsStore.PlaceContext
 
 local STUDIO_LOGO_ASSET = "studio-logo"
@@ -35,7 +36,7 @@ local presets: { [string]: PresetProfile } = {
 					then onlineDetails.placeName
 					elseif offlineDetails then offlineDetails.placeName
 					else nil,
-				stateUrl = if onlineDetails then onlineDetails.placeLink else nil,
+				detailsUrl = Constants.PLUGIN_LINK_PROFILE_LINK,
 				buttons = if onlineDetails
 					then {
 						{ label = "Play on Roblox", url = onlineDetails.placeLink },
@@ -62,6 +63,7 @@ local presets: { [string]: PresetProfile } = {
 			return {
 				name = "Roblox Studio",
 				details = "Editing in Studio",
+				detailsUrl = Constants.PLUGIN_LINK_PROFILE_LINK,
 				assets = {
 					largeImage = STUDIO_LOGO_ASSET,
 					largeText = "Studio Activity",

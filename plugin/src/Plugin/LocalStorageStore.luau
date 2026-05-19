@@ -25,8 +25,10 @@ export type CustomProfileButton = {
 type CustomProfileActivity = {
 	details: string?,
 	state: string?,
-	buttons: { CustomProfileButton }?,
 	showPlaceIcon: boolean?,
+	showJoinButton: boolean?,
+	showPluginButton: boolean?,
+	customButtons: { CustomProfileButton }?,
 	overridePlaceId: number?,
 }
 

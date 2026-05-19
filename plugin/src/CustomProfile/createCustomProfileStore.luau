@@ -25,6 +25,8 @@ local DEFAULT_CUSTOM_PROFILE: CustomProfileData = {
 		details = "Building my game",
 		state = "{placeName}",
 		showPlaceIcon = true,
+		showJoinButton = true,
+		showPluginButton = false,
 	},
 }
 
