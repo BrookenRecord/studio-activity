@@ -6,6 +6,7 @@ local Charm = require(Packages.Charm)
 local BuildVars = require(Plugin.Source.BuildVars)
 local DiscordApi = require(Plugin.Source.Api.Discord)
 local Logger = require(Plugin.Source.Logger)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 
 type ApplicationAsset = DiscordApi.ApplicationAsset
 
@@ -60,7 +61,7 @@ local function createAppAssetsStore(discord: DiscordApi.DiscordApi)
 end
 
 return {
-	get = Charm.computed(function()
+	get = createSingleton(function()
 		local discord = DiscordApi.new({
 			clientId = BuildVars.discord.clientId,
 		})

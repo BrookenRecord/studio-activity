@@ -1,11 +1,11 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
 local t = require(Packages.t)
 
 local Logger = require(Plugin.Source.Logger)
 local createPluginSettingsStore = require(script.Parent.createPluginSettingsStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 
 local DiscordApi = require(Plugin.Source.Api.Discord)
 type ApiUser = DiscordApi.User
@@ -101,7 +101,7 @@ local function validate(value: any): (boolean, string)
 end
 
 return {
-	get = Charm.computed(function()
+	get = createSingleton(function()
 		return createPluginSettingsStore("PresenceLocalStorage", defaultValue, validate)
 	end),
 }
