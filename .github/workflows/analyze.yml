@@ -26,9 +26,7 @@ jobs:
         run: rokit list
 
       - name: Run Lune setup
-        run: |
-          lune setup
-          rm -f .luaurc
+        run: lune setup
 
       - name: 📦 Setup project
         run: lune run setup

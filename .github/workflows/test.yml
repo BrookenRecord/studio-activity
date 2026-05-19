@@ -43,3 +43,5 @@ jobs:
         run: lute run test
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+          ROBLOX_UNIT_TESTING_UNIVERSE_ID: "10128045586"
+          ROBLOX_UNIT_TESTING_PLACE_ID: "137718969043315"

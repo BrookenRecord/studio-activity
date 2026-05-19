@@ -1,0 +1,30 @@
+local path = require("@std/path")
+
+local BuildVars = require("@repo/plugin/src/BuildVars/Types")
+type BuildVars = BuildVars.BuildVars
+
+export type Channel = "prod" | "dev"
+export type Target = "creator-store" | "local"
+
+export type BuildCache = {
+	-- Maps file path to MD5 hash
+	[string]: string,
+}
+
+export type BuildContext = {
+	channel: Channel,
+	target: Target,
+	dest: path.Path,
+	vars: BuildVars,
+	shouldRebuild: boolean,
+	cache: BuildCache,
+}
+
+export type BuildGroup = {
+	name: string,
+	paths: { path.Pathlike },
+	context: BuildContext,
+	step: (self: BuildGroup) -> (),
+}
+
+return nil

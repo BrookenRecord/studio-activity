@@ -15,11 +15,13 @@ local function runTests()
 	Charm.flags.strict = true
 	Charm.flags.frozen = true
 
+	-- selene: allow(global_usage)
+	local testPathPattern = _G.JEST_TEST_PATH_PATTERN
+
 	local status, result = Jest.runCLI(root, {
 		verbose = false,
 		ci = false,
-		-- selene: allow(global_usage)
-		testPathPattern = _G.JEST_TEST_PATH_PATTERN,
+		testPathPattern = if testPathPattern ~= "__null__" then testPathPattern else nil,
 	}, { root }):awaitStatus()
 
 	if status == "Rejected" then

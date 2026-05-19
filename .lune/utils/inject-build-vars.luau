@@ -34,6 +34,7 @@ local function injectBuildVars(config: Config)
 		build = {
 			version = version,
 			channel = "live",
+			target = "",
 			hash = gitHash,
 			isDev = not isProd,
 		},

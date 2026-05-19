@@ -2,6 +2,7 @@ export type BuildVars = {
 	build: {
 		version: string,
 		channel: string,
+		target: string,
 		hash: string,
 		isDev: boolean,
 	},
