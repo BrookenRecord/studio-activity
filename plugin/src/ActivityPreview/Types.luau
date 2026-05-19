@@ -1,3 +1,8 @@
+export type ActivityButton = {
+	label: string,
+	url: string,
+}
+
 export type ActivityAssets = {
 	largeImage: string?,
 	largeText: string?,
@@ -11,6 +16,7 @@ export type Activity = {
 	detailsUrl: string?,
 	state: string?,
 	stateUrl: string?,
+	buttons: { ActivityButton }?,
 	startedAt: number?,
 	assets: ActivityAssets?,
 }

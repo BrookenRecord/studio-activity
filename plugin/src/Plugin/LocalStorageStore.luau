@@ -10,6 +10,11 @@ local createPluginSettingsStore = require(script.Parent.createPluginSettingsStor
 local DiscordApi = require(Plugin.Source.Api.Discord)
 type ApiUser = DiscordApi.User
 
+export type CustomProfileButton = {
+	label: string,
+	url: string,
+}
+
 --[[
 	NOTE: All optional fields here are intentionally tri-state — `nil` means
 	"use the runtime default" (which can differ per field), and `true`/`false`
@@ -20,6 +25,7 @@ type ApiUser = DiscordApi.User
 type CustomProfileActivity = {
 	details: string?,
 	state: string?,
+	buttons: { CustomProfileButton }?,
 	showPlaceIcon: boolean?,
 	overridePlaceId: number?,
 }

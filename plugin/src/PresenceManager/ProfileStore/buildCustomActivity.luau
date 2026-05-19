@@ -31,6 +31,7 @@ local function buildCustomActivity(context: PlaceContext, profile: CustomProfile
 		details = if details then interpolate(details, templates) else nil,
 		detailsUrl = "https://github.com/grilme99/studio-activity",
 		state = if state then interpolate(state, templates) else nil,
+		buttons = profile.activity.buttons,
 		assets = if profile.activity.showPlaceIcon and onlineDetails
 			then {
 				largeImage = onlineDetails.iconWebUrl,

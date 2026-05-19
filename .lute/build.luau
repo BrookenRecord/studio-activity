@@ -100,7 +100,7 @@ local context: BuildContext = {
 
 		api = {
 			secure = channel == "prod",
-			host = process.env.API_HOST,
+			host = if channel == "prod" then process.env.API_HOST else "localhost:8787",
 		},
 
 		discord = {

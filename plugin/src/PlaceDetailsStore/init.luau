@@ -15,6 +15,6 @@ export type PlaceDetailsStore = createPlaceDetailsStore.PlaceDetailsStore
 
 return table.freeze({
 	get = Charm.computed(function()
-		return createPlaceDetailsStore()
+		return Charm.untracked(createPlaceDetailsStore)
 	end),
 })

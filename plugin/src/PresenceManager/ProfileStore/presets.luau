@@ -36,6 +36,11 @@ local presets: { [string]: PresetProfile } = {
 					elseif offlineDetails then offlineDetails.placeName
 					else nil,
 				stateUrl = if onlineDetails then onlineDetails.placeLink else nil,
+				buttons = if onlineDetails
+					then {
+						{ label = "Play on Roblox", url = onlineDetails.placeLink },
+					}
+					else nil,
 				assets = if onlineDetails
 					then {
 						largeImage = onlineDetails.iconWebUrl,
