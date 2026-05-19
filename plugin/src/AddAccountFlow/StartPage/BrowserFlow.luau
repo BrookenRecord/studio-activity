@@ -21,6 +21,10 @@ local useState = React.useState
 local useEffect = React.useEffect
 local useCallback = React.useCallback
 
+-- This is a horrible hack that allows us to copy the contents of a TextBox
+-- to the clipboard, by sending a virtual ctrl + c keycode sequence.
+--
+-- Not sure if this will work long-term. Only one way to find out!
 local function sendCopyKeycode()
 	local virtualInput: VirtualInput = UserInputService:CreateVirtualInput() :: any
 
@@ -63,8 +67,12 @@ local function BrowserFlow()
 			local focusConnection = textbox.Focused:Connect(function()
 				selectAll()
 
-				sendCopyKeycode()
-				NotificationStore.get().push("info", "Copied URL to clipboard")
+				-- This hack might start to error in the future, so we wrap it
+				-- in a pcall just in case.
+				local success = pcall(sendCopyKeycode)
+				if success then
+					NotificationStore.get().push("info", "Copied URL to clipboard")
+				end
 			end)
 
 			-- Re-select all if the user clicks to move the cursor while focused.
