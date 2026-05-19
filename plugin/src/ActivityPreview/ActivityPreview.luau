@@ -5,6 +5,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local ActivityButtons = require(script.Parent.ActivityButtons)
 local ActivityDetails = require(script.Parent.ActivityDetails)
 local ActivityImage = require(script.Parent.ActivityImage)
 local ActivityTimer = require(script.Parent.ActivityTimer)
@@ -13,9 +14,6 @@ local Types = require(script.Parent.Types)
 
 local View = Foundation.View
 local Text = Foundation.Text
-local Button = Foundation.Button
-local InputSize = Foundation.Enums.InputSize
-local ButtonVariant = Foundation.Enums.ButtonVariant
 
 local createNextOrder = ReactUtils.createNextOrder
 
@@ -28,24 +26,6 @@ type Props = {
 
 local function ActivityPreview(props: Props)
 	local nextOrder = createNextOrder()
-
-	local buttonChildren: { React.ReactNode } = {}
-	if props.activity.buttons then
-		for index, button in props.activity.buttons do
-			table.insert(
-				buttonChildren,
-				e(Button, {
-					text = button.label,
-					key = `{button.label}:{index}`,
-					size = InputSize.Small,
-					variant = if index == 1 then ButtonVariant.SoftEmphasis else ButtonVariant.Standard,
-					width = UDim.new(1, 0),
-					LayoutOrder = index,
-					onActivated = function() end,
-				})
-			)
-		end
-	end
 
 	return e(View, {
 		tag = "size-full-0 auto-y bg-surface-300 clip col padding-small gap-medium radius-small stroke-emphasis stroke-thick",
@@ -90,10 +70,10 @@ local function ActivityPreview(props: Props)
 			}),
 		}),
 
-		ActivityButtons = props.activity.buttons and e(View, {
-			tag = "size-full-0 auto-y col gap-small",
+		ActivityButtons = props.activity.buttons and e(ActivityButtons, {
+			buttons = props.activity.buttons,
 			LayoutOrder = nextOrder(),
-		}, buttonChildren),
+		}),
 	})
 end
 
