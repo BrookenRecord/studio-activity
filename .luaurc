@@ -7,6 +7,6 @@
 		"std": "~/.lute/typedefs/1.0.0/std",
 		"pkg": "./Packages",
 		"repo": ".",
-		"scripts": "./.lute",
+		"scripts": "./.lute"
 	}
 }
