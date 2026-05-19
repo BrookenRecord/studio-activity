@@ -19,12 +19,10 @@ use crate::helpers::{inject_edge, mock_edge_context, test_router};
 async fn deserialize_plugin_loaded() {
     let json = r#"{
         "distinctId": "user-1",
-        "event": {
-            "pluginLoaded": {
-                "accountCount": 2,
-                "isPresenceActive": true,
-                "activeProfile": "default"
-            }
+        "pluginLoaded": {
+            "accountCount": 2,
+            "isPresenceActive": true,
+            "activeProfile": "default"
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
@@ -41,7 +39,7 @@ async fn deserialize_plugin_loaded() {
 
 #[wasm_bindgen_test]
 async fn deserialize_plugin_loaded_defaults() {
-    let json = r#"{"distinctId":"user-1","event":{"pluginLoaded":{}}}"#;
+    let json = r#"{"distinctId":"user-1","pluginLoaded":{}}"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
         Some(telemetry_request::Event::PluginLoaded(PluginLoaded {
@@ -59,7 +57,7 @@ async fn deserialize_plugin_loaded_defaults() {
 
 #[wasm_bindgen_test]
 async fn deserialize_ui_opened() {
-    let json = r#"{"distinctId":"user-2","event":{"uiOpened":{}}}"#;
+    let json = r#"{"distinctId":"user-2","uiOpened":{}}"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
         req.event,
@@ -71,9 +69,7 @@ async fn deserialize_ui_opened() {
 async fn deserialize_onboarding_completed() {
     let json = r#"{
         "distinctId": "user-3",
-        "event": {
-            "onboardingCompleted": { "optedIntoTelemetry": true }
-        }
+        "onboardingCompleted": { "optedIntoTelemetry": true }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
@@ -90,12 +86,10 @@ async fn deserialize_onboarding_completed() {
 async fn deserialize_account_linked() {
     let json = r#"{
         "distinctId": "user-4",
-        "event": {
-            "accountLinked": {
-                "accountCount": 1,
-                "isFirstAccount": true,
-                "linkFlow": 1
-            }
+        "accountLinked": {
+            "accountCount": 1,
+            "isFirstAccount": true,
+            "linkFlow": 1
         }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
@@ -113,9 +107,7 @@ async fn deserialize_account_linked() {
 async fn deserialize_device_code_flow_failed() {
     let json = r#"{
         "distinctId": "user-5",
-        "event": {
-            "deviceCodeFlowFailed": { "error": "expired" }
-        }
+        "deviceCodeFlowFailed": { "error": "expired" }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
@@ -130,9 +122,7 @@ async fn deserialize_device_code_flow_failed() {
 async fn deserialize_browser_flow_failed() {
     let json = r#"{
         "distinctId": "user-5b",
-        "event": {
-            "browserFlowFailed": { "error": "timeout" }
-        }
+        "browserFlowFailed": { "error": "timeout" }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
@@ -147,7 +137,7 @@ async fn deserialize_browser_flow_failed() {
 async fn deserialize_presence_toggled() {
     let json = r#"{
         "distinctId": "user-6",
-        "event": { "presenceToggled": { "isActive": false } }
+        "presenceToggled": { "isActive": false }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert!(matches!(
@@ -162,7 +152,7 @@ async fn deserialize_presence_toggled() {
 async fn deserialize_profile_selected() {
     let json = r#"{
         "distinctId": "user-7",
-        "event": { "profileSelected": { "profile": "minimal" } }
+        "profileSelected": { "profile": "minimal" }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
@@ -177,7 +167,7 @@ async fn deserialize_profile_selected() {
 async fn deserialize_session_error() {
     let json = r#"{
         "distinctId": "user-8",
-        "event": { "sessionError": { "error": "refresh_failed" } }
+        "sessionError": { "error": "refresh_failed" }
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     match req.event {
@@ -195,7 +185,7 @@ async fn deserialize_with_plugin_metadata() {
         "pluginVersion": "1.2.0",
         "pluginChannel": "stable",
         "pluginHash": "abc123",
-        "event": { "uiOpened": {} }
+        "uiOpened": {}
     }"#;
     let req: TelemetryRequest = serde_json::from_str(json).unwrap();
     assert_eq!(req.plugin_version, "1.2.0");
@@ -209,7 +199,7 @@ async fn deserialize_with_plugin_metadata() {
 
 #[wasm_bindgen_test]
 async fn reject_unknown_event_variant() {
-    let json = r#"{"distinctId":"u","event":{"madeUpEvent":{}}}"#;
+    let json = r#"{"distinctId":"u","madeUpEvent":{}}"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(result.is_err(), "unknown event variant should be rejected");
 }
@@ -218,9 +208,7 @@ async fn reject_unknown_event_variant() {
 async fn reject_unknown_fields_on_event() {
     let json = r#"{
         "distinctId": "u",
-        "event": {
-            "accountLinked": { "accountCount": 1, "isFirstAccount": true, "extra": 42 }
-        }
+        "accountLinked": { "accountCount": 1, "isFirstAccount": true, "extra": 42 }
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(
@@ -233,7 +221,7 @@ async fn reject_unknown_fields_on_event() {
 async fn reject_unknown_fields_on_request() {
     let json = r#"{
         "distinctId": "u",
-        "event": {"uiOpened": {}},
+        "uiOpened": {},
         "extraTopLevel": true
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
@@ -244,7 +232,7 @@ async fn reject_unknown_fields_on_request() {
 async fn reject_wrong_property_types() {
     let json = r#"{
         "distinctId": "u",
-        "event": { "presenceToggled": { "isActive": "yes" } }
+        "presenceToggled": { "isActive": "yes" }
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(result.is_err(), "wrong property type should be rejected");
@@ -276,7 +264,7 @@ async fn decompose_includes_event_properties() {
     assert_eq!(name, "account_linked");
     assert_eq!(props["account_count"], 2);
     assert_eq!(props["is_first_account"], false);
-    assert_eq!(props["link_flow"], 1);
+    assert_eq!(props["link_flow"], "ACCOUNT_LINK_FLOW_DEVICE_CODE");
 }
 
 #[wasm_bindgen_test]
@@ -315,9 +303,7 @@ async fn telemetry_missing_content_type_returns_error() {
     let app = test_router();
     let req = inject_edge(
         Request::post("/v1/telemetry")
-            .body(Body::from(
-                r#"{"distinctId":"u","event":{"pluginLoaded":{}}}"#,
-            ))
+            .body(Body::from(r#"{"distinctId":"u","pluginLoaded":{}}"#))
             .unwrap(),
         mock_edge_context(),
     );

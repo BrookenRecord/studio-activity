@@ -29,12 +29,12 @@ fn main() -> Result<()> {
     config.file_descriptor_set_path(&descriptor_path);
     config.compile_well_known_types();
 
-    // Give the oneof enum a plain serde Serialize so decompose_event()
+    // Give the oneof enum a snake_case serde Serialize so decompose_event()
     // can split it into (event_name, properties) via the externally-tagged
     // representation. pbjson handles everything else.
     config.type_attribute(
         ".api.v1.TelemetryRequest.event",
-        "#[derive(serde::Serialize)]",
+        "#[derive(serde::Serialize)]\n#[serde(rename_all = \"snake_case\")]",
     );
 
     config.compile_protos(&protos, &[proto_root])?;

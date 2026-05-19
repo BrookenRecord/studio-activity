@@ -43,6 +43,7 @@
 					},
 					"completion": {
 						"enabled": true,
+						"enableFragmentAutocomplete": false,
 						"imports": {
 							"enabled": true,
 							"separateGroupsWithLine": true,
@@ -66,12 +67,12 @@
 					"enabled": true,
 					"download_api_documentation": true,
 					"download_definitions": true
+				},
+				"fflags": {
+					"enable_by_default": true,
+					"enable_new_solver": false,
+					"sync": true
 				}
-				// "fflags": {
-				//     "enable_by_default": true,
-				//     "enable_new_solver": true,
-				//     "sync": true
-				// }
 			}
 		}
 	}

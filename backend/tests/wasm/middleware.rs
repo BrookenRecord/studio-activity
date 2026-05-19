@@ -42,6 +42,12 @@ async fn missing_cf_ray_generates_fallback_request_id() {
         .expect("x-request-id header should be set")
         .to_str()
         .unwrap();
-    assert!(!request_id.is_empty(), "fallback request id should not be empty");
-    assert_ne!(request_id, "unknown", "should generate a UUID, not 'unknown'");
+    assert!(
+        !request_id.is_empty(),
+        "fallback request id should not be empty"
+    );
+    assert_ne!(
+        request_id, "unknown",
+        "should generate a UUID, not 'unknown'"
+    );
 }

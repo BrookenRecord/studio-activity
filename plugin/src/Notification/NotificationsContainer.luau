@@ -25,7 +25,7 @@ local function NotificationsContainer()
 
 	return e(View, {
 		tag = "size-full",
-		ZIndex = 10,
+		ZIndex = 300,
 	}, active and e(Notification, {
 		key = tostring(active.id),
 		type = active.type,

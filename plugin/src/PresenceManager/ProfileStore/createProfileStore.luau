@@ -7,13 +7,14 @@ local Foundation = require(Packages.Foundation)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
-local PlaceContextStore = require(Plugin.Source.PlaceContextStore)
-type PlaceContext = PlaceContextStore.PlaceContext
+local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+type PlaceContext = PlaceDetailsStore.PlaceContext
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
+local buildCustomActivity = require(script.Parent.buildCustomActivity)
 local presets = require(script.Parent.presets)
 
 local IconName = Foundation.Enums.IconName
@@ -32,6 +33,7 @@ export type Profile = {
 	name: string,
 	icon: Foundation.IconName,
 	isPreset: boolean,
+	overridePlaceId: number?,
 	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
 }
 
@@ -55,8 +57,9 @@ local function wrapCustomProfile(data: CustomProfileData): Profile
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
-		buildActivityAsync = function(_context: PlaceContext): ActivityConfig
-			return data.activity
+		overridePlaceId = data.activity.overridePlaceId,
+		buildActivityAsync = function(context: PlaceContext): ActivityConfig
+			return buildCustomActivity(context, data)
 		end,
 	}
 end
@@ -67,6 +70,7 @@ local function wrapPreset(preset: presets.PresetProfile): Profile
 		name = preset.name,
 		icon = preset.icon,
 		isPreset = true,
+		overridePlaceId = nil,
 		buildActivityAsync = preset.buildActivityAsync,
 	}
 end
@@ -105,6 +109,7 @@ end
 
 local function createProfileStore(): ProfileStore
 	local localStorage = LocalStorageStore.get()
+	local placeDetailsStore = PlaceDetailsStore.get()
 
 	local getActiveProfileId = computed(function(): string
 		return localStorage.getStorage().selectedProfileId or "default"
@@ -172,16 +177,35 @@ local function createProfileStore(): ProfileStore
 			pcall(task.cancel, buildThread)
 		end
 
-		local placeContextStore = PlaceContextStore.get()
-		local context = placeContextStore.getContext()
+		local activeProfileId = getActiveProfileId()
+		local storage = localStorage.getStorage()
+		local customProfiles: CustomProfiles = storage.customProfiles or {}
+		local activeCustomProfile = customProfiles[activeProfileId]
 
-		if context == nil then
+		local profile: Profile?
+		if presets[activeProfileId] then
+			profile = wrapPreset(presets[activeProfileId])
+		elseif activeCustomProfile then
+			profile = wrapCustomProfile(activeCustomProfile)
+		else
+			profile = wrapPreset(presets.default)
+		end
+
+		local overridePlaceId = if activeCustomProfile then activeCustomProfile.activity.overridePlaceId else nil
+		if profile == nil then
 			setResolvedActivity(nil)
 			return
 		end
 
-		local profile = getActiveProfile()
-		if not profile then
+		local context: PlaceContext?
+		if overridePlaceId and overridePlaceId > 0 then
+			placeDetailsStore.prefetchPlaceIds({ overridePlaceId })
+			context = placeDetailsStore.getContextByPlaceId(overridePlaceId)
+		else
+			context = placeDetailsStore.getCurrentContext()
+		end
+
+		if context == nil then
 			setResolvedActivity(nil)
 			return
 		end
@@ -191,6 +215,22 @@ local function createProfileStore(): ProfileStore
 			setResolvedActivity(activity)
 			buildThread = nil
 		end)
+	end)
+
+	local disposePrefetchEffect = effect(function()
+		local customProfiles: CustomProfiles = localStorage.getStorage().customProfiles or {}
+		local placeIds: { number } = {}
+
+		for _, custom in customProfiles do
+			local overridePlaceId = custom.activity.overridePlaceId
+			if overridePlaceId and overridePlaceId > 0 then
+				table.insert(placeIds, overridePlaceId)
+			end
+		end
+
+		if #placeIds > 0 then
+			placeDetailsStore.prefetchPlaceIds(placeIds)
+		end
 	end)
 
 	local function setCustomProfile(id: string, data: CustomProfileData)
@@ -221,6 +261,7 @@ local function createProfileStore(): ProfileStore
 	local function destroy()
 		disposeProfileFallbackEffect()
 		disposeBuildEffect()
+		disposePrefetchEffect()
 
 		if buildThread then
 			pcall(task.cancel, buildThread)

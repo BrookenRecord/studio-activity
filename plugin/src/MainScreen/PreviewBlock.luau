@@ -32,9 +32,9 @@ local function PreviewBlock(props: Props)
 	}, {
 		PreviewContainer = currentActivity and e(View, {
 			tag = "auto-y",
-			Size = UDim2.fromScale(0.6, 0),
+			Size = UDim2.fromScale(0.8, 0),
 			sizeConstraint = {
-				MaxSize = Vector2.new(280, math.huge),
+				MaxSize = Vector2.new(300, math.huge),
 			},
 			LayoutOrder = nextOrder(),
 		}, {

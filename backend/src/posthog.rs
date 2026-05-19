@@ -21,7 +21,12 @@
 //! We do **not** collect: Roblox usernames, place names or IDs, game
 //! content, file paths, system information, or any free-form text.
 
+use once_cell::sync::Lazy;
+use prost::Message;
+use prost_reflect::{DescriptorPool, DynamicMessage, SerializeOptions};
 use serde_json::{json, Value};
+use url::Url;
+use uuid::Uuid;
 use worker::wasm_bindgen::JsValue;
 use worker::{Fetch, Headers, Method, Request, RequestInit};
 
@@ -30,24 +35,76 @@ use crate::proto::{telemetry_request::Event, TelemetryRequest};
 const POSTHOG_CAPTURE_PATH: &str = "/i/v0/e/";
 const LIB_NAME: &str = "studio-activity-backend";
 const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
+const TELEMETRY_REQUEST_DESCRIPTOR_NAME: &str = "api.v1.TelemetryRequest";
+const UTM_PARAM_KEYS: [&str; 5] = [
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_content",
+    "utm_term",
+];
+
+static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
+    DescriptorPool::decode(
+        include_bytes!(concat!(env!("OUT_DIR"), "/proto_descriptor.bin")).as_ref(),
+    )
+    .expect("api.v1 descriptor pool")
+});
+
+fn posthog_serialize_options() -> SerializeOptions {
+    SerializeOptions::new()
+        .use_proto_field_name(true)
+        // Keep enum values in their canonical proto JSON string form.
+        .skip_default_fields(false)
+}
 
 /// Decomposes a proto `Event` into its snake_case event name and a flat
-/// properties JSON object by leveraging the serde `Serialize` derive.
+/// properties JSON object by using `prost-reflect`'s JSON serializer.
 ///
-/// The `Event` enum serializes as an externally-tagged enum, e.g.
-/// `{"auth_started": {"has_existing_credentials": true}}`. We split
-/// that into `("auth_started", {"has_existing_credentials": true})`.
+/// We serialize via reflection so we can apply PostHog-specific options
+/// without changing the plugin-facing pbjson wire format:
+/// - `use_proto_field_name(true)` for snake_case keys
+/// - `skip_default_fields(false)` so false/0/"" are preserved
 ///
 /// Null values (from unset `optional` proto fields) are stripped so
 /// only properties that were actually provided are forwarded.
 pub fn decompose_event(event: &Event) -> (String, Value) {
-    let serialized = serde_json::to_value(event).unwrap_or_default();
+    let descriptor = match DESCRIPTOR_POOL.get_message_by_name(TELEMETRY_REQUEST_DESCRIPTOR_NAME) {
+        Some(descriptor) => descriptor,
+        None => return (String::new(), json!({})),
+    };
 
-    let Value::Object(map) = serialized else {
+    // Wrap in TelemetryRequest so the oneof field name itself gives us
+    // the event name in proto snake_case.
+    let mut request = TelemetryRequest::default();
+    request.event = Some(event.clone());
+
+    let encoded = request.encode_to_vec();
+    let dynamic = match DynamicMessage::decode(descriptor.clone(), encoded.as_slice()) {
+        Ok(dynamic) => dynamic,
+        Err(_) => return (String::new(), json!({})),
+    };
+
+    let mut serializer = serde_json::Serializer::new(Vec::new());
+    if dynamic
+        .serialize_with_options(&mut serializer, &posthog_serialize_options())
+        .is_err()
+    {
+        return (String::new(), json!({}));
+    }
+
+    let serialized: Value = serde_json::from_slice(&serializer.into_inner()).unwrap_or_default();
+    let Value::Object(mut map) = serialized else {
         return (String::new(), json!({}));
     };
 
-    let Some((name, mut properties)) = map.into_iter().next() else {
+    let Some(event_oneof) = descriptor.oneofs().find(|oneof| oneof.name() == "event") else {
+        return (String::new(), json!({}));
+    };
+    let Some((name, mut properties)) = event_oneof.fields().find_map(|field| {
+        map.remove(field.name())
+            .map(|value| (field.name().to_owned(), value))
+    }) else {
         return (String::new(), json!({}));
     };
 
@@ -228,6 +285,138 @@ fn build_screen_payload(api_key: &str, req: &TelemetryRequest, client_ip: Option
         "distinct_id": req.distinct_id,
         "properties": properties,
     })
+}
+
+/// Extracts UTM parameters from a fully-qualified URL.
+fn extract_utm_from_url(current_url: &str) -> serde_json::Map<String, Value> {
+    let mut out = serde_json::Map::new();
+
+    let Ok(url) = Url::parse(current_url) else {
+        return out;
+    };
+
+    for (key, value) in url.query_pairs() {
+        let key = key.as_ref();
+        if !UTM_PARAM_KEYS.contains(&key) {
+            continue;
+        }
+
+        let value = value.trim();
+        if value.is_empty() {
+            continue;
+        }
+
+        out.insert(key.to_string(), json!(value));
+    }
+
+    out
+}
+
+/// Attempts to parse the host from a referrer URL.
+fn referring_domain(referrer: &str) -> Option<String> {
+    let parsed = Url::parse(referrer).ok()?;
+    parsed.host_str().map(ToOwned::to_owned)
+}
+
+/// Builds a deterministic, anonymous distinct id for server-side pageviews.
+///
+/// We hash a fingerprint of `client_ip + user_agent` using UUID v5 with a
+/// per-deployment salt, so IDs are stable for attribution but still anonymous.
+/// If both inputs are absent we fall back to a random UUID to avoid creating
+/// one shared "unknown" identity across many visitors.
+fn stable_pageview_distinct_id(
+    salt: &str,
+    client_ip: Option<&str>,
+    user_agent: Option<&str>,
+) -> String {
+    let ip = client_ip.map(str::trim).filter(|value| !value.is_empty());
+    let ua = user_agent.map(str::trim).filter(|value| !value.is_empty());
+
+    if ip.is_none() && ua.is_none() {
+        return Uuid::new_v4().to_string();
+    }
+
+    let fingerprint = format!(
+        "root_pageview_v1|{salt}|{}|{}",
+        ip.unwrap_or("unknown_ip"),
+        ua.unwrap_or("unknown_ua")
+    );
+    Uuid::new_v5(&Uuid::NAMESPACE_URL, fingerprint.as_bytes()).to_string()
+}
+
+/// Builds an anonymous `$pageview` payload for root-domain attribution.
+pub fn build_pageview_payload(
+    api_key: &str,
+    distinct_id_salt: Option<&str>,
+    current_url: &str,
+    referrer: Option<&str>,
+    user_agent: Option<&str>,
+    client_ip: Option<&str>,
+) -> Value {
+    let mut properties = serde_json::Map::new();
+    properties.insert("$current_url".into(), json!(current_url));
+    properties.insert("$lib".into(), json!(LIB_NAME));
+    properties.insert("$lib_version".into(), json!(LIB_VERSION));
+    properties.insert("$process_person_profile".into(), json!(false));
+
+    properties.extend(extract_utm_from_url(current_url));
+
+    if let Some(value) = referrer.map(str::trim).filter(|value| !value.is_empty()) {
+        properties.insert("$referrer".into(), json!(value));
+
+        if let Some(domain) = referring_domain(value) {
+            properties.insert("$referring_domain".into(), json!(domain));
+        }
+    }
+
+    if let Some(value) = user_agent.map(str::trim).filter(|value| !value.is_empty()) {
+        properties.insert("$useragent".into(), json!(value));
+    }
+
+    if let Some(value) = client_ip.map(str::trim).filter(|value| !value.is_empty()) {
+        properties.insert("$ip".into(), json!(value));
+    }
+
+    let distinct_id = distinct_id_salt
+        .map(str::trim)
+        .filter(|salt| !salt.is_empty())
+        .map_or_else(
+            || Uuid::new_v4().to_string(),
+            |salt| stable_pageview_distinct_id(salt, client_ip, user_agent),
+        );
+
+    json!({
+        "api_key": api_key,
+        "event": "$pageview",
+        "distinct_id": distinct_id,
+        "properties": properties,
+    })
+}
+
+/// Forwards a prebuilt payload to PostHog capture.
+pub async fn forward_payload(host: &str, payload: &Value) {
+    send_to_posthog(host, payload).await;
+}
+
+/// Forwards an anonymous `$pageview` event for root-domain attribution.
+pub async fn forward_pageview(
+    host: &str,
+    api_key: &str,
+    distinct_id_salt: Option<&str>,
+    current_url: &str,
+    referrer: Option<&str>,
+    user_agent: Option<&str>,
+    client_ip: Option<&str>,
+) {
+    let payload = build_pageview_payload(
+        api_key,
+        distinct_id_salt,
+        current_url,
+        referrer,
+        user_agent,
+        client_ip,
+    );
+    forward_payload(host, &payload).await;
 }
 
 /// Sends a JSON payload to the PostHog capture API. Errors are logged,

@@ -1,3 +1,5 @@
+local UserInputService = game:GetService("UserInputService")
+
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
@@ -6,6 +8,7 @@ local React = require(Packages.React)
 local ReactCharm = require(Packages.ReactCharm)
 
 local AuthContext = require(script.Parent.Parent.AuthContext)
+local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local Steps = require(script.Parent.Steps)
 
 local TextInput = Foundation.TextInput
@@ -17,6 +20,20 @@ local e = React.createElement
 local useState = React.useState
 local useEffect = React.useEffect
 local useCallback = React.useCallback
+
+-- This is a horrible hack that allows us to copy the contents of a TextBox
+-- to the clipboard, by sending a virtual ctrl + c keycode sequence.
+--
+-- Not sure if this will work long-term. Only one way to find out!
+local function sendCopyKeycode()
+	local virtualInput: VirtualInput = UserInputService:CreateVirtualInput() :: any
+
+	virtualInput:SendKey(true, Enum.KeyCode.LeftControl)
+	virtualInput:SendKey(true, Enum.KeyCode.C)
+
+	virtualInput:SendKey(false, Enum.KeyCode.LeftControl)
+	virtualInput:SendKey(false, Enum.KeyCode.C)
+end
 
 local function BrowserFlow()
 	local auth = AuthContext.useAuth()
@@ -47,7 +64,16 @@ local function BrowserFlow()
 		if textbox then
 			textbox.TextEditable = false
 
-			local focusConnection = textbox.Focused:Connect(selectAll)
+			local focusConnection = textbox.Focused:Connect(function()
+				selectAll()
+
+				-- This hack might start to error in the future, so we wrap it
+				-- in a pcall just in case.
+				local success = pcall(sendCopyKeycode)
+				if success then
+					NotificationStore.get().push("info", "Copied URL to clipboard")
+				end
+			end)
 
 			-- Re-select all if the user clicks to move the cursor while focused.
 			-- CursorPosition changes when the user clicks within the box or
@@ -94,7 +120,7 @@ local function BrowserFlow()
 		steps = {
 			{
 				id = "step-1",
-				text = "Select and copy this link",
+				text = "Select to copy this link",
 				content = e(TextInput, {
 					onReturnPressed = function() end,
 					text = startUrl,
