@@ -57,7 +57,7 @@ local function SettingsList(props: Props)
 			ActivityText = e(List.Item, {
 				leading = IconName.TextUppercaseALowercaseA,
 				title = "Custom text",
-				description = "Edit the text shown on your activity.",
+				description = "Set the lines of text shown in your activity.",
 				onActivated = function()
 					ModalStore.get().open("customProfileText", {
 						props = {
@@ -72,7 +72,7 @@ local function SettingsList(props: Props)
 			GameOverride = e(List.Item, {
 				leading = IconName.ControllerWithCog,
 				title = "Game override",
-				description = "Override the game displayed on your activity.",
+				description = "Show a specific game in your activity instead of the one you're editing.",
 				onActivated = function()
 					ModalStore.get().open("customProfileGameOverride", {
 						props = {
@@ -86,7 +86,7 @@ local function SettingsList(props: Props)
 			GameIconToggle = e(List.Item, {
 				leading = IconName.FrameCamera,
 				title = "Show game icon",
-				description = "Show the platform icon of the place you're currently editing.",
+				description = "Display the icon of the game you're editing.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
@@ -107,7 +107,7 @@ local function SettingsList(props: Props)
 			JoinButtonToggle = e(List.Item, {
 				leading = IconName.ChainLink,
 				title = "Show play button",
-				description = "Link the place you're currently editing with a 'Play on Roblox' button.",
+				description = "Add a 'Play on Roblox' button that links to your game.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
@@ -128,7 +128,7 @@ local function SettingsList(props: Props)
 			ShowScriptToggle = e(List.Item, {
 				leading = IconName.ChainLink,
 				title = "Show current script",
-				description = "Show the script you're currently editing on your activity.",
+				description = "Display the name of the script you're editing.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
@@ -149,7 +149,7 @@ local function SettingsList(props: Props)
 			ShowTestingToggle = e(List.Item, {
 				leading = IconName.ChainLink,
 				title = "Show testing mode",
-				description = "Show if you're currently play testing your game.",
+				description = "Indicate when you're playtesting your game.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
@@ -170,7 +170,7 @@ local function SettingsList(props: Props)
 			PluginButtonToggle = e(List.Item, {
 				leading = IconName.Heart,
 				title = "Show plugin button",
-				description = "Support Studio Activity by linking it on your profile.",
+				description = "Add a button that links others to the Studio Activity plugin.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)

@@ -172,7 +172,7 @@ local function ProfileSelection(props: Props)
 
 			EditBtn = if isPreset
 				then e(Tooltip, {
-					title = "You can't edit built-in profiles",
+					title = "Built-in profiles can't be edited",
 					align = PopoverAlign.End,
 					side = PopoverSide.Top,
 					LayoutOrder = nextOrder(),

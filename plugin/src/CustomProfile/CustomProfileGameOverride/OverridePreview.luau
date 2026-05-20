@@ -88,9 +88,9 @@ local function OverridePreview(props: Props)
 				else e(Text, {
 					tag = "size-full-0 auto-y text-wrap text-align-x-left text-title-small content-default",
 					Text = if override.status == "ready"
-						then "Overriding Activity"
+						then "Override active"
 						elseif override.status == "idle" then "No override set"
-						else "We ran into an issue",
+						else "Couldn't load place",
 					LayoutOrder = nextOrder(),
 				}),
 
