@@ -8,11 +8,14 @@ local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
 local ActivityPreview = require(Plugin.Source.ActivityPreview)
+local BuildContext = require(Plugin.Source.PresenceManager.ProfileStore.BuildContext)
 local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+local PluginContextStore = require(Plugin.Source.PluginContextStore)
 local ProfileContext = require(script.Parent.ProfileContext)
 local buildCustomActivity = require(Plugin.Source.PresenceManager.ProfileStore.buildCustomActivity)
 
 type ActivityConfig = buildCustomActivity.ActivityConfig
+type BuildContext = BuildContext.BuildContext
 
 local View = Foundation.View
 
@@ -30,6 +33,7 @@ local function PreviewBlock(props: Props)
 	local nextOrder = createNextOrder()
 	local profile = ProfileContext.useProfile()
 	local placeDetailsStore = PlaceDetailsStore.get()
+	local pluginContextStore = PluginContextStore.get()
 
 	local currentActivityComputed = useMemo(function()
 		return Charm.computed(function(): ActivityConfig?
@@ -43,9 +47,14 @@ local function PreviewBlock(props: Props)
 				return nil
 			end
 
-			return buildCustomActivity(placeContext, customProfile)
+			local buildContext: BuildContext = {
+				place = placeContext,
+				studio = pluginContextStore.getStudioContext(),
+			}
+
+			return buildCustomActivity(buildContext, customProfile)
 		end)
-	end, { profile.profileStore :: any, placeDetailsStore })
+	end, { profile.profileStore :: any, placeDetailsStore, pluginContextStore })
 
 	local currentActivity = useSignalState(currentActivityComputed)
 

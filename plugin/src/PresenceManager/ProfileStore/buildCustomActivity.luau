@@ -1,21 +1,22 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
+local BuildContext = require(script.Parent.BuildContext)
 local Constants = require(Plugin.Source.Common.Constants)
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
-local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 local interpolate = require(Plugin.Source.Common.interpolate)
 
 export type ActivityConfig = createPresenceManager.ActivityConfig
 type CustomProfileData = LocalStorageStore.CustomProfileData
-type PlaceContext = PlaceDetailsStore.PlaceContext
+type BuildContext = BuildContext.BuildContext
 
 local STUDIO_LOGO_ASSET = "studio-logo"
 local MAX_CUSTOM_BUTTONS = 2
 
-local function buildCustomActivity(context: PlaceContext, profile: CustomProfileData): ActivityConfig
-	local onlineDetails = context.onlinePlaceDetails
-	local offlineDetails = context.offlinePlaceDetails
+local function buildCustomActivity(context: BuildContext, profile: CustomProfileData): ActivityConfig
+	local place = context.place
+	local onlineDetails = place.onlinePlaceDetails
+	local offlineDetails = place.offlinePlaceDetails
 
 	local details = profile.activity.details
 	local state = profile.activity.state

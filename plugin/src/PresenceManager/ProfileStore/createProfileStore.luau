@@ -8,7 +8,11 @@ local createPresenceManager = require(Plugin.Source.PresenceManager.createPresen
 type ActivityConfig = createPresenceManager.ActivityConfig
 
 local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
-type PlaceContext = PlaceDetailsStore.PlaceContext
+
+local PluginContextStore = require(Plugin.Source.PluginContextStore)
+
+local BuildContextModule = require(script.Parent.BuildContext)
+type BuildContext = BuildContextModule.BuildContext
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
@@ -34,7 +38,7 @@ export type Profile = {
 	icon: Foundation.IconName,
 	isPreset: boolean,
 	overridePlaceId: number?,
-	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
+	buildActivityAsync: (context: BuildContext) -> ActivityConfig,
 }
 
 export type ProfileStore = {
@@ -58,7 +62,7 @@ local function wrapCustomProfile(data: CustomProfileData): Profile
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
 		overridePlaceId = data.activity.overridePlaceId,
-		buildActivityAsync = function(context: PlaceContext): ActivityConfig
+		buildActivityAsync = function(context: BuildContext): ActivityConfig
 			return buildCustomActivity(context, data)
 		end,
 	}
@@ -79,7 +83,7 @@ end
 	Retry a profile build with exponential backoff.
 	The build function can yield. Returns nil on persistent failure.
 ]]
-local function buildWithRetry(profile: Profile, context: PlaceContext): ActivityConfig?
+local function buildWithRetry(profile: Profile, context: BuildContext): ActivityConfig?
 	local backoffConfig = RetryBackoff.defaultConfig()
 	local backoffState = RetryBackoff.createState()
 
@@ -110,6 +114,7 @@ end
 local function createProfileStore(): ProfileStore
 	local localStorage = LocalStorageStore.get()
 	local placeDetailsStore = PlaceDetailsStore.get()
+	local pluginContextStore = PluginContextStore.get()
 
 	local getActiveProfileId = computed(function(): string
 		return localStorage.getStorage().selectedProfileId or "default"
@@ -197,21 +202,26 @@ local function createProfileStore(): ProfileStore
 			return
 		end
 
-		local context: PlaceContext?
+		local placeContext: PlaceDetailsStore.PlaceContext?
 		if overridePlaceId and overridePlaceId > 0 then
 			placeDetailsStore.prefetchPlaceIds({ overridePlaceId })
-			context = placeDetailsStore.getContextByPlaceId(overridePlaceId)
+			placeContext = placeDetailsStore.getContextByPlaceId(overridePlaceId)
 		else
-			context = placeDetailsStore.getCurrentContext()
+			placeContext = placeDetailsStore.getCurrentContext()
 		end
 
-		if context == nil then
+		if placeContext == nil then
 			setResolvedActivity(nil)
 			return
 		end
 
+		local buildContext: BuildContext = {
+			place = placeContext,
+			studio = pluginContextStore.getStudioContext(),
+		}
+
 		buildThread = task.spawn(function()
-			local activity = buildWithRetry(profile, context)
+			local activity = buildWithRetry(profile, buildContext)
 			setResolvedActivity(activity)
 			buildThread = nil
 		end)

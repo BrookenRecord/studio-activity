@@ -8,17 +8,20 @@ local Charm = require(Packages.Charm)
 local Telemetry = require(Plugin.Source.Telemetry.fireEventAsync)
 local Types = require(Plugin.Source.Telemetry.Types)
 local createPluginLoader = require(script.Parent.createPluginLoader)
+local setupGuest = require(script.Parent.setupGuest)
 
 export type PluginMain = (plugin: Plugin, pluginLoaderContext: createPluginLoader.PluginLoaderContext) -> () -> ()
 
 local function setup(plugin: Plugin, main: PluginMain)
 	plugin.Name = "StudioActivity"
 
-	-- Currently, the plugin breaks in weird ways when running in Play Solo.
-	-- While I come up with a better long-term solution, we're just going to
-	-- block the plugin from running if we're in an active DataModel.
-	-- See: https://github.com/grilme99/studio-activity/issues/6
+	-- Roblox loads this plugin into both the edit data model and any active
+	-- play-test data models (Play Solo spawns a server + client pair). The
+	-- edit instance owns the UI, presence pipeline, and Discord sessions.
+	-- Play-test instances run a stripped-down guest that just reports their
+	-- liveness back to the host via PluginConnectionService.
 	if RunService:IsRunning() then
+		setupGuest(plugin)
 		return
 	end
 
@@ -37,6 +40,12 @@ local function setup(plugin: Plugin, main: PluginMain)
 	-- → creates headless sessions so linked users see presence right away.
 	local PresenceManager = require(Plugin.Source.PresenceManager)
 	local presenceManager = PresenceManager.get()
+
+	-- Initialize PluginContextStore so it begins tracking the active script
+	-- and any play-test data models before the user opens the UI. This must
+	-- happen before ProfileStore so the build effect sees a populated context.
+	local PluginContextStore = require(Plugin.Source.PluginContextStore)
+	local pluginContextStore = PluginContextStore.get()
 
 	-- Initialize ProfileStore early so it loads the active profile from disk
 	-- and begins resolving it against PlaceContext.
@@ -128,6 +137,7 @@ local function setup(plugin: Plugin, main: PluginMain)
 		disposeProfileEffect()
 		profileStore.destroy()
 		presenceManager.destroy()
+		pluginContextStore.destroy()
 		pluginLoaderContext.destroy()
 	end)
 
