@@ -20,17 +20,19 @@ local Radius = Foundation.Enums.Radius
 local createNextOrder = ReactUtils.createNextOrder
 local useSignalState = ReactCharm.useSignalState
 
+type CustomProfileStore = ProfileContext.CustomProfileStore
+
 local e = React.createElement
 
 type Props = {
+	store: CustomProfileStore,
 	LayoutOrder: number?,
 }
 
 local function OverridePreview(props: Props)
 	local nextOrder = createNextOrder()
-	local profile = ProfileContext.useProfile()
 
-	local override = useSignalState(profile.profileStore.getOverrideLookupState)
+	local override = useSignalState(props.store.getOverrideLookupState)
 
 	local placeDetails = override.context and override.context.onlinePlaceDetails
 	local iconWebUrl = placeDetails and placeDetails.iconWebUrl

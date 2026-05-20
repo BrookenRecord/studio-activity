@@ -5,6 +5,7 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
+local ActivityButtons = require(script.Parent.ActivityButtons)
 local ActivityDetails = require(script.Parent.ActivityDetails)
 local ActivityImage = require(script.Parent.ActivityImage)
 local ActivityTimer = require(script.Parent.ActivityTimer)
@@ -67,6 +68,11 @@ local function ActivityPreview(props: Props)
 					LayoutOrder = nextOrder(),
 				}),
 			}),
+		}),
+
+		ActivityButtons = (props.activity.buttons and #props.activity.buttons > 0) and e(ActivityButtons, {
+			buttons = props.activity.buttons,
+			LayoutOrder = nextOrder(),
 		}),
 	})
 end

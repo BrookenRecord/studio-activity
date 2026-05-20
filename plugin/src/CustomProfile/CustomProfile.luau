@@ -5,13 +5,12 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
-local ActivityFields = require(script.Parent.ActivityFields)
-local GameOverride = require(script.Parent.GameOverride)
 local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local PreviewBlock = require(script.Parent.PreviewBlock)
 local ProfileActions = require(script.Parent.ProfileActions)
 local ProfileContext = require(script.Parent.ProfileContext)
 local ProfileName = require(script.Parent.ProfileName)
+local SettingsList = require(script.Parent.SettingsList)
 local Title = require(script.Parent.Title)
 
 local View = Foundation.View
@@ -91,7 +90,7 @@ local function CustomProfileSheet(props: SheetProps)
 
 		Content = e(Sheet.Content, nil, {
 			Container = e(View, {
-				tag = "size-full-0 auto-y col padding-y-small",
+				tag = "size-full-0 auto-y col padding-top-small",
 				LayoutOrder = nextOrder(),
 			}, {
 				PreviewBlock = e(PreviewBlock, {
@@ -102,11 +101,7 @@ local function CustomProfileSheet(props: SheetProps)
 					LayoutOrder = nextOrder(),
 				}),
 
-				ActivityFields = e(ActivityFields, {
-					LayoutOrder = nextOrder(),
-				}),
-
-				GameOverride = e(GameOverride, {
+				SettingsList = e(SettingsList, {
 					LayoutOrder = nextOrder(),
 				}),
 			}),

@@ -1,10 +1,8 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
-local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
-
 local createPluginStore = require(script.createPluginStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 
 return {
-	get = Charm.computed(createPluginStore),
+	get = createSingleton(createPluginStore),
 }

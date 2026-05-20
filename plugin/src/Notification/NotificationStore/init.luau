@@ -1,11 +1,9 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
-local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
-
 local createNotificationStore = require(script.createNotificationStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 export type NotificationType = createNotificationStore.NotificationType
 
 return {
-	get = Charm.computed(createNotificationStore),
+	get = createSingleton(createNotificationStore),
 }

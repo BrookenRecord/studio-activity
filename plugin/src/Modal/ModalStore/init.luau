@@ -1,12 +1,10 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
-local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
-
 local createModalStore = require(script.createModalStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 export type ModalId = createModalStore.ModalId
 export type ModalStackEntry = createModalStore.ModalStackEntry
 
 return {
-	get = Charm.computed(createModalStore),
+	get = createSingleton(createModalStore),
 }

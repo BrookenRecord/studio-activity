@@ -32,12 +32,18 @@ export type ActivityConfigAssets = {
 	smallText: string?,
 }
 
+export type ActivityConfigButton = {
+	label: string,
+	url: string,
+}
+
 export type ActivityConfig = {
 	name: string,
 	details: string?,
 	detailsUrl: string?,
 	state: string?,
 	stateUrl: string?,
+	buttons: { ActivityConfigButton }?,
 	startedAt: number?,
 	assets: ActivityConfigAssets?,
 }
@@ -56,6 +62,10 @@ export type PresenceManager = {
 
 --- Convert ActivityConfig into the API format (mostly changing to snake_case.)
 local function serializeActivity(activity: ActivityConfig, startedAt: number?): ApiActivity
+	if activity.buttons and #activity.buttons > 2 then
+		Logger:Warn("Activities only support up to 2 buttons")
+	end
+
 	local apiActivity: ApiActivity = {
 		type = 0, -- PLAYING
 		name = activity.name,
@@ -65,6 +75,8 @@ local function serializeActivity(activity: ActivityConfig, startedAt: number?): 
 
 		state = activity.state,
 		state_url = activity.stateUrl,
+
+		buttons = activity.buttons,
 
 		application_id = BuildVars.discord.clientId,
 		platform = "desktop",

@@ -14,7 +14,6 @@ type Props = {
 	title: string?,
 	body: string?,
 	onClose: (result: boolean) -> (),
-	LayoutOrder: number?,
 }
 
 local function ConfirmationDialog(props: Props)

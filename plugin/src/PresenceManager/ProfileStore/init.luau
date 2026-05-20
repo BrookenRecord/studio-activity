@@ -1,15 +1,11 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
-local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
-
 local createProfileStore = require(script.createProfileStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 
 export type ProfileStore = createProfileStore.ProfileStore
 export type Profile = createProfileStore.Profile
 
 return table.freeze({
-	get = Charm.computed(function()
-		return createProfileStore()
-	end),
+	get = createSingleton(createProfileStore),
 })

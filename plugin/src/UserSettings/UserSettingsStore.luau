@@ -1,10 +1,10 @@
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
-local Charm = require(Packages.Charm)
 local t = require(Packages.t)
 
 local createPluginSettingsStore = require(Plugin.Source.Plugin.createPluginSettingsStore)
+local createSingleton = require(Plugin.Source.Common.createSingleton)
 local defaultSettings = require(script.Parent.DefaultSettings)
 
 export type UserSettings = {
@@ -28,7 +28,7 @@ for key in defaultSettings do
 end
 
 return {
-	get = Charm.computed(function()
+	get = createSingleton(function()
 		return createPluginSettingsStore("PresenceUserSettings", defaultValue, validate)
 	end),
 }
