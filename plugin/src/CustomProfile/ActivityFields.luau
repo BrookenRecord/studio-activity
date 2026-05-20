@@ -7,6 +7,7 @@ local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 local Sift = require(Packages.Sift)
 
+local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local ProfileContext = require(script.Parent.ProfileContext)
 
 local View = Foundation.View
@@ -16,6 +17,7 @@ local IconName = Foundation.Enums.IconName
 local ListItemInputType = Foundation.Enums.ListItemInputType
 
 local createNextOrder = ReactUtils.createNextOrder
+local useSignalBinding = ReactCharm.useSignalBinding
 local useSignalState = ReactCharm.useSignalState
 
 local e = React.createElement
@@ -31,7 +33,7 @@ local function ActivityFields(props: Props)
 	local profileStore = ProfileContext.useProfile().profileStore
 
 	local currentProfile = useSignalState(profileStore.getProfile)
-	-- local profileBinding = useSignalBinding(profileStore.getProfile)
+	local profileBinding = useSignalBinding(profileStore.getProfile)
 
 	local showPlaceIcon = if currentProfile.activity.showPlaceIcon == nil
 		then true
@@ -56,7 +58,14 @@ local function ActivityFields(props: Props)
 				leading = IconName.TextUppercaseALowercaseA,
 				title = "Custom text",
 				description = "Edit the text shown on your activity.",
-				onActivated = function() end,
+				onActivated = function()
+					ModalStore.get().open("customProfileText", {
+						props = {
+							profile = profileBinding,
+							store = profileStore,
+						},
+					})
+				end,
 				LayoutOrder = nextOrder(),
 			}),
 
@@ -64,7 +73,13 @@ local function ActivityFields(props: Props)
 				leading = IconName.ControllerWithCog,
 				title = "Game override",
 				description = "Override the game displayed on your activity.",
-				onActivated = function() end,
+				onActivated = function()
+					ModalStore.get().open("customProfileGameOverride", {
+						props = {
+							store = profileStore,
+						},
+					})
+				end,
 				LayoutOrder = nextOrder(),
 			}),
 

@@ -6,7 +6,14 @@ local Charm = require(Packages.Charm)
 local signal = Charm.signal
 local computed = Charm.computed
 
-export type ModalId = "addAccount" | "welcome" | "confirmation" | "settings" | "customProfile"
+export type ModalId =
+	"addAccount"
+	| "welcome"
+	| "confirmation"
+	| "settings"
+	| "customProfile"
+	| "customProfileText"
+	| "customProfileGameOverride"
 
 export type ModalStackEntry = {
 	id: ModalId,

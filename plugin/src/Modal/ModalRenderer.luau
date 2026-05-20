@@ -7,6 +7,8 @@ local ReactCharm = require(Packages.ReactCharm)
 local AddAccountFlow = require(Plugin.Source.AddAccountFlow)
 local ConfirmationDialog = require(script.Parent.ConfirmationDialog)
 local CustomProfile = require(Plugin.Source.CustomProfile)
+local CustomProfileGameOverride = require(Plugin.Source.CustomProfile.CustomProfileGameOverride)
+local CustomProfileText = require(Plugin.Source.CustomProfile.CustomProfileText)
 local ModalStore = require(script.Parent.ModalStore)
 local SettingsModal = require(Plugin.Source.UserSettings.SettingsModal)
 local WelcomeDialog = require(Plugin.Source.Telemetry.TelemetryOptOutDialog)
@@ -68,6 +70,29 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 				isOpen = isOpen,
 				existingProfileId = props and props.existingProfileId,
 				onClose = onClose,
+			})
+		end,
+	},
+
+	customProfileText = {
+		type = "dialog",
+		render = function(isOpen, onClose, props)
+			return e(CustomProfileText, {
+				isOpen = isOpen,
+				onClose = onClose,
+				profile = props.profile,
+				store = props.store,
+			})
+		end,
+	},
+
+	customProfileGameOverride = {
+		type = "dialog",
+		render = function(isOpen, onClose, props)
+			return e(CustomProfileGameOverride, {
+				isOpen = isOpen,
+				onClose = onClose,
+				store = props.store,
 			})
 		end,
 	},
