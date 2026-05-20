@@ -44,10 +44,10 @@ local function buildCustomActivity(context: PlaceContext, profile: CustomProfile
 	end
 
 	if profile.activity.customButtons then
-		local remainingButtons = MAX_CUSTOM_BUTTONS - #buttons
-		for i = 1, remainingButtons do
-			local customButton = profile.activity.customButtons[i]
-			table.insert(buttons, customButton)
+		local remaining = MAX_CUSTOM_BUTTONS - #buttons
+		local count = math.min(remaining, #profile.activity.customButtons)
+		for i = 1, count do
+			table.insert(buttons, profile.activity.customButtons[i])
 		end
 	end
 

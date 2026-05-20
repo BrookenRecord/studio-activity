@@ -24,26 +24,24 @@ local e = React.createElement
 
 type CustomProfileData = ProfileContext.CustomProfileData
 
+local function withDefault(value: boolean?, default: boolean): boolean
+	return if value == nil then default else value
+end
+
 type Props = {
 	LayoutOrder: number?,
 }
 
-local function ActivityFields(props: Props)
+local function SettingsList(props: Props)
 	local nextOrder = createNextOrder()
 	local profileStore = ProfileContext.useProfile().profileStore
 
 	local currentProfile = useSignalState(profileStore.getProfile)
 	local profileBinding = useSignalBinding(profileStore.getProfile)
 
-	local showPlaceIcon = if currentProfile.activity.showPlaceIcon == nil
-		then true
-		else currentProfile.activity.showPlaceIcon
-	local showJoinButton = if currentProfile.activity.showJoinButton == nil
-		then true
-		else currentProfile.activity.showJoinButton
-	local showPluginButton = if currentProfile.activity.showPluginButton == nil
-		then false
-		else currentProfile.activity.showPluginButton
+	local showPlaceIcon = withDefault(currentProfile.activity.showPlaceIcon, true)
+	local showJoinButton = withDefault(currentProfile.activity.showJoinButton, true)
+	local showPluginButton = withDefault(currentProfile.activity.showPluginButton, false)
 
 	return e(View, {
 		tag = "size-full-0 auto-y",
@@ -54,7 +52,7 @@ local function ActivityFields(props: Props)
 			isContained = { isContained = false :: false, hasMargin = false },
 			size = InputSize.Small,
 		}, {
-			ActivityText = React.createElement(List.Item, {
+			ActivityText = e(List.Item, {
 				leading = IconName.TextUppercaseALowercaseA,
 				title = "Custom text",
 				description = "Edit the text shown on your activity.",
@@ -69,7 +67,7 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 			}),
 
-			GameOverride = React.createElement(List.Item, {
+			GameOverride = e(List.Item, {
 				leading = IconName.ControllerWithCog,
 				title = "Game override",
 				description = "Override the game displayed on your activity.",
@@ -83,18 +81,14 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 			}),
 
-			GameIconToggle = React.createElement(List.Item, {
+			GameIconToggle = e(List.Item, {
 				leading = IconName.FrameCamera,
 				title = "Show game icon",
 				description = "Show the platform icon of the place you're currently editing.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
-							-- Read from `prev` so concurrent updates don't desync; treat
-							-- the absence of an explicit value as the default (true).
-							local current = if prev.activity.showPlaceIcon == nil
-								then true
-								else prev.activity.showPlaceIcon
+							local current = withDefault(prev.activity.showPlaceIcon, true)
 							return Sift.Dictionary.mergeDeep(prev, {
 								activity = {
 									showPlaceIcon = not current,
@@ -108,18 +102,14 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 			}),
 
-			JoinButtonToggle = React.createElement(List.Item, {
+			JoinButtonToggle = e(List.Item, {
 				leading = IconName.ChainLink,
 				title = "Show play button",
 				description = "Link the place you're currently editing with a 'Play on Roblox' button.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
-							-- Read from `prev` so concurrent updates don't desync; treat
-							-- the absence of an explicit value as the default (true).
-							local current = if prev.activity.showJoinButton == nil
-								then true
-								else prev.activity.showJoinButton
+							local current = withDefault(prev.activity.showJoinButton, true)
 							return Sift.Dictionary.mergeDeep(prev, {
 								activity = {
 									showJoinButton = not current,
@@ -133,18 +123,14 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 			}),
 
-			PluginButtonToggle = React.createElement(List.Item, {
+			PluginButtonToggle = e(List.Item, {
 				leading = IconName.Heart,
 				title = "Show plugin button",
 				description = "Support Studio Activity by linking it on your profile.",
 				onActivated = {
 					onActivated = function()
 						profileStore.setProfile(function(prev)
-							-- Read from `prev` so concurrent updates don't desync; treat
-							-- the absence of an explicit value as the default (true).
-							local current = if prev.activity.showPluginButton == nil
-								then false
-								else prev.activity.showPluginButton
+							local current = withDefault(prev.activity.showPluginButton, false)
 							return Sift.Dictionary.mergeDeep(prev, {
 								activity = {
 									showPluginButton = not current,
@@ -158,64 +144,7 @@ local function ActivityFields(props: Props)
 				LayoutOrder = nextOrder(),
 			}),
 		}),
-
-		-- GameIconToggle = e(Checkbox, {
-		-- 	label = "Show game icon",
-		-- 	isChecked = showPlaceIcon,
-		-- 	size = InputSize.Small,
-		-- 	LayoutOrder = nextOrder(),
-		-- 	onActivated = function()
-		-- 		profileStore.setProfile(function(prev)
-		-- 			-- Read from `prev` so concurrent updates don't desync; treat
-		-- 			-- the absence of an explicit value as the default (true).
-		-- 			local current = if prev.activity.showPlaceIcon == nil then true else prev.activity.showPlaceIcon
-		-- 			return Sift.Dictionary.mergeDeep(prev, {
-		-- 				activity = {
-		-- 					showPlaceIcon = not current,
-		-- 				},
-		-- 			})
-		-- 		end)
-		-- 	end,
-		-- }),
-
-		-- Details = e(TextInput, {
-		-- 	text = profileBinding:map(function(profile: CustomProfileData)
-		-- 		return profile.activity.details or ""
-		-- 	end),
-		-- 	label = "Line 1",
-		-- 	size = InputSize.Small,
-		-- 	width = UDim.new(1, 0),
-		-- 	LayoutOrder = nextOrder(),
-		-- 	onChanged = function(text: string)
-		-- 		profileStore.setProfile(function(prev)
-		-- 			return Sift.Dictionary.mergeDeep(prev, {
-		-- 				activity = {
-		-- 					details = if text == "" then Sift.None else text,
-		-- 				},
-		-- 			})
-		-- 		end)
-		-- 	end,
-		-- }),
-
-		-- State = e(TextInput, {
-		-- 	text = profileBinding:map(function(profile: CustomProfileData)
-		-- 		return profile.activity.state or ""
-		-- 	end),
-		-- 	label = "Line 2",
-		-- 	size = InputSize.Small,
-		-- 	width = UDim.new(1, 0),
-		-- 	LayoutOrder = nextOrder(),
-		-- 	onChanged = function(text: string)
-		-- 		profileStore.setProfile(function(prev)
-		-- 			return Sift.Dictionary.mergeDeep(prev, {
-		-- 				activity = {
-		-- 					state = if text == "" then Sift.None else text,
-		-- 				},
-		-- 			})
-		-- 		end)
-		-- 	end,
-		-- }),
 	})
 end
 
-return React.memo(ActivityFields)
+return React.memo(SettingsList)

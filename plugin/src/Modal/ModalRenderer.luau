@@ -76,9 +76,8 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 
 	customProfileText = {
 		type = "dialog",
-		render = function(isOpen, onClose, props)
+		render = function(_isOpen, onClose, props)
 			return e(CustomProfileText, {
-				isOpen = isOpen,
 				onClose = onClose,
 				profile = props.profile,
 				store = props.store,
@@ -88,9 +87,8 @@ local MODAL_REGISTRY: { [ModalStore.ModalId]: ModalConfig } = {
 
 	customProfileGameOverride = {
 		type = "dialog",
-		render = function(isOpen, onClose, props)
+		render = function(_isOpen, onClose, props)
 			return e(CustomProfileGameOverride, {
-				isOpen = isOpen,
 				onClose = onClose,
 				store = props.store,
 			})

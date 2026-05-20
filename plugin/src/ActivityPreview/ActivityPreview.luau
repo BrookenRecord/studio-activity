@@ -70,7 +70,7 @@ local function ActivityPreview(props: Props)
 			}),
 		}),
 
-		ActivityButtons = props.activity.buttons and e(ActivityButtons, {
+		ActivityButtons = (props.activity.buttons and #props.activity.buttons > 0) and e(ActivityButtons, {
 			buttons = props.activity.buttons,
 			LayoutOrder = nextOrder(),
 		}),

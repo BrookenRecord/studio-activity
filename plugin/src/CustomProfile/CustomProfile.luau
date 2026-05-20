@@ -5,12 +5,12 @@ local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
 local ReactUtils = require(Packages.ReactUtils)
 
-local ActivityFields = require(script.Parent.ActivityFields)
 local ModalStore = require(Plugin.Source.Modal.ModalStore)
 local PreviewBlock = require(script.Parent.PreviewBlock)
 local ProfileActions = require(script.Parent.ProfileActions)
 local ProfileContext = require(script.Parent.ProfileContext)
 local ProfileName = require(script.Parent.ProfileName)
+local SettingsList = require(script.Parent.SettingsList)
 local Title = require(script.Parent.Title)
 
 local View = Foundation.View
@@ -101,7 +101,7 @@ local function CustomProfileSheet(props: SheetProps)
 					LayoutOrder = nextOrder(),
 				}),
 
-				ActivityFields = e(ActivityFields, {
+				SettingsList = e(SettingsList, {
 					LayoutOrder = nextOrder(),
 				}),
 			}),

@@ -7,7 +7,7 @@ use crate::extractors::{Edge, WorkerContext};
 use crate::posthog;
 
 const DEFAULT_POSTHOG_HOST: &str = "https://us.i.posthog.com";
-const GITHUB_REPO_URL: &str = "https://github.com/grilme99/studio-activity";
+const GITHUB_REPO_URL: &str = "https://github.com/BrookenRecord/studio-activity";
 
 #[allow(clippy::must_use_candidate)]
 #[tracing::instrument(

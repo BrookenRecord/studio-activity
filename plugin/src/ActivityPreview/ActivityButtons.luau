@@ -20,6 +20,8 @@ local createNextOrder = ReactUtils.createNextOrder
 
 local e = React.createElement
 
+local function NOOP() end
+
 type Props = {
 	buttons: { Types.ActivityButton },
 	LayoutOrder: number?,
@@ -34,13 +36,13 @@ local function ActivityButtons(props: Props)
 			buttonChildren,
 			e(Button, {
 				text = button.label,
-				key = `{button.label}:{index}`,
+				key = tostring(index),
 				size = InputSize.Small,
 				variant = if index == 1 then ButtonVariant.SoftEmphasis else ButtonVariant.Standard,
 				fillBehavior = FillBehavior.Fill,
 				width = UDim.new(1, 0),
 				LayoutOrder = index,
-				onActivated = function() end,
+				onActivated = NOOP,
 			})
 		)
 	end

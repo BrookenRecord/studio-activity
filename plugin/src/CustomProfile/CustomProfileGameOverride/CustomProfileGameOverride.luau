@@ -101,4 +101,4 @@ local function CustomProfileGameOverride(props: Props)
 	})
 end
 
-return CustomProfileGameOverride
+return React.memo(CustomProfileGameOverride)
