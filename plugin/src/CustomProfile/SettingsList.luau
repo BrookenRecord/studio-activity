@@ -42,6 +42,8 @@ local function SettingsList(props: Props)
 	local showPlaceIcon = withDefault(currentProfile.activity.showPlaceIcon, true)
 	local showJoinButton = withDefault(currentProfile.activity.showJoinButton, true)
 	local showPluginButton = withDefault(currentProfile.activity.showPluginButton, false)
+	local showCurrentScript = withDefault(currentProfile.activity.showCurrentScript, true)
+	local showTestingState = withDefault(currentProfile.activity.showTestingState, true)
 
 	return e(View, {
 		tag = "size-full-0 auto-y",
@@ -119,6 +121,48 @@ local function SettingsList(props: Props)
 					end,
 					inputType = ListItemInputType.Toggle,
 					isChecked = showJoinButton,
+				},
+				LayoutOrder = nextOrder(),
+			}),
+
+			ShowScriptToggle = e(List.Item, {
+				leading = IconName.ChainLink,
+				title = "Show current script",
+				description = "Show the script you're currently editing on your activity.",
+				onActivated = {
+					onActivated = function()
+						profileStore.setProfile(function(prev)
+							local current = withDefault(prev.activity.showCurrentScript, true)
+							return Sift.Dictionary.mergeDeep(prev, {
+								activity = {
+									showCurrentScript = not current,
+								},
+							})
+						end)
+					end,
+					inputType = ListItemInputType.Toggle,
+					isChecked = showCurrentScript,
+				},
+				LayoutOrder = nextOrder(),
+			}),
+
+			ShowTestingToggle = e(List.Item, {
+				leading = IconName.ChainLink,
+				title = "Show testing mode",
+				description = "Show if you're currently play testing your game.",
+				onActivated = {
+					onActivated = function()
+						profileStore.setProfile(function(prev)
+							local current = withDefault(prev.activity.showTestingState, true)
+							return Sift.Dictionary.mergeDeep(prev, {
+								activity = {
+									showTestingState = not current,
+								},
+							})
+						end)
+					end,
+					inputType = ListItemInputType.Toggle,
+					isChecked = showTestingState,
 				},
 				LayoutOrder = nextOrder(),
 			}),

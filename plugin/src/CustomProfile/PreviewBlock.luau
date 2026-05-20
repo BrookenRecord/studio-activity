@@ -38,6 +38,7 @@ local function PreviewBlock(props: Props)
 	local currentActivityComputed = useMemo(function()
 		return Charm.computed(function(): ActivityConfig?
 			local customProfile = profile.profileStore.getProfile()
+
 			local overridePlaceId = customProfile.activity.overridePlaceId
 			local placeContext = if overridePlaceId and overridePlaceId > 0
 				then placeDetailsStore.getContextByPlaceId(overridePlaceId)
@@ -62,7 +63,7 @@ local function PreviewBlock(props: Props)
 		tag = "size-full-0 auto-y col align-x-center padding-bottom-small",
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		PreviewContainer = currentActivity and e(View, {
+		PreviewContainer = e(View, {
 			tag = "auto-y",
 			Size = UDim2.fromScale(0.8, 0),
 			sizeConstraint = {

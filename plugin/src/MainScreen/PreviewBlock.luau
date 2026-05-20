@@ -30,7 +30,7 @@ local function PreviewBlock(props: Props)
 		tag = "size-full-0 auto-y col align-x-center",
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		PreviewContainer = currentActivity and e(View, {
+		PreviewContainer = e(View, {
 			tag = "auto-y",
 			Size = UDim2.fromScale(0.8, 0),
 			sizeConstraint = {

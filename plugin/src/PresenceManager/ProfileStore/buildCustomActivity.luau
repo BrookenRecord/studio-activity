@@ -13,13 +13,26 @@ type BuildContext = BuildContext.BuildContext
 local STUDIO_LOGO_ASSET = "studio-logo"
 local MAX_CUSTOM_BUTTONS = 2
 
+local function resolveState(context: BuildContext, profile: CustomProfileData, templates: { [string]: string }): string?
+	if context.studio.isPlayTesting and profile.activity.showTestingState then
+		return "Testing"
+	end
+
+	local activeScript = context.studio.activeScript
+	if activeScript and profile.activity.showCurrentScript then
+		return `Editing {activeScript.name}`
+	end
+
+	local state = profile.activity.state
+	return if state then interpolate(state, templates) else nil
+end
+
 local function buildCustomActivity(context: BuildContext, profile: CustomProfileData): ActivityConfig
 	local place = context.place
 	local onlineDetails = place.onlinePlaceDetails
 	local offlineDetails = place.offlinePlaceDetails
 
 	local details = profile.activity.details
-	local state = profile.activity.state
 
 	local templates = {
 		placeName = if onlineDetails
@@ -55,7 +68,7 @@ local function buildCustomActivity(context: BuildContext, profile: CustomProfile
 	local activity: ActivityConfig = {
 		name = "Roblox Studio",
 		details = if details then interpolate(details, templates) else nil,
-		state = if state then interpolate(state, templates) else nil,
+		state = resolveState(context, profile, templates),
 		detailsUrl = Constants.PLUGIN_LINK_PROFILE_LINK,
 		buttons = if #buttons > 0 then buttons else nil,
 		assets = if profile.activity.showPlaceIcon and onlineDetails

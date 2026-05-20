@@ -25,9 +25,13 @@ export type CustomProfileButton = {
 type CustomProfileActivity = {
 	details: string?,
 	state: string?,
+
 	showPlaceIcon: boolean?,
 	showJoinButton: boolean?,
 	showPluginButton: boolean?,
+	showCurrentScript: boolean?,
+	showTestingState: boolean?,
+
 	customButtons: { CustomProfileButton }?,
 	overridePlaceId: number?,
 }

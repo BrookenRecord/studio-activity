@@ -20,12 +20,13 @@ local createNextOrder = ReactUtils.createNextOrder
 local e = React.createElement
 
 type Props = {
-	activity: Types.Activity,
+	activity: Types.Activity?,
 	LayoutOrder: number?,
 }
 
 local function ActivityPreview(props: Props)
 	local nextOrder = createNextOrder()
+	local activity = props.activity
 
 	return e(View, {
 		tag = "size-full-0 auto-y bg-surface-300 clip col padding-small gap-medium radius-small stroke-emphasis stroke-thick",
@@ -50,7 +51,7 @@ local function ActivityPreview(props: Props)
 			LayoutOrder = nextOrder(),
 		}, {
 			ActivityImage = e(ActivityImage, {
-				assets = props.activity.assets,
+				assets = if activity then activity.assets else nil,
 				LayoutOrder = nextOrder(),
 			}),
 
@@ -59,19 +60,19 @@ local function ActivityPreview(props: Props)
 				LayoutOrder = nextOrder(),
 			}, {
 				ActivityDetails = e(ActivityDetails, {
-					activity = props.activity,
+					activity = activity,
 					LayoutOrder = nextOrder(),
 				}),
 
 				ActivityTimer = e(ActivityTimer, {
-					startedAt = props.activity.startedAt,
+					startedAt = if activity then activity.startedAt else nil,
 					LayoutOrder = nextOrder(),
 				}),
 			}),
 		}),
 
-		ActivityButtons = (props.activity.buttons and #props.activity.buttons > 0) and e(ActivityButtons, {
-			buttons = props.activity.buttons,
+		ActivityButtons = (activity and activity.buttons and #activity.buttons > 0) and e(ActivityButtons, {
+			buttons = activity.buttons,
 			LayoutOrder = nextOrder(),
 		}),
 	})

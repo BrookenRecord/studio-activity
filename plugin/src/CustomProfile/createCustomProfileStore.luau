@@ -27,6 +27,8 @@ local DEFAULT_CUSTOM_PROFILE: CustomProfileData = {
 		showPlaceIcon = true,
 		showJoinButton = true,
 		showPluginButton = false,
+		showCurrentScript = true,
+		showTestingState = true,
 	},
 }
 

@@ -10,9 +10,11 @@ local useTimerText = require(script.Parent.useTimerText)
 local View = Foundation.View
 local Text = Foundation.Text
 local Icon = Foundation.Icon
+local Skeleton = Foundation.Skeleton
 local IconName = Foundation.Enums.IconName
 local IconVariant = Foundation.Enums.IconVariant
 local IconSize = Foundation.Enums.IconSize
+local Radius = Foundation.Enums.Radius
 local useTokens = Foundation.Hooks.useTokens
 
 local createNextOrder = ReactUtils.createNextOrder
@@ -29,7 +31,7 @@ local function ActivityTimer(props: Props)
 	local nextOrder = createNextOrder()
 
 	local tokens = useTokens()
-	local contentColor = tokens.Color.Extended.Green.Green_500
+	local contentColor = if props.startedAt then tokens.Color.Extended.Green.Green_500 else tokens.Color.System.Neutral
 
 	local startTime = useMemo(function()
 		return props.startedAt or os.time()
@@ -49,12 +51,18 @@ local function ActivityTimer(props: Props)
 			LayoutOrder = nextOrder(),
 		}),
 
-		TimerText = e(Text, {
-			tag = "auto-xy text-body-small",
-			textStyle = contentColor,
-			Text = timerText,
-			LayoutOrder = nextOrder(),
-		}),
+		TimerText = if props.startedAt
+			then e(Text, {
+				tag = "auto-xy text-body-small",
+				textStyle = contentColor,
+				Text = timerText,
+				LayoutOrder = nextOrder(),
+			})
+			else e(Skeleton, {
+				radius = Radius.XSmall,
+				Size = UDim2.fromOffset(42, 12),
+				LayoutOrder = nextOrder(),
+			}),
 	})
 end
 
