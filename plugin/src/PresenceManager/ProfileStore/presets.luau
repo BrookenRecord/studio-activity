@@ -18,6 +18,7 @@ local STUDIO_LOGO_ASSET = "studio-logo"
 export type PresetProfile = {
 	name: string,
 	icon: IconName,
+	sortOrder: number,
 	buildActivityAsync: (context: BuildContext) -> ActivityConfig,
 }
 
@@ -37,7 +38,8 @@ end
 local presets: { [string]: PresetProfile } = {
 	default = {
 		name = "Default",
-		icon = IconName.PhotoCameraFace :: IconName,
+		icon = IconName.Studio :: IconName,
+		sortOrder = 0,
 		buildActivityAsync = function(context: BuildContext): ActivityConfig
 			local place = context.place
 			local onlineDetails = if place.placeType == "online" then place.onlinePlaceDetails else nil
@@ -71,9 +73,10 @@ local presets: { [string]: PresetProfile } = {
 		end,
 	},
 
-	confidential = {
-		name = "Confidential",
-		icon = IconName.Eyelashes :: IconName,
+	incognito = {
+		name = "Incognito",
+		icon = IconName.DisguiseNoseGlasses :: IconName,
+		sortOrder = 1,
 		buildActivityAsync = function(_context: BuildContext): ActivityConfig
 			return {
 				name = "Roblox Studio",

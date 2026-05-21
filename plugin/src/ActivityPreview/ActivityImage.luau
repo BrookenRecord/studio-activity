@@ -61,10 +61,11 @@ local function ActivityImage(props: Props)
 			url = smallImageUrl,
 			size = "small",
 		})
-		else e(Skeleton, {
+		elseif rawSmallImage then e(Skeleton, {
 			radius = Radius.Circle,
 			Size = UDim2.fromScale(1, 1),
 		})
+		else nil
 
 	return e(View, {
 		tag = "size-1600-1600",
@@ -78,7 +79,7 @@ local function ActivityImage(props: Props)
 			}, largeBlock)
 			else largeBlock,
 
-		SmallImageBlock = e(View, {
+		SmallImageBlock = rawSmallImage and e(View, {
 			tag = "size-700-700 bg-surface-300 radius-circle",
 			stroke = {
 				Color = tokens.Color.Surface.Surface_300.Color3,

@@ -38,6 +38,7 @@ export type Profile = {
 	name: string,
 	icon: Foundation.IconName,
 	isPreset: boolean,
+	sortOrder: number,
 	overridePlaceId: number?,
 	buildActivityAsync: (context: BuildContext) -> ActivityConfig,
 }
@@ -62,6 +63,9 @@ local function wrapCustomProfile(data: CustomProfileData): Profile
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
+		-- Custom profiles are sorted alphabetically in a separate bucket,
+		-- so this value is unused; included only to satisfy the Profile type.
+		sortOrder = 0,
 		overridePlaceId = data.activity.overridePlaceId,
 		buildActivityAsync = function(context: BuildContext): ActivityConfig
 			return buildCustomActivity(context, data)
@@ -75,6 +79,7 @@ local function wrapPreset(preset: presets.PresetProfile): Profile
 		name = preset.name,
 		icon = preset.icon,
 		isPreset = true,
+		sortOrder = preset.sortOrder,
 		overridePlaceId = nil,
 		buildActivityAsync = preset.buildActivityAsync,
 	}
