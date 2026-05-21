@@ -23,7 +23,7 @@ export type PresetProfile = {
 
 local function defaultState(context: BuildContext): string
 	if context.studio.isPlayTesting then
-		return "Testing"
+		return "Playtesting"
 	end
 
 	local activeScript = context.studio.activeScript
@@ -59,6 +59,7 @@ local presets: { [string]: PresetProfile } = {
 				assets = if onlineDetails
 					then {
 						largeImage = onlineDetails.iconWebUrl,
+						largeText = onlineDetails.placeName,
 						smallImage = STUDIO_LOGO_ASSET,
 						smallText = "Studio Activity",
 					}

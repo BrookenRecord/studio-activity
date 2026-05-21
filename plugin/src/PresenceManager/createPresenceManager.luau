@@ -212,7 +212,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			-- On last attempt, don't wait — just return the error
 			if attempt == MAX_RETRIES then
 				Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
-				NotificationStore.get().push("error", "Failed to update Discord presence")
+				NotificationStore.get().push("error", "Failed to update Discord activity")
 				Telemetry.fireEvent({
 					type = "sessionError",
 					value = Types.SessionError.new({ error = "max_retries" }),

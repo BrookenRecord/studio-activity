@@ -126,7 +126,7 @@ local function SettingsList(props: Props)
 			}),
 
 			ShowScriptToggle = e(List.Item, {
-				leading = IconName.ChainLink,
+				leading = IconName.SquareCode,
 				title = "Show current script",
 				description = "Display the name of the script you're editing.",
 				onActivated = {
@@ -147,7 +147,7 @@ local function SettingsList(props: Props)
 			}),
 
 			ShowTestingToggle = e(List.Item, {
-				leading = IconName.ChainLink,
+				leading = IconName.PersonPlay,
 				title = "Show testing mode",
 				description = "Indicate when you're playtesting your game.",
 				onActivated = {

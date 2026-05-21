@@ -15,7 +15,7 @@ local MAX_CUSTOM_BUTTONS = 2
 
 local function resolveState(context: BuildContext, profile: CustomProfileData, templates: { [string]: string }): string?
 	if context.studio.isPlayTesting and profile.activity.showTestingState then
-		return "Testing"
+		return "Playtesting"
 	end
 
 	local activeScript = context.studio.activeScript
@@ -74,6 +74,7 @@ local function buildCustomActivity(context: BuildContext, profile: CustomProfile
 		assets = if profile.activity.showPlaceIcon and onlineDetails
 			then {
 				largeImage = onlineDetails.iconWebUrl,
+				largeText = onlineDetails.placeName,
 				smallImage = STUDIO_LOGO_ASSET,
 				smallText = "Studio Activity",
 			}
