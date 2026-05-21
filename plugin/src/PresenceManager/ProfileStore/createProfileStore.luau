@@ -4,6 +4,7 @@ local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 local Foundation = require(Packages.Foundation)
 
+local PresenceManager = require(Plugin.Source.PresenceManager)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
@@ -115,6 +116,7 @@ local function createProfileStore(): ProfileStore
 	local localStorage = LocalStorageStore.get()
 	local placeDetailsStore = PlaceDetailsStore.get()
 	local pluginContextStore = PluginContextStore.get()
+	local presenceManager = PresenceManager.get()
 
 	local getActiveProfileId = computed(function(): string
 		return localStorage.getStorage().selectedProfileId or "default"
@@ -220,8 +222,13 @@ local function createProfileStore(): ProfileStore
 			studio = pluginContextStore.getStudioContext(),
 		}
 
+		local startedAt = presenceManager.getSessionStartedAt()
+
 		buildThread = task.spawn(function()
 			local activity = buildWithRetry(profile, buildContext)
+			if activity then
+				activity.startedAt = startedAt
+			end
 			setResolvedActivity(activity)
 			buildThread = nil
 		end)

@@ -11,6 +11,7 @@ local ActivityPreview = require(Plugin.Source.ActivityPreview)
 local BuildContext = require(Plugin.Source.PresenceManager.ProfileStore.BuildContext)
 local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
 local PluginContextStore = require(Plugin.Source.PluginContextStore)
+local PresenceManager = require(Plugin.Source.PresenceManager)
 local ProfileContext = require(script.Parent.ProfileContext)
 local buildCustomActivity = require(Plugin.Source.PresenceManager.ProfileStore.buildCustomActivity)
 
@@ -34,6 +35,7 @@ local function PreviewBlock(props: Props)
 	local profile = ProfileContext.useProfile()
 	local placeDetailsStore = PlaceDetailsStore.get()
 	local pluginContextStore = PluginContextStore.get()
+	local presenceManager = PresenceManager.get()
 
 	local currentActivityComputed = useMemo(function()
 		return Charm.computed(function(): ActivityConfig?
@@ -53,9 +55,11 @@ local function PreviewBlock(props: Props)
 				studio = pluginContextStore.getStudioContext(),
 			}
 
-			return buildCustomActivity(buildContext, customProfile)
+			local activity = buildCustomActivity(buildContext, customProfile)
+			activity.startedAt = presenceManager.getSessionStartedAt()
+			return activity
 		end)
-	end, { profile.profileStore :: any, placeDetailsStore, pluginContextStore })
+	end, { profile.profileStore :: any, placeDetailsStore, pluginContextStore, presenceManager })
 
 	local currentActivity = useSignalState(currentActivityComputed)
 
