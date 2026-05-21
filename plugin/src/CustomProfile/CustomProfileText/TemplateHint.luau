@@ -19,8 +19,7 @@ type Props = {
 }
 
 local function TemplateHint(props: Props)
-	local description =
-		"Use the templating syntax to add dynamic data to your Discord activity. Available templates:\n\n"
+	local description = "Insert live data into your activity text using these variables:\n\n"
 
 	for i, template in TEMPLATES do
 		description ..= `• \{{template}\}`
@@ -33,7 +32,7 @@ local function TemplateHint(props: Props)
 
 	return e(FeedbackAlert, {
 		severity = AlertSeverity.Info,
-		title = "Templating Syntax",
+		title = "Use variables",
 		description = description,
 		LayoutOrder = props.LayoutOrder,
 	}, {})

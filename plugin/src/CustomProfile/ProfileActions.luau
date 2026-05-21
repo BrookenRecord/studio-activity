@@ -50,7 +50,7 @@ local function ProfileActions(props: Props)
 				local accepted = ModalStore.get().openAsync("confirmation", {
 					priority = 2,
 					props = {
-						title = "Are you sure?",
+						title = "Delete this profile?",
 						body = "This action cannot be undone.",
 					},
 				})

@@ -4,11 +4,16 @@ local Packages = Plugin.Packages
 local Charm = require(Packages.Charm)
 local Foundation = require(Packages.Foundation)
 
+local PresenceManager = require(Plugin.Source.PresenceManager)
 local createPresenceManager = require(Plugin.Source.PresenceManager.createPresenceManager)
 type ActivityConfig = createPresenceManager.ActivityConfig
 
 local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
-type PlaceContext = PlaceDetailsStore.PlaceContext
+
+local PluginContextStore = require(Plugin.Source.PluginContextStore)
+
+local BuildContextModule = require(script.Parent.BuildContext)
+type BuildContext = BuildContextModule.BuildContext
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
@@ -33,8 +38,9 @@ export type Profile = {
 	name: string,
 	icon: Foundation.IconName,
 	isPreset: boolean,
+	sortOrder: number,
 	overridePlaceId: number?,
-	buildActivityAsync: (context: PlaceContext) -> ActivityConfig,
+	buildActivityAsync: (context: BuildContext) -> ActivityConfig,
 }
 
 export type ProfileStore = {
@@ -57,8 +63,11 @@ local function wrapCustomProfile(data: CustomProfileData): Profile
 		name = data.name,
 		icon = IconName.DiamondSimplified :: Foundation.IconName,
 		isPreset = false,
+		-- Custom profiles are sorted alphabetically in a separate bucket,
+		-- so this value is unused; included only to satisfy the Profile type.
+		sortOrder = 0,
 		overridePlaceId = data.activity.overridePlaceId,
-		buildActivityAsync = function(context: PlaceContext): ActivityConfig
+		buildActivityAsync = function(context: BuildContext): ActivityConfig
 			return buildCustomActivity(context, data)
 		end,
 	}
@@ -70,6 +79,7 @@ local function wrapPreset(preset: presets.PresetProfile): Profile
 		name = preset.name,
 		icon = preset.icon,
 		isPreset = true,
+		sortOrder = preset.sortOrder,
 		overridePlaceId = nil,
 		buildActivityAsync = preset.buildActivityAsync,
 	}
@@ -79,7 +89,7 @@ end
 	Retry a profile build with exponential backoff.
 	The build function can yield. Returns nil on persistent failure.
 ]]
-local function buildWithRetry(profile: Profile, context: PlaceContext): ActivityConfig?
+local function buildWithRetry(profile: Profile, context: BuildContext): ActivityConfig?
 	local backoffConfig = RetryBackoff.defaultConfig()
 	local backoffState = RetryBackoff.createState()
 
@@ -110,6 +120,8 @@ end
 local function createProfileStore(): ProfileStore
 	local localStorage = LocalStorageStore.get()
 	local placeDetailsStore = PlaceDetailsStore.get()
+	local pluginContextStore = PluginContextStore.get()
+	local presenceManager = PresenceManager.get()
 
 	local getActiveProfileId = computed(function(): string
 		return localStorage.getStorage().selectedProfileId or "default"
@@ -197,21 +209,31 @@ local function createProfileStore(): ProfileStore
 			return
 		end
 
-		local context: PlaceContext?
+		local placeContext: PlaceDetailsStore.PlaceContext?
 		if overridePlaceId and overridePlaceId > 0 then
 			placeDetailsStore.prefetchPlaceIds({ overridePlaceId })
-			context = placeDetailsStore.getContextByPlaceId(overridePlaceId)
+			placeContext = placeDetailsStore.getContextByPlaceId(overridePlaceId)
 		else
-			context = placeDetailsStore.getCurrentContext()
+			placeContext = placeDetailsStore.getCurrentContext()
 		end
 
-		if context == nil then
+		if placeContext == nil then
 			setResolvedActivity(nil)
 			return
 		end
 
+		local buildContext: BuildContext = {
+			place = placeContext,
+			studio = pluginContextStore.getStudioContext(),
+		}
+
+		local startedAt = presenceManager.getSessionStartedAt()
+
 		buildThread = task.spawn(function()
-			local activity = buildWithRetry(profile, context)
+			local activity = buildWithRetry(profile, buildContext)
+			if activity then
+				activity.startedAt = startedAt
+			end
 			setResolvedActivity(activity)
 			buildThread = nil
 		end)

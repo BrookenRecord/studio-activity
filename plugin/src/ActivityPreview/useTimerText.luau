@@ -17,7 +17,7 @@ local function useTimerText(startTime: number): React.Binding<string>
 	useEffect(function()
 		local isRunning = true
 
-		task.spawn(function()
+		local thread = task.spawn(function()
 			while isRunning do
 				local currentTime = os.time()
 				local elapsedTime = currentTime - startTime
@@ -28,6 +28,7 @@ local function useTimerText(startTime: number): React.Binding<string>
 		end)
 
 		return function()
+			task.cancel(thread)
 			isRunning = false
 		end
 	end, { startTime })

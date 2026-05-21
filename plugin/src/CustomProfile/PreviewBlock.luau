@@ -8,11 +8,15 @@ local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 
 local ActivityPreview = require(Plugin.Source.ActivityPreview)
+local BuildContext = require(Plugin.Source.PresenceManager.ProfileStore.BuildContext)
 local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+local PluginContextStore = require(Plugin.Source.PluginContextStore)
+local PresenceManager = require(Plugin.Source.PresenceManager)
 local ProfileContext = require(script.Parent.ProfileContext)
 local buildCustomActivity = require(Plugin.Source.PresenceManager.ProfileStore.buildCustomActivity)
 
 type ActivityConfig = buildCustomActivity.ActivityConfig
+type BuildContext = BuildContext.BuildContext
 
 local View = Foundation.View
 
@@ -30,10 +34,13 @@ local function PreviewBlock(props: Props)
 	local nextOrder = createNextOrder()
 	local profile = ProfileContext.useProfile()
 	local placeDetailsStore = PlaceDetailsStore.get()
+	local pluginContextStore = PluginContextStore.get()
+	local presenceManager = PresenceManager.get()
 
 	local currentActivityComputed = useMemo(function()
 		return Charm.computed(function(): ActivityConfig?
 			local customProfile = profile.profileStore.getProfile()
+
 			local overridePlaceId = customProfile.activity.overridePlaceId
 			local placeContext = if overridePlaceId and overridePlaceId > 0
 				then placeDetailsStore.getContextByPlaceId(overridePlaceId)
@@ -43,9 +50,16 @@ local function PreviewBlock(props: Props)
 				return nil
 			end
 
-			return buildCustomActivity(placeContext, customProfile)
+			local buildContext: BuildContext = {
+				place = placeContext,
+				studio = pluginContextStore.getStudioContext(),
+			}
+
+			local activity = buildCustomActivity(buildContext, customProfile)
+			activity.startedAt = presenceManager.getSessionStartedAt()
+			return activity
 		end)
-	end, { profile.profileStore :: any, placeDetailsStore })
+	end, { profile.profileStore :: any, placeDetailsStore, pluginContextStore, presenceManager })
 
 	local currentActivity = useSignalState(currentActivityComputed)
 
@@ -53,7 +67,7 @@ local function PreviewBlock(props: Props)
 		tag = "size-full-0 auto-y col align-x-center padding-bottom-small",
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		PreviewContainer = currentActivity and e(View, {
+		PreviewContainer = e(View, {
 			tag = "auto-y",
 			Size = UDim2.fromScale(0.8, 0),
 			sizeConstraint = {

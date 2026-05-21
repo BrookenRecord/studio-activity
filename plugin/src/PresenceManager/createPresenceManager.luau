@@ -50,6 +50,7 @@ export type ActivityConfig = {
 
 export type PresenceManager = {
 	getActivity: () -> ActivityConfig?,
+	getSessionStartedAt: () -> number?,
 	getIsActive: () -> boolean,
 	getDisabledAccountIds: () -> { [string]: true },
 
@@ -148,7 +149,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 	local sessionTokens: { [string]: string } = {}
 
 	-- Tracks when sessions first became active, used as the Discord timestamp.
-	local sessionStartedAt: number? = os.time()
+	local getSessionStartedAt, setSessionStartedAt = signal(os.time() :: number?)
 
 	-- Incremented on every sync to detect stale heartbeat writes.
 	-- The heartbeat checks this before and after API calls to avoid writing
@@ -211,7 +212,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			-- On last attempt, don't wait — just return the error
 			if attempt == MAX_RETRIES then
 				Logger:Warn(`{context}: failed after {MAX_RETRIES} attempts, last error: {errorType}`)
-				NotificationStore.get().push("error", "Failed to update Discord presence")
+				NotificationStore.get().push("error", "Failed to update Discord activity")
 				Telemetry.fireEvent({
 					type = "sessionError",
 					value = Types.SessionError.new({ error = "max_retries" }),
@@ -346,11 +347,11 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			return
 		end
 
-		if sessionStartedAt == nil then
-			sessionStartedAt = os.time()
+		if peek(getSessionStartedAt) == nil then
+			setSessionStartedAt(os.time())
 		end
 
-		local serialized = serializeActivity(activity, sessionStartedAt)
+		local serialized = serializeActivity(activity, peek(getSessionStartedAt))
 		local activeAccountIds: { [string]: true } = {}
 
 		for id, account in accounts do
@@ -498,7 +499,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 			end
 
 			local generationBefore = syncGeneration
-			local serialized = serializeActivity(activity, sessionStartedAt)
+			local serialized = serializeActivity(activity, peek(getSessionStartedAt))
 			local authAccounts = peek(auth.getStorage).accounts
 			local disabledIds = peek(getDisabledAccountIds)
 
@@ -569,6 +570,7 @@ local function createPresenceManager(discord: DiscordApi.DiscordApi): PresenceMa
 
 	return {
 		getActivity = getActivity,
+		getSessionStartedAt = getSessionStartedAt,
 		getIsActive = getIsActive,
 		getDisabledAccountIds = getDisabledAccountIds,
 

@@ -11,8 +11,10 @@ local WebImage = require(Plugin.Source.Common.WebImage)
 
 local View = Foundation.View
 local Tooltip = Foundation.Tooltip
+local Skeleton = Foundation.Skeleton
 local PopoverSide = Foundation.Enums.PopoverSide
 local PopoverAlign = Foundation.Enums.PopoverAlign
+local Radius = Foundation.Enums.Radius
 local useTokens = Foundation.Hooks.useTokens
 
 local useSignalState = ReactCharm.useSignalState
@@ -40,8 +42,8 @@ local function ActivityImage(props: Props)
 	local largeImageUrl = if rawLargeImage then appAssets.resolveUrl(rawLargeImage) else nil
 	local smallImageUrl = if rawSmallImage then appAssets.resolveUrl(rawSmallImage) else nil
 
-	local largeBlock = largeImageUrl
-		and e(View, {
+	local largeBlock = if largeImageUrl
+		then e(View, {
 			tag = "size-full",
 		}, {
 			Image = e(WebImage, {
@@ -49,11 +51,21 @@ local function ActivityImage(props: Props)
 				size = "big",
 			}),
 		})
+		else e(Skeleton, {
+			radius = Radius.Small,
+			Size = UDim2.fromScale(1, 1),
+		})
 
-	local smallImageBlock = smallImageUrl and e(WebImage, {
-		url = smallImageUrl,
-		size = "small",
-	})
+	local smallImageBlock = if smallImageUrl
+		then e(WebImage, {
+			url = smallImageUrl,
+			size = "small",
+		})
+		elseif rawSmallImage then e(Skeleton, {
+			radius = Radius.Circle,
+			Size = UDim2.fromScale(1, 1),
+		})
+		else nil
 
 	return e(View, {
 		tag = "size-1600-1600",
@@ -67,7 +79,7 @@ local function ActivityImage(props: Props)
 			}, largeBlock)
 			else largeBlock,
 
-		SmallImageBlock = smallImageUrl and e(View, {
+		SmallImageBlock = rawSmallImage and e(View, {
 			tag = "size-700-700 bg-surface-300 radius-circle",
 			stroke = {
 				Color = tokens.Color.Surface.Surface_300.Color3,

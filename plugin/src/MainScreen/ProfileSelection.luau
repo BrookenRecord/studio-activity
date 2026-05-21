@@ -32,7 +32,7 @@ local e = React.createElement
 local CUSTOM_PROFILE_TRIGGER_ID = "__add-custom-profile"
 
 local profileDropdownItems = Charm.computed(function(): Foundation.DropdownItems
-	type Record = { id: string, name: string, icon: IconName }
+	type Record = { id: string, name: string, icon: IconName, sortOrder: number }
 	local presetProfiles: { Record } = {}
 	local customProfiles: { Record } = {}
 
@@ -43,11 +43,16 @@ local profileDropdownItems = Charm.computed(function(): Foundation.DropdownItems
 			id = id,
 			icon = profile.icon,
 			name = profile.name,
+			sortOrder = profile.sortOrder,
 		})
 	end
 
-	-- Sort the list of profiles
+	-- Presets honor the order authored in presets.luau (Default before
+	-- Confidential, etc.), falling back to alphabetical for ties.
 	table.sort(presetProfiles, function(a, b)
+		if a.sortOrder ~= b.sortOrder then
+			return a.sortOrder < b.sortOrder
+		end
 		return a.name < b.name
 	end)
 	table.sort(customProfiles, function(a, b)
@@ -172,7 +177,7 @@ local function ProfileSelection(props: Props)
 
 			EditBtn = if isPreset
 				then e(Tooltip, {
-					title = "You can't edit built-in profiles",
+					title = "Built-in profiles can't be edited",
 					align = PopoverAlign.End,
 					side = PopoverSide.Top,
 					LayoutOrder = nextOrder(),

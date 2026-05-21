@@ -55,7 +55,7 @@ local function CustomProfileGameOverride(props: Props)
 			}, {
 				PlaceIdInput = e(NumberInput, {
 					label = "Place ID",
-					hint = "Optionally override the game displayed on your activity. If unset, the place you're currently editing will be used instead.",
+					hint = "Show a specific game in your activity. Leave blank to use the place you're editing.",
 					value = override.placeId or 0,
 					onChanged = function(placeId: number, reason: OnChangeCallbackReason)
 						-- NumberInput re-fires onChanged with its `value` prop on focus loss.

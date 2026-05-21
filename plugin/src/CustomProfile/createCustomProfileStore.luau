@@ -22,11 +22,13 @@ local LOOKUP_DEBOUNCE_SECONDS = 1
 local DEFAULT_CUSTOM_PROFILE: CustomProfileData = {
 	name = "My Profile",
 	activity = {
-		details = "Building my game",
-		state = "{placeName}",
+		details = "{placeName}",
+		state = "Building my game",
 		showPlaceIcon = true,
 		showJoinButton = true,
 		showPluginButton = false,
+		showCurrentScript = true,
+		showTestingState = true,
 	},
 }
 
