@@ -3,6 +3,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local Packages = Plugin.Packages
 local Foundation = require(Packages.Foundation)
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 local ReactUtils = require(Packages.ReactUtils)
 local Sift = require(Packages.Sift)
 
@@ -18,7 +19,9 @@ local ButtonVariant = Foundation.Enums.ButtonVariant
 
 local createNextOrder = ReactUtils.createNextOrder
 local useCallback = React.useCallback
+local useEffect = React.useEffect
 local useState = React.useState
+local useSignalState = ReactCharm.useSignalState
 
 type Props = {
 	onClose: (result: any?) -> (),
@@ -29,19 +32,33 @@ local function WelcomeDialog(props: Props)
 
 	local userSettingsStore = UserSettingsStore.get()
 	local localStorageStore = LocalStorageStore.get()
+	local userSettings = useSignalState(userSettingsStore.getStorage)
+	local isUserSettingsLoading = useSignalState(userSettingsStore.getIsLoading)
+	local isLocalStorageLoading = useSignalState(localStorageStore.getIsLoading)
+	local isLoading = isUserSettingsLoading or isLocalStorageLoading
 
 	local isOptedIn, setIsOptedIn = useState(true)
 
+	useEffect(function()
+		if not isUserSettingsLoading then
+			setIsOptedIn(userSettings.collectAnonymousUsageData)
+		end
+	end, { isUserSettingsLoading, userSettings.collectAnonymousUsageData })
+
 	local onClose = useCallback(function()
-		localStorageStore.setStorage(function(prev)
-			return Sift.Dictionary.join(prev, {
-				hasCompletedOnboarding = true,
-			})
-		end)
+		if isLoading then
+			return
+		end
 
 		userSettingsStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
 				collectAnonymousUsageData = isOptedIn,
+			})
+		end)
+
+		localStorageStore.setStorage(function(prev)
+			return Sift.Dictionary.join(prev, {
+				hasCompletedOnboarding = true,
 			})
 		end)
 
@@ -53,7 +70,7 @@ local function WelcomeDialog(props: Props)
 		end
 
 		props.onClose()
-	end, { localStorageStore.setStorage :: any, userSettingsStore.setStorage, isOptedIn, props.onClose })
+	end, { isLoading, isOptedIn })
 
 	local onCancel = useCallback(function()
 		props.onClose()
@@ -90,7 +107,7 @@ local function WelcomeDialog(props: Props)
 				Checkbox = React.createElement(Checkbox, {
 					label = "Help out by sending anonymous usage data",
 					isChecked = isOptedIn,
-					onActivated = setIsOptedIn,
+					onActivated = if isLoading then function() end else setIsOptedIn,
 					LayoutOrder = nextOrder(),
 				}),
 			}),

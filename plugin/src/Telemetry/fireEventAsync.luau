@@ -46,6 +46,10 @@ local function shouldSendTelemetry(): boolean
 		return false
 	end
 
+	if userSettingsStore.getErr() ~= nil or localStorageStore.getErr() ~= nil then
+		return false
+	end
+
 	local userSettings = userSettingsStore.getStorage()
 	if not userSettings.collectAnonymousUsageData then
 		return false
@@ -84,6 +88,12 @@ local function sendEvent(event: TelemetryEvent)
 	end
 end
 
+local function sendEventIfAllowed(event: TelemetryEvent)
+	if shouldSendTelemetry() then
+		sendEvent(event)
+	end
+end
+
 --[[
 	Fire a telemetry event. Respects the user's opt-out setting.
 
@@ -107,13 +117,13 @@ local function fireEvent(event: TelemetryEvent)
 		local debounced = debouncedSenders[eventType]
 		if not debounced then
 			debounced = Debounce.trailing(debounceSeconds, function(debouncedEvent: TelemetryEvent)
-				task.spawn(sendEvent, debouncedEvent)
+				task.spawn(sendEventIfAllowed, debouncedEvent)
 			end)
 			debouncedSenders[eventType] = debounced
 		end
 		debounced.call(event)
 	else
-		task.spawn(sendEvent, event)
+		task.spawn(sendEventIfAllowed, event)
 	end
 end
 
@@ -122,6 +132,10 @@ end
 	Call this during plugin teardown to ensure final state is sent.
 ]]
 local function flushAll()
+	if not shouldSendTelemetry() then
+		return
+	end
+
 	for _, debounced in debouncedSenders do
 		debounced.flush()
 	end
