@@ -18,6 +18,8 @@ local InputSize = Foundation.Enums.InputSize
 
 local STORAGE_KEYS = { "PresenceAuthStore", "PresenceLocalStorage", "PresenceUserSettings" }
 
+type AuthStorage = AuthStore.AuthStore
+
 local e = React.createElement
 local useState = React.useState
 local useMemo = React.useMemo
@@ -25,6 +27,21 @@ local useMemo = React.useMemo
 type Props = {
 	LayoutOrder: number?,
 }
+
+local function redactAuthStore(auth: AuthStorage): AuthStorage
+	local redacted: AuthStorage = {
+		accounts = {},
+	}
+
+	for accountId, account in auth.accounts do
+		local redactedAccount = table.clone(account)
+		redactedAccount.accessToken = "<redacted>"
+		redactedAccount.refreshToken = "<redacted>"
+		redacted.accounts[accountId] = redactedAccount
+	end
+
+	return redacted
+end
 
 local function DeveloperMenu(props: Props)
 	local isOpen, setIsOpen = useState(false)
@@ -44,7 +61,7 @@ local function DeveloperMenu(props: Props)
 
 					print("UserSettings:", userSettings)
 					print("LocalStorage:", localStorage)
-					print("AuthStore (WARNING contains access tokens):", auth)
+					print("AuthStore:", redactAuthStore(auth))
 
 					print(`\n{divider}`)
 

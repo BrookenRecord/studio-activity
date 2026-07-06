@@ -9,6 +9,10 @@ local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local PluginStore = require(script.Parent.PluginStore)
 
+local REDACTED_STORAGE_KEYS = {
+	PresenceAuthStore = true,
+}
+
 export type PluginSettingsStore<T> = {
 	getStorage: () -> T,
 	setStorage: (T | (T) -> T) -> (),
@@ -42,7 +46,10 @@ local function createPluginSettingsStore<T>(
 
 		local data = plugin:GetSetting(storageKey)
 
-		Logger:Debug(`read raw plugin settings for {storageKey}:`, data)
+		Logger:Debug(
+			`read raw plugin settings for {storageKey}:`,
+			if REDACTED_STORAGE_KEYS[storageKey] then "<redacted>" else data
+		)
 
 		if typeof(data) == "string" then
 			Logger:Info(`deserializing plugin settings for {storageKey} to object...`)
