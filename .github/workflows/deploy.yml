@@ -22,7 +22,14 @@ jobs:
       - uses: arduino/setup-protoc@v3
 
       - name: Install worker-build and wasm-bindgen-cli
-        run: cargo install worker-build wasm-bindgen-cli
+        run: |
+          cargo install worker-build
+          cargo install wasm-bindgen-cli --version 0.2.121
+
+      - name: Test
+        run: |
+          cd backend
+          cargo test
 
       - name: Build
         run: |

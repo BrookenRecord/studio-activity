@@ -25,13 +25,16 @@ jobs:
       - name: 📋 Verify tools
         run: rokit list
 
-      - name: Run Lune setup
-        run: lune setup
+      - name: Run Lute setup
+        run: lute setup
 
       - name: 📦 Setup project
-        run: lune run setup
+        run: lute run setup
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
 
+      - name: 🔎 Run lint
+        run: lute run lint
+
       - name: 🔎 Run static analysis
-        run: lune run ci
+        run: lute run analyze
