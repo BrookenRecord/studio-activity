@@ -15,20 +15,24 @@ export type WebImageState =
 	| {
 		status: "loading",
 		data: nil,
+		url: string,
 	}
 	| {
 		status: "ready",
 		data: buffer,
+		url: string,
 	}
 	| {
 		status: "error",
 		data: nil,
+		url: string,
 	}
 
 local function useWebImage(url: string): WebImageState
 	local imageState, setImageState = useState<<WebImageState>>({
 		status = "loading",
 		data = nil,
+		url = url,
 	})
 
 	-- Download image from web
@@ -41,6 +45,7 @@ local function useWebImage(url: string): WebImageState
 		setImageState({
 			status = "loading",
 			data = nil,
+			url = url,
 		})
 
 		local isCurrent = true
@@ -61,6 +66,7 @@ local function useWebImage(url: string): WebImageState
 					setImageState({
 						status = "error",
 						data = nil,
+						url = url,
 					})
 				end
 				return
@@ -74,6 +80,7 @@ local function useWebImage(url: string): WebImageState
 					setImageState({
 						status = "error",
 						data = nil,
+						url = url,
 					})
 				end
 				return
@@ -89,6 +96,7 @@ local function useWebImage(url: string): WebImageState
 					setImageState({
 						status = "error",
 						data = nil,
+						url = url,
 					})
 				end
 				return
@@ -98,6 +106,7 @@ local function useWebImage(url: string): WebImageState
 				setImageState({
 					status = "ready",
 					data = buffer.fromstring(result.Body :: string),
+					url = url,
 				})
 			end
 		end)
@@ -109,6 +118,14 @@ local function useWebImage(url: string): WebImageState
 			end
 		end
 	end, { url })
+
+	if imageState.url ~= url then
+		return {
+			status = "loading",
+			data = nil,
+			url = url,
+		}
+	end
 
 	return imageState
 end

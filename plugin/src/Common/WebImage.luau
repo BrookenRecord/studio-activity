@@ -50,7 +50,15 @@ local function WebImage(props: Props)
 		end
 
 		local imageData = imageState.data
-		local editableImage
+		local editableImage: any = nil
+		local isCurrent = true
+		local function destroyEditableImage()
+			if editableImage then
+				editableImage:Destroy()
+				editableImage = nil
+			end
+		end
+
 		local thread = task.spawn(function()
 			local success, err = pcall(function()
 				local decoded = png.decode(imageData)
@@ -68,21 +76,33 @@ local function WebImage(props: Props)
 					local result, content = (AssetService :: any):CreateDataModelContentAsync(editableImageContent)
 					-- TODO Luau: This enum is too new for the LSP to type check
 					if result == (Enum :: any).CreateContentResult.Success then
-						setImageContent(content)
-						editableImage:Destroy()
-						editableImage = nil :: any
+						if isCurrent then
+							setImageContent(content)
+							destroyEditableImage()
+						end
 					else
-						setImageContent(editableImageContent)
+						if isCurrent then
+							setImageContent(editableImageContent)
+						end
 					end
 				else
-					setImageContent(editableImageContent)
+					if isCurrent then
+						setImageContent(editableImageContent)
+					end
 				end
 
 				-- TODO: Migrate to the static content API once available. Should save
 				-- a bit of memory.
 			end)
 
+			if not isCurrent then
+				destroyEditableImage()
+				return
+			end
+
 			if not success then
+				destroyEditableImage()
+				setImageContent(nil)
 				setHasError(true)
 				Logger:Warn("Error while rendering web image", {
 					error = err,
@@ -93,13 +113,15 @@ local function WebImage(props: Props)
 		end)
 
 		return function()
+			isCurrent = false
 			task.cancel(thread)
-			if editableImage then
-				editableImage:Destroy()
-			end
+			destroyEditableImage()
 			setImageContent(nil)
 		end
 	end, { imageState :: any })
+
+	local isError = imageState.status == "error" or hasError
+	local isReady = imageState.status == "ready" and imageContent ~= nil and not hasError
 
 	return e(View, {
 		tag = {
@@ -109,12 +131,12 @@ local function WebImage(props: Props)
 		},
 		LayoutOrder = props.LayoutOrder,
 	}, {
-		ErrorIcon = hasError and e(Icon, {
+		ErrorIcon = isError and e(Icon, {
 			name = IconName.SquareFaceEmoji,
 			size = if isBig then IconSize.Medium else IconSize.XSmall,
 		}),
 
-		Image = (not hasError) and e("ImageLabel", {
+		Image = isReady and e("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			ImageContent = imageContent,
