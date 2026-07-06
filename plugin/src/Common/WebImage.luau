@@ -32,18 +32,26 @@ local function WebImage(props: Props)
 
 	local imageContent, setImageContent = useState<<Content?>>(nil)
 	local hasError, setHasError = useState(false)
-	local imageData = useWebImage(props.url)
+	local imageState = useWebImage(props.url)
 
 	local isBig = props.size == "big"
 
 	useEffect(function()
+		if imageState.status == "loading" then
+			setImageContent(nil)
+			setHasError(false)
+			return function() end
+		end
+
+		if imageState.status == "error" then
+			setImageContent(nil)
+			setHasError(true)
+			return function() end
+		end
+
+		local imageData = imageState.data
 		local editableImage
 		local thread = task.spawn(function()
-			if imageData == nil then
-				setHasError(true)
-				return
-			end
-
 			local success, err = pcall(function()
 				local decoded = png.decode(imageData)
 
@@ -91,7 +99,7 @@ local function WebImage(props: Props)
 			end
 			setImageContent(nil)
 		end
-	end, { imageData })
+	end, { imageState :: any })
 
 	return e(View, {
 		tag = {

@@ -11,8 +11,25 @@ local useState = React.useState
 local useEffect = React.useEffect
 local useRef = React.useRef
 
-local function useWebImage(url: string): buffer?
-	local imageData, setImageData = useState<<buffer?>>(nil)
+export type WebImageState =
+	| {
+		status: "loading",
+		data: nil,
+	}
+	| {
+		status: "ready",
+		data: buffer,
+	}
+	| {
+		status: "error",
+		data: nil,
+	}
+
+local function useWebImage(url: string): WebImageState
+	local imageState, setImageState = useState<<WebImageState>>({
+		status = "loading",
+		data = nil,
+	})
 
 	-- Download image from web
 	local downloadThread = useRef<<thread?>>(nil)
@@ -21,6 +38,12 @@ local function useWebImage(url: string): buffer?
 			pcall(task.cancel, downloadThread.current)
 		end
 
+		setImageState({
+			status = "loading",
+			data = nil,
+		})
+
+		local isCurrent = true
 		downloadThread.current = task.spawn(function()
 			local success, result = pcall(function()
 				return HttpService:RequestAsync({
@@ -34,6 +57,12 @@ local function useWebImage(url: string): buffer?
 				Logger:Warn("Failed to download web image (network error)", {
 					result = result,
 				})
+				if isCurrent then
+					setImageState({
+						status = "error",
+						data = nil,
+					})
+				end
 				return
 			end
 
@@ -41,6 +70,12 @@ local function useWebImage(url: string): buffer?
 				Logger:Warn("Failed to download web image (API error)", {
 					result = result,
 				})
+				if isCurrent then
+					setImageState({
+						status = "error",
+						data = nil,
+					})
+				end
 				return
 			end
 
@@ -50,21 +85,32 @@ local function useWebImage(url: string): buffer?
 					url = url,
 					contentType = contentType,
 				})
+				if isCurrent then
+					setImageState({
+						status = "error",
+						data = nil,
+					})
+				end
 				return
 			end
 
-			-- We downloaded the image!
-			setImageData(buffer.fromstring(result.Body :: string))
+			if isCurrent then
+				setImageState({
+					status = "ready",
+					data = buffer.fromstring(result.Body :: string),
+				})
+			end
 		end)
 
 		return function()
+			isCurrent = false
 			if downloadThread.current then
 				pcall(task.cancel, downloadThread.current)
 			end
 		end
 	end, { url })
 
-	return imageData
+	return imageState
 end
 
 return useWebImage
