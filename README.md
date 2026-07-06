@@ -9,7 +9,7 @@
 <div align="center">
 
   [![Creator Store](./.github/assets/link-creator-store.svg)](https://create.roblox.com/store/asset/127703833967745/Studio-Activity)
-  [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/grilme99/studio-activity/releases/latest)
+  [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/BrookenRecord/studio-activity/releases/latest)
 
 </div>
 
@@ -50,7 +50,7 @@ The easiest way to install Studio Activity is from the Creator Store:
 
 ### Manual install (`.rbxm`)
 
-Prefer to sideload the latest build directly? Download `StudioActivity.rbxm` from the [latest GitHub release](https://github.com/grilme99/studio-activity/releases/latest) and add it to your Plugins folder.
+Prefer to sideload the latest build directly? Download `StudioActivity.rbxm` from the [latest GitHub release](https://github.com/BrookenRecord/studio-activity/releases/latest) and add it to your Plugins folder.
 
 <details>
 <summary>Manual install steps</summary>
@@ -71,7 +71,7 @@ To update later, download the newer `.rbxm` and replace the existing file in you
 
 ## Privacy & telemetry
 
-Studio Activity supports **anonymous, opt-in usage data**. You're asked during onboarding whether to enable it, and you can toggle it off anytime from plugin settings.
+Studio Activity supports **anonymous usage data**. You're asked during onboarding whether to enable it, and you can toggle it off anytime from plugin settings. The onboarding checkbox is enabled by default, but no telemetry is sent until that choice has been saved.
 
 **Why I collect it.** I maintain Studio Activity on my own in my spare time. Telemetry is my only way to find out when an OAuth flow breaks for some chunk of users, or when a Studio update regresses presence updates. Without it, bugs that break onboarding can sit in a release for weeks before anyone files an issue. I keep the event list narrow on purpose: only what I need to spot regressions and prioritize fixes.
 
@@ -81,7 +81,7 @@ Studio Activity supports **anonymous, opt-in usage data**. You're asked during o
 - Account linking: `accountLinkStarted`, `accountLinked`, `deviceCodeFlowFailed`, `browserFlowFailed`, `accountRemoved`
 - Presence: `presenceToggled`, `profileSelected`, `sessionError`
 - Plugin version, channel, and build hash
-- A SHA-256 hash of your Roblox user ID, computed locally. It can't be reversed back to a username.
+- A random per-install telemetry ID, generated locally after telemetry consent exists. It is not based on your Roblox user ID.
 - Your IP address, forwarded to PostHog only for bot detection and country-level geo enrichment. PostHog is configured to discard IPs after processing them.
 
 **What is _not_ collected.** Roblox usernames, place names, place IDs, game content, file paths, system information, Discord usernames, Discord tokens, or any free-form text you type into the plugin.
@@ -89,6 +89,19 @@ Studio Activity supports **anonymous, opt-in usage data**. You're asked during o
 **Where it goes.** Events are sent to a small Cloudflare Worker I run (source in [`backend/`](backend/)). The worker validates them and forwards them to PostHog. The complete event schema is defined in [`protos/api/v1/api.proto`](protos/api/v1/api.proto); the plugin can't send anything that isn't in that file.
 
 If you'd rather not contribute telemetry, leave the toggle off in plugin settings. The plugin works identically either way.
+
+## Maintainer release notes
+
+Lute is the canonical build system for V1 releases. Lune commands are legacy and should not be used to produce release artifacts.
+
+Release build:
+
+```sh
+API_HOST=activity.brooke.sh DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID" \
+  lute run build --channel prod --target creator-store --output StudioActivity.rbxm --skip-reload --clean
+```
+
+Before publishing, run the GitHub release workflow manually with `dry_run=true`. The dry run checks out the repo, runs the Lute setup/build path, verifies the release tree, and uploads `StudioActivity.rbxm` as a workflow artifact without tagging or creating a GitHub Release.
 
 ## Why does the plugin ask for so many Discord permissions?
 
