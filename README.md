@@ -91,19 +91,6 @@ Studio Activity supports **anonymous usage data**. You're asked during onboardin
 
 If you'd rather not contribute telemetry, leave the toggle off in plugin settings. The plugin works identically either way.
 
-## Maintainer release notes
-
-Lute is the canonical build system for V1 releases. Lune commands are legacy and should not be used to produce release artifacts.
-
-Release build:
-
-```sh
-API_HOST=activity.brooke.sh DISCORD_CLIENT_ID="$DISCORD_CLIENT_ID" \
-  lute run build --channel prod --target creator-store --output StudioActivity.rbxm --skip-reload --clean
-```
-
-Before publishing, run the GitHub release workflow manually with `dry_run=true`. The dry run checks out the repo, runs the Lute setup/build path, verifies the release tree, and uploads `StudioActivity.rbxm` as a workflow artifact without tagging or creating a GitHub Release.
-
 ## Why does the plugin ask for so many Discord permissions?
 
 When you link your Discord account, Discord asks you to authorize the **`sdk.social_layer_presence`** scope. That scope is broader than what the plugin actually uses. Here's why.
