@@ -40,7 +40,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
 
       - name: Install wasm-bindgen test runner
-        run: cargo install wasm-bindgen-cli --version 0.2.121
+        run: cargo install wasm-bindgen-cli --version 0.2.125
 
       - name: Run Lute setup
         run: lute setup
