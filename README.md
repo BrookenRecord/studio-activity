@@ -35,7 +35,7 @@ Studio Activity mirrors your current Roblox Studio session to Discord so your pr
 
 - Requires Roblox Studio and a Discord account.
 - Your Discord access token stays local in Studio; my backend never receives it.
-- Telemetry is anonymous and opt-in, and you can disable it anytime in plugin settings.
+- Telemetry is anonymous, the onboarding checkbox is checked by default, and you can disable it anytime in plugin settings.
 - Creator Store is recommended; local `.rbxm` installs have extra plugin-isolation risk.
 - You can inspect the exact Discord calls in [`plugin/src/Api/Discord.luau`](plugin/src/Api/Discord.luau) and [`plugin/src/PresenceManager/createPresenceManager.luau`](plugin/src/PresenceManager/createPresenceManager.luau).
 
@@ -80,7 +80,8 @@ Studio Activity supports **anonymous usage data**. You're asked during onboardin
 - Lifecycle: `pluginLoaded`, `pluginUnloaded`, `uiOpened`, `onboardingCompleted`
 - Account linking: `accountLinkStarted`, `accountLinked`, `deviceCodeFlowFailed`, `browserFlowFailed`, `accountRemoved`
 - Presence: `presenceToggled`, `profileSelected`, `sessionError`
-- Plugin version, channel, and build hash
+- Plugin version, channel, build hash, and build target
+- A per-plugin-load session ID used to group events from the same Studio session
 - A random per-install telemetry ID, generated locally after telemetry consent exists. It is not based on your Roblox user ID.
 - Your IP address, forwarded to PostHog only for bot detection and country-level geo enrichment. PostHog is configured to discard IPs after processing them.
 
