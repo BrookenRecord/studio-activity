@@ -9,6 +9,15 @@ use crate::proto::TelemetryRequest;
 const DEFAULT_POSTHOG_HOST: &str = "https://us.i.posthog.com";
 const MAX_DISTINCT_IDS_PER_IP: usize = 3;
 const IDENTITY_WINDOW_TTL_SECS: u64 = 86_400;
+const MAX_DISTINCT_ID_LEN: usize = 64;
+
+pub fn is_valid_distinct_id(distinct_id: &str) -> bool {
+    !distinct_id.is_empty()
+        && distinct_id.len() <= MAX_DISTINCT_ID_LEN
+        && distinct_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
 
 /// Checks the per-IP and per-user Cloudflare rate limiters.
 /// Returns `Some(reason)` if the request should be silently dropped.
@@ -41,6 +50,8 @@ async fn check_rate_limits(
 }
 
 /// Checks whether this IP has exceeded its `distinct_id` budget using KV.
+/// Cloudflare KV is eventually consistent, so this is a best-effort abuse
+/// control rather than an atomic concurrency limit.
 /// Returns `Some("identity_spray")` if the request should be silently dropped.
 async fn check_identity_budget(
     env: &worker::Env,
@@ -121,9 +132,11 @@ pub fn telemetry(
     SendFuture::new(async move {
         let client_ip = edge.client_ip.as_deref().unwrap_or("unknown");
 
-        if payload.distinct_id.is_empty() {
+        if !is_valid_distinct_id(&payload.distinct_id) {
             return Err(AppError::Validation {
-                message: "distinct_id is required".into(),
+                message: format!(
+                    "distinct_id must be 1-{MAX_DISTINCT_ID_LEN} ASCII letters, numbers, dashes, or underscores"
+                ),
                 field: Some("distinct_id".into()),
             });
         }

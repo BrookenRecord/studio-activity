@@ -10,6 +10,7 @@ use backend::proto::{
     telemetry_request, AccountLinked, BrowserFlowFailed, DeviceCodeFlowFailed, OnboardingCompleted,
     PluginLoaded, PresenceToggled, ProfileSelected, SessionError, TelemetryRequest,
 };
+use backend::routes::is_valid_distinct_id;
 
 use crate::helpers::{inject_edge, mock_edge_context, test_router};
 
@@ -238,6 +239,23 @@ async fn reject_wrong_property_types() {
     }"#;
     let result = serde_json::from_str::<TelemetryRequest>(json);
     assert!(result.is_err(), "wrong property type should be rejected");
+}
+
+#[wasm_bindgen_test]
+async fn distinct_id_validation_accepts_guid_and_legacy_hash() {
+    assert!(is_valid_distinct_id("0f8fad5b-d9cb-469f-a165-70867728950e"));
+    assert!(is_valid_distinct_id(
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    ));
+    assert!(is_valid_distinct_id("install_id_1"));
+}
+
+#[wasm_bindgen_test]
+async fn distinct_id_validation_rejects_bad_values() {
+    assert!(!is_valid_distinct_id(""));
+    assert!(!is_valid_distinct_id("has space"));
+    assert!(!is_valid_distinct_id("has/slash"));
+    assert!(!is_valid_distinct_id(&"x".repeat(65)));
 }
 
 // ---------------------------------------------------------------------------
