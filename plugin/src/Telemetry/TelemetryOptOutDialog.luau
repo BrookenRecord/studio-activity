@@ -33,11 +33,6 @@ local function WelcomeDialog(props: Props)
 	local isOptedIn, setIsOptedIn = useState(true)
 
 	local onClose = useCallback(function()
-		Telemetry.fireEvent({
-			type = "onboardingCompleted",
-			value = Types.OnboardingCompleted.new({ optedIntoTelemetry = isOptedIn }),
-		})
-
 		localStorageStore.setStorage(function(prev)
 			return Sift.Dictionary.join(prev, {
 				hasCompletedOnboarding = true,
@@ -50,17 +45,19 @@ local function WelcomeDialog(props: Props)
 			})
 		end)
 
+		if isOptedIn then
+			Telemetry.fireEvent({
+				type = "onboardingCompleted",
+				value = Types.OnboardingCompleted.new({ optedIntoTelemetry = true }),
+			})
+		end
+
 		props.onClose()
 	end, { localStorageStore.setStorage :: any, userSettingsStore.setStorage, isOptedIn, props.onClose })
 
 	local onCancel = useCallback(function()
-		localStorageStore.setStorage(function(prev)
-			return Sift.Dictionary.join(prev, {
-				hasCompletedOnboarding = true,
-			})
-		end)
 		props.onClose()
-	end, { localStorageStore.setStorage :: any, props.onClose })
+	end, { props.onClose })
 
 	return React.createElement(Dialog.Root, {
 		disablePortal = false,

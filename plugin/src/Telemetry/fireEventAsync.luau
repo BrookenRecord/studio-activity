@@ -5,6 +5,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local BackendApi = require(Plugin.Source.Api.Backend)
 local BuildVars = require(Plugin.Source.BuildVars)
 local Debounce = require(Plugin.Source.Common.Debounce)
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local Types = require(script.Parent.Types)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
@@ -36,6 +37,27 @@ local DEBOUNCE_EVENTS: { [string]: number } = {
 }
 
 local debouncedSenders: { [string]: Debounce.DebouncedFn } = {}
+
+local function shouldSendTelemetry(): boolean
+	local userSettingsStore = UserSettingsStore.get()
+	local localStorageStore = LocalStorageStore.get()
+
+	if userSettingsStore.getIsLoading() or localStorageStore.getIsLoading() then
+		return false
+	end
+
+	local userSettings = userSettingsStore.getStorage()
+	if not userSettings.collectAnonymousUsageData then
+		return false
+	end
+
+	local localStorage = localStorageStore.getStorage()
+	if not localStorage.hasCompletedOnboarding then
+		return false
+	end
+
+	return true
+end
 
 local function sendEvent(event: TelemetryEvent)
 	ensureInitialized()
@@ -70,14 +92,11 @@ end
 	are debounced so only the final state is sent.
 ]]
 local function fireEvent(event: TelemetryEvent)
-	local userSettingsStore = UserSettingsStore.get()
-	local userSettings = userSettingsStore.getStorage()
-
-	if not userSettings.collectAnonymousUsageData then
+	if event == nil then
 		return
 	end
 
-	if event == nil then
+	if not shouldSendTelemetry() then
 		return
 	end
 

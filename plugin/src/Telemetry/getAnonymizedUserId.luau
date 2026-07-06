@@ -1,20 +1,30 @@
+local HttpService = game:GetService("HttpService")
+
 local Plugin = script:FindFirstAncestor("StudioActivity")
 
-local Packages = Plugin.Packages
-local sha256 = require(Packages.sha256)
-
-local getLocalUserId = require(script.Parent.getLocalUserId)
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 
 --[[
 	The events we send to the backend need some persistent identifier so we can
-	group them by the user they come from. However, we do not collect PII so we
-	first need to anonymize the UserId before sending it off. That's what this
-	function is for.
+	group them by install. Keep this value independent from Roblox account IDs
+	so it cannot be reversed or joined back to a public user id.
 ]]
 local function getAnonymizedUserId(): string
-	local plainUserId = getLocalUserId()
-	local hash = sha256(tostring(plainUserId))
-	return hash
+	local localStorageStore = LocalStorageStore.get()
+	local storage = localStorageStore.getStorage()
+
+	if storage.telemetryId and storage.telemetryId ~= "" then
+		return storage.telemetryId
+	end
+
+	local telemetryId = HttpService:GenerateGUID(false)
+	localStorageStore.setStorage(function(prev)
+		local nextStorage = table.clone(prev)
+		nextStorage.telemetryId = telemetryId
+		return nextStorage
+	end)
+
+	return telemetryId
 end
 
 return getAnonymizedUserId

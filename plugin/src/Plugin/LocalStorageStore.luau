@@ -50,6 +50,7 @@ export type LocalStorageStore = {
 	customProfiles: CustomProfiles?,
 	userDetailsCache: { [string]: ApiUser }?,
 	disabledAccountIds: { [string]: true }?,
+	telemetryId: string?,
 }
 
 local defaultValue: LocalStorageStore = {
@@ -59,6 +60,7 @@ local defaultValue: LocalStorageStore = {
 	customProfiles = {},
 	userDetailsCache = {},
 	disabledAccountIds = {},
+	telemetryId = nil,
 }
 
 local validateActivity = t.interface({
@@ -83,6 +85,7 @@ local validateInterface = t.interface({
 	customProfiles = t.optional(t.table),
 	userDetailsCache = t.optional(t.table),
 	disabledAccountIds = t.optional(t.table),
+	telemetryId = t.optional(t.string),
 })
 
 --[[
