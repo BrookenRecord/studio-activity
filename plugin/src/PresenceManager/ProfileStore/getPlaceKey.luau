@@ -1,8 +1,14 @@
-local Plugin = script:FindFirstAncestor("StudioActivity")
+type PlaceContext = {
+	placeType: "offline" | "online",
+	placeId: number,
+	experienceId: number,
 
-local PlaceDetailsStore = require(Plugin.Source.PlaceDetailsStore)
+	offlinePlaceDetails: {
+		placeName: string,
+	}?,
+}
 
-local function getPlaceKey(placeContext: PlaceDetailsStore.PlaceContext): string?
+local function getPlaceKey(placeContext: PlaceContext): string?
 	if placeContext.placeType == "online" then
 		if placeContext.experienceId and placeContext.experienceId > 0 then
 			return `online:{placeContext.experienceId}`
