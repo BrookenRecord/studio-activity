@@ -45,6 +45,7 @@ local batch = Charm.batch
 -- Polling bounds to protect against server misconfig or bugs
 local MIN_POLL_INTERVAL = 1
 local MAX_POLL_INTERVAL = 30
+local MAX_START_RATE_LIMIT_RETRIES = 3
 
 --[[ Types ]]
 
@@ -101,7 +102,17 @@ local function create(config: Config)
 
 		local keys = Pkce.generate()
 
-		local startResult = backend.startBrowserFlowAsync(keys.codeChallenge)
+		local startResult = nil
+		for _ = 1, MAX_START_RATE_LIMIT_RETRIES + 1 do
+			startResult = backend.startBrowserFlowAsync(keys.codeChallenge)
+			if startResult.ok or startResult.error.type ~= "rate_limited" then
+				break
+			end
+
+			task.wait(math.clamp(startResult.error.retryAfter, MIN_POLL_INTERVAL, MAX_POLL_INTERVAL))
+		end
+
+		assert(startResult ~= nil)
 		if not startResult.ok then
 			local err = startResult.error
 			local message: string
@@ -109,6 +120,8 @@ local function create(config: Config)
 				message = err.message
 			elseif err.type == "validation" then
 				message = err.message or "Invalid request"
+			elseif err.type == "rate_limited" then
+				message = "Backend is busy. Try again shortly."
 			else
 				message = `Backend request failed ({err.statusCode})`
 			end
@@ -150,6 +163,12 @@ local function create(config: Config)
 
 			if not pollResult.ok then
 				local err = pollResult.error
+
+				if err.type == "rate_limited" then
+					task.wait(math.clamp(err.retryAfter, MIN_POLL_INTERVAL, MAX_POLL_INTERVAL))
+					continue
+				end
+
 				local message: string
 				if err.type == "network" then
 					message = err.message

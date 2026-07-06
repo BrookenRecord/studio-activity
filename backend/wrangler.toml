@@ -10,7 +10,7 @@ POSTHOG_HOST = "https://us.i.posthog.com"
 BACKEND_PUBLIC_URL = "https://activity.brooke.sh"
 DISCORD_OAUTH_SCOPE = "sdk.social_layer_presence"
 DISCORD_CLIENT_ID = "1488672108933550192"
-GITHUB_REPO = "grilme99/studio-activity"
+GITHUB_REPO = "BrookenRecord/studio-activity"
 
 [observability]
 enabled = true
@@ -67,4 +67,13 @@ namespace_id = "1003"
 
 [ratelimits.simple]
 limit = 60
+period = 60
+
+# Per-IP session creation throttle for the browser OAuth flow.
+[[ratelimits]]
+name = "OAUTH_START_LIMITER"
+namespace_id = "1004"
+
+[ratelimits.simple]
+limit = 20
 period = 60

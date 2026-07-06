@@ -7,7 +7,14 @@ use crate::extractors::{Edge, WorkerContext};
 use crate::posthog;
 
 const DEFAULT_POSTHOG_HOST: &str = "https://us.i.posthog.com";
-const GITHUB_REPO_URL: &str = "https://github.com/BrookenRecord/studio-activity";
+const DEFAULT_GITHUB_REPO: &str = "BrookenRecord/studio-activity";
+
+fn github_repo_url(env: Option<&worker::Env>) -> String {
+    let repo = env
+        .and_then(|env| env.var("GITHUB_REPO").ok())
+        .map_or_else(|| DEFAULT_GITHUB_REPO.to_string(), |v| v.to_string());
+    format!("https://github.com/{repo}")
+}
 
 #[allow(clippy::must_use_candidate)]
 #[tracing::instrument(
@@ -22,13 +29,13 @@ pub fn gh_redirect(
     req: Request,
 ) -> SendFuture<impl std::future::Future<Output = Response>> {
     SendFuture::new(async move {
-        let mut redirect = Redirect::temporary(GITHUB_REPO_URL).into_response();
+        let env = req.extensions().get::<worker::Env>().cloned();
+        let mut redirect = Redirect::temporary(&github_repo_url(env.as_ref())).into_response();
         redirect
             .headers_mut()
             .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
 
         let headers: HeaderMap = req.headers().clone();
-        let env = req.extensions().get::<worker::Env>().cloned();
         let ctx = req.extensions().get::<WorkerContext>().cloned();
         let (Some(env), Some(WorkerContext(ctx_arc))) = (env, ctx) else {
             return redirect;

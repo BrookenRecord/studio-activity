@@ -64,6 +64,35 @@ async fn forbidden_returns_403_without_detail() {
 }
 
 #[wasm_bindgen_test]
+async fn payload_too_large_returns_413() {
+    let resp = AppError::PayloadTooLarge {
+        limit_bytes: 16 * 1024,
+    }
+    .into_response();
+    assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
+
+    let json = body_json(resp).await;
+    assert_eq!(json["type"], "/errors/payload-too-large");
+    assert_eq!(json["title"], "Payload Too Large");
+    assert_eq!(json["status"], 413);
+}
+
+#[wasm_bindgen_test]
+async fn rate_limited_returns_429_with_retry_after() {
+    let resp = AppError::TooManyRequests {
+        retry_after_seconds: 5,
+    }
+    .into_response();
+    assert_eq!(resp.status(), StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(resp.headers()["retry-after"], "5");
+
+    let json = body_json(resp).await;
+    assert_eq!(json["type"], "/errors/rate-limited");
+    assert_eq!(json["title"], "Too Many Requests");
+    assert_eq!(json["status"], 429);
+}
+
+#[wasm_bindgen_test]
 async fn internal_error_returns_500_without_leaking_context() {
     let err = AppError::Internal {
         context: "database connection pool exhausted".into(),

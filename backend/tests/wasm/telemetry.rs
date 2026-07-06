@@ -1,4 +1,6 @@
-use axum::body::Body;
+use axum::{body::Body, extract::FromRequest};
+use backend::error::AppError;
+use backend::extractors::AppJson;
 use http::{Request, StatusCode};
 use tower::ServiceExt;
 use wasm_bindgen_test::*;
@@ -325,6 +327,21 @@ async fn telemetry_invalid_json_returns_error() {
 
     let resp = app.oneshot(req).await.unwrap();
     assert_ne!(resp.status(), StatusCode::NO_CONTENT);
+}
+
+#[wasm_bindgen_test]
+async fn telemetry_oversized_json_returns_413() {
+    let oversized = format!(r#"{{"distinctId":"{}"}}"#, "x".repeat(17 * 1024));
+    let req = Request::post("/v1/telemetry")
+        .header("content-type", "application/json")
+        .body(Body::from(oversized))
+        .unwrap();
+
+    let result = AppJson::<TelemetryRequest>::from_request(req, &()).await;
+    assert!(matches!(
+        result,
+        Err(AppError::PayloadTooLarge { limit_bytes: 16384 })
+    ));
 }
 
 // Note: Tests that exercise rate limiting, KV identity tracking, and PostHog

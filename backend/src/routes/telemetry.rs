@@ -77,11 +77,26 @@ async fn check_identity_budget(
     let mut updated = ids;
     updated.push(distinct_id.to_string());
 
-    if let Ok(serialized) = serde_json::to_string(&updated) {
-        let _ = kv
-            .put(&key, serialized)
-            .map(|p| p.expiration_ttl(IDENTITY_WINDOW_TTL_SECS))
-            .map(|fut| async { fut.execute().await });
+    let serialized = match serde_json::to_string(&updated) {
+        Ok(serialized) => serialized,
+        Err(e) => {
+            tracing::debug!(error = %e, "failed to serialize telemetry identity budget");
+            return None;
+        }
+    };
+
+    match kv
+        .put(&key, serialized)
+        .map(|p| p.expiration_ttl(IDENTITY_WINDOW_TTL_SECS))
+    {
+        Ok(write) => {
+            if let Err(e) = write.execute().await {
+                tracing::warn!(error = %e, "telemetry identity budget write failed");
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "telemetry identity budget write builder failed");
+        }
     }
 
     None
@@ -121,16 +136,16 @@ pub fn telemetry(
         let (event_name, _) = posthog::decompose_event(event);
 
         tracing::Span::current()
-            .record("distinct_id", &payload.distinct_id)
             .record("event_name", event_name.as_str())
-            .record("client_ip", client_ip);
+            .record(
+                "client_ip_known",
+                !client_ip.is_empty() && client_ip != "unknown",
+            );
 
         // Rate limiting (silent drop)
         if let Some(reason) = check_rate_limits(&env, client_ip, &payload.distinct_id).await {
             tracing::warn!(
                 drop_reason = reason,
-                client_ip,
-                distinct_id = %payload.distinct_id,
                 event_name = event_name.as_str(),
                 "telemetry event silently dropped",
             );
@@ -141,8 +156,6 @@ pub fn telemetry(
         if let Some(reason) = check_identity_budget(&env, client_ip, &payload.distinct_id).await {
             tracing::warn!(
                 drop_reason = reason,
-                client_ip,
-                distinct_id = %payload.distinct_id,
                 event_name = event_name.as_str(),
                 ids_threshold = MAX_DISTINCT_IDS_PER_IP,
                 "telemetry event silently dropped",

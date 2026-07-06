@@ -8,9 +8,9 @@
 //!
 //! - **Event name + properties**: Which features are used and how often,
 //!   so we can prioritize development. Defined in `protos/api/v1/api.proto`.
-//! - **Anonymized user ID** (`distinct_id`): A one-way SHA-256 hash of
-//!   the Roblox user ID, computed client-side. We never see or store the
-//!   real user ID.
+//! - **Anonymous install ID** (`distinct_id`): A random per-install GUID,
+//!   generated client-side after telemetry consent exists. It is not derived
+//!   from a Roblox account ID.
 //! - **Plugin version/channel/hash**: So we know which versions are in
 //!   active use and can deprecate safely.
 //! - **IP address**: Forwarded to PostHog *only* for bot detection and
@@ -30,7 +30,7 @@ use uuid::Uuid;
 use worker::wasm_bindgen::JsValue;
 use worker::{Fetch, Headers, Method, Request, RequestInit};
 
-use crate::proto::{telemetry_request::Event, TelemetryRequest};
+use crate::proto::{telemetry_request::Event, PluginBuildTarget, TelemetryRequest};
 
 const POSTHOG_CAPTURE_PATH: &str = "/i/v0/e/";
 const LIB_NAME: &str = "studio-activity-backend";
@@ -168,10 +168,12 @@ fn inject_common_properties(
         props.insert("$app_build".into(), json!(req.plugin_hash));
     }
     if !req.plugin_channel.is_empty() {
-        props.insert("$lib".into(), json!(req.plugin_channel));
+        props.insert("plugin_channel".into(), json!(req.plugin_channel));
     }
-    if !req.plugin_target.is_empty() {
-        props.insert("$app_namespace".into(), json!(req.plugin_channel));
+    if let Ok(target) = PluginBuildTarget::try_from(req.plugin_target) {
+        if target != PluginBuildTarget::Unspecified {
+            props.insert("$app_namespace".into(), json!(target.as_str_name()));
+        }
     }
 
     // IP is used only for bot detection and country-level geo enrichment.
