@@ -24,7 +24,7 @@ jobs:
       - name: Install worker-build and wasm-bindgen-cli
         run: |
           cargo install worker-build
-          cargo install wasm-bindgen-cli --version 0.2.121
+          cargo install wasm-bindgen-cli --version 0.2.125
 
       - name: Test
         run: |
