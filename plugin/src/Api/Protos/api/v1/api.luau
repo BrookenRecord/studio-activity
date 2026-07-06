@@ -25,6 +25,7 @@ type _Messages = {
 	BrowserFlowPollRequest: _BrowserFlowPollRequestMessage,
 	BrowserFlowPollResponse: _BrowserFlowPollResponseMessage,
 	LatestVersionResponse: _LatestVersionResponseMessage,
+	PluginBuildTarget: _PluginBuildTargetMessage,
 	AccountLinkFlow: _AccountLinkFlowMessage,
 	BrowserFlowStatus: _BrowserFlowStatusMessage,
 }
@@ -45,6 +46,7 @@ type _TelemetryRequestFields = {
 	pluginVersion: string,
 	pluginChannel: string,
 	pluginHash: string,
+	pluginTarget: PluginBuildTarget,
 	sessionId: string,
 	event: (
 		{ type: "pluginLoaded", value: PluginLoaded }
@@ -67,6 +69,7 @@ type _TelemetryRequestPartialFields = {
 	pluginVersion: string?,
 	pluginChannel: string?,
 	pluginHash: string?,
+	pluginTarget: PluginBuildTarget?,
 	sessionId: string?,
 	event: (
 		{ type: "pluginLoaded", value: PluginLoaded }
@@ -474,6 +477,13 @@ export type LatestVersionResponse = typeof(setmetatable(
 ))
 type _LatestVersionResponseMessage = proto.Message<LatestVersionResponse, _LatestVersionResponsePartialFields>
 
+type _PluginBuildTargetMessage = proto.Enum<PluginBuildTarget>
+export type PluginBuildTarget =
+	"PLUGIN_BUILD_TARGET_UNSPECIFIED"
+	| "PLUGIN_BUILD_TARGET_LOCAL"
+	| "PLUGIN_BUILD_TARGET_CREATOR_STORE"
+	| number -- Unknown
+
 type _AccountLinkFlowMessage = proto.Enum<AccountLinkFlow>
 export type AccountLinkFlow =
 	"ACCOUNT_LINK_FLOW_UNSPECIFIED"
@@ -500,6 +510,9 @@ do
 			pluginVersion = if data == nil or data.pluginVersion == nil then "" else data.pluginVersion,
 			pluginChannel = if data == nil or data.pluginChannel == nil then "" else data.pluginChannel,
 			pluginHash = if data == nil or data.pluginHash == nil then "" else data.pluginHash,
+			pluginTarget = if data == nil or data.pluginTarget == nil
+				then assert(messages.PluginBuildTarget.fromNumber(0), "Enum has no 0 default")
+				else data.pluginTarget,
 			sessionId = if data == nil or data.sessionId == nil then "" else data.sessionId,
 			event = if data == nil or data.event == nil then nil else data.event,
 		}, _TelemetryRequestImpl :: _TelemetryRequestImpl)
@@ -529,8 +542,20 @@ do
 			output, cursor = proto.writeString(output, cursor, self.pluginHash)
 		end
 
+		if
+			self.pluginTarget ~= nil
+			and (
+				self.pluginTarget ~= nil and self.pluginTarget ~= 0
+				or self.pluginTarget ~= messages.PluginBuildTarget.fromNumber(0)
+			)
+		then
+			output, cursor = proto.writeTag(output, cursor, 6, proto.wireTypes.varint)
+			output, cursor =
+				proto.writeVarInt(output, cursor, messages.PluginBuildTarget.toNumber(self.pluginTarget :: any))
+		end
+
 		if self.sessionId ~= nil and self.sessionId ~= "" then
-			output, cursor = proto.writeTag(output, cursor, 5, proto.wireTypes.lengthDelimited)
+			output, cursor = proto.writeTag(output, cursor, 7, proto.wireTypes.lengthDelimited)
 			output, cursor = proto.writeString(output, cursor, self.sessionId)
 		end
 
@@ -600,7 +625,12 @@ do
 			field, wireType, cursor = proto.readTag(input, cursor)
 
 			if wireType == proto.wireTypes.varint then
-				-- No fields
+				if field == 6 then
+					local value
+					value, cursor = proto.readVarIntI32(input, cursor)
+					self.pluginTarget = (messages.PluginBuildTarget.fromNumber(value) or value) :: any --[[ Luau: Enums are a string intersection which Luau is quick to dismantle ]]
+					continue
+				end
 
 				local _
 				_, cursor = proto.readVarInt(input, cursor)
@@ -625,7 +655,7 @@ do
 					value, cursor = proto.readBuffer(input, cursor)
 					self.pluginHash = proto.decodeString(value)
 					continue
-				elseif field == 5 then
+				elseif field == 7 then
 					local value
 					value, cursor = proto.readBuffer(input, cursor)
 					self.sessionId = proto.decodeString(value)
@@ -733,6 +763,18 @@ do
 			output.pluginHash = self.pluginHash
 		end
 
+		if
+			self.pluginTarget ~= nil
+			and (
+				self.pluginTarget ~= nil and self.pluginTarget ~= 0
+				or self.pluginTarget ~= messages.PluginBuildTarget.fromNumber(0)
+			)
+		then
+			output.pluginTarget = if typeof(self.pluginTarget) == "number"
+				then self.pluginTarget
+				else messages.PluginBuildTarget.toNumber(self.pluginTarget :: any)
+		end
+
 		if self.sessionId ~= nil and self.sessionId ~= "" then
 			output.sessionId = self.sessionId
 		end
@@ -785,6 +827,12 @@ do
 
 		if input.pluginHash ~= nil then
 			self.pluginHash = input.pluginHash
+		end
+
+		if input.pluginTarget ~= nil then
+			self.pluginTarget = if typeof(input.pluginTarget) == "number"
+				then (messages.PluginBuildTarget.fromNumber(input.pluginTarget) or input.pluginTarget)
+				else (messages.PluginBuildTarget.fromName(input.pluginTarget) or input.pluginTarget)
 		end
 
 		if input.sessionId ~= nil then
@@ -2707,6 +2755,44 @@ do
 	typeRegistry.default:register(messages.LatestVersionResponse)
 end
 
+messages.PluginBuildTarget = {
+	fromNumber = function(value: number): PluginBuildTarget?
+		if value == 0 then
+			return "PLUGIN_BUILD_TARGET_UNSPECIFIED"
+		elseif value == 1 then
+			return "PLUGIN_BUILD_TARGET_LOCAL"
+		elseif value == 2 then
+			return "PLUGIN_BUILD_TARGET_CREATOR_STORE"
+		else
+			return nil
+		end
+	end,
+
+	toNumber = function(self: PluginBuildTarget): number
+		if self == "PLUGIN_BUILD_TARGET_UNSPECIFIED" then
+			return 0
+		elseif self == "PLUGIN_BUILD_TARGET_LOCAL" then
+			return 1
+		elseif self == "PLUGIN_BUILD_TARGET_CREATOR_STORE" then
+			return 2
+		else
+			return self
+		end
+	end,
+
+	fromName = function(name: string): PluginBuildTarget?
+		if name == "PLUGIN_BUILD_TARGET_UNSPECIFIED" then
+			return "PLUGIN_BUILD_TARGET_UNSPECIFIED"
+		elseif name == "PLUGIN_BUILD_TARGET_LOCAL" then
+			return "PLUGIN_BUILD_TARGET_LOCAL"
+		elseif name == "PLUGIN_BUILD_TARGET_CREATOR_STORE" then
+			return "PLUGIN_BUILD_TARGET_CREATOR_STORE"
+		else
+			return nil
+		end
+	end,
+}
+
 messages.AccountLinkFlow = {
 	fromNumber = function(value: number): AccountLinkFlow?
 		if value == 0 then
@@ -2814,6 +2900,7 @@ return {
 	BrowserFlowPollRequest = messages.BrowserFlowPollRequest,
 	BrowserFlowPollResponse = messages.BrowserFlowPollResponse,
 	LatestVersionResponse = messages.LatestVersionResponse,
+	PluginBuildTarget = messages.PluginBuildTarget,
 	AccountLinkFlow = messages.AccountLinkFlow,
 	BrowserFlowStatus = messages.BrowserFlowStatus,
 }

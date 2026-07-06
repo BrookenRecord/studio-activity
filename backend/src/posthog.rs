@@ -168,6 +168,9 @@ fn inject_common_properties(
         props.insert("$app_build".into(), json!(req.plugin_hash));
     }
     if !req.plugin_channel.is_empty() {
+        props.insert("$lib".into(), json!(req.plugin_channel));
+    }
+    if !req.plugin_target.is_empty() {
         props.insert("$app_namespace".into(), json!(req.plugin_channel));
     }
 

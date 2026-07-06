@@ -41,12 +41,18 @@ local function sendEvent(event: TelemetryEvent)
 	ensureInitialized()
 	assert(backendApi and sessionId and distinctId)
 
+	local target = if BuildVars.build.target == "creator-store"
+		then "PLUGIN_BUILD_TARGET_CREATOR_STORE"
+		elseif BuildVars.build.target == "local" then "PLUGIN_BUILD_TARGET_LOCAL"
+		else "PLUGIN_BUILD_TARGET_UNSPECIFIED"
+
 	local request = api.TelemetryRequest.new({
 		distinctId = distinctId,
 		sessionId = sessionId,
 		pluginVersion = BuildVars.build.version,
 		pluginChannel = BuildVars.build.channel,
 		pluginHash = BuildVars.build.hash,
+		pluginTarget = target,
 		event = event,
 	})
 
