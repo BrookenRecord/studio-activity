@@ -297,6 +297,8 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			return
 		end
 
+		clearLocalUser(id)
+
 		task.spawn(function()
 			local revocationFailed = false
 
@@ -316,8 +318,6 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 				NotificationStore.get()
 					.push("warning", "Discord token revocation failed; local account data was cleared")
 			end
-
-			clearLocalUser(id)
 		end)
 	end
 
