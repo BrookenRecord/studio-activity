@@ -47,6 +47,7 @@ export type LocalStorageStore = {
 	hasCompletedOnboarding: boolean,
 	isPresenceActive: boolean?,
 	selectedProfileId: string?,
+	pinnedProfileIdsByPlaceKey: { [string]: string }?,
 	customProfiles: CustomProfiles?,
 	userDetailsCache: { [string]: ApiUser }?,
 	disabledAccountIds: { [string]: true }?,
@@ -57,6 +58,7 @@ local defaultValue: LocalStorageStore = {
 	hasCompletedOnboarding = false,
 	isPresenceActive = true,
 	selectedProfileId = nil,
+	pinnedProfileIdsByPlaceKey = {},
 	customProfiles = {},
 	userDetailsCache = {},
 	disabledAccountIds = {},
@@ -82,6 +84,7 @@ local validateInterface = t.interface({
 	hasCompletedOnboarding = t.boolean,
 	isPresenceActive = t.optional(t.boolean),
 	selectedProfileId = t.optional(t.string),
+	pinnedProfileIdsByPlaceKey = t.optional(t.table),
 	customProfiles = t.optional(t.table),
 	userDetailsCache = t.optional(t.table),
 	disabledAccountIds = t.optional(t.table),
@@ -101,6 +104,15 @@ local function validate(value: any): (boolean, string)
 			if not isValid then
 				Logger:Warn(`LocalStorageStore: dropping malformed custom profile "{id}": {message}`)
 				value.customProfiles[id] = nil
+			end
+		end
+	end
+
+	if typeof(value) == "table" and typeof(value.pinnedProfileIdsByPlaceKey) == "table" then
+		for placeKey, profileId in value.pinnedProfileIdsByPlaceKey do
+			if typeof(placeKey) ~= "string" or typeof(profileId) ~= "string" then
+				Logger:Warn(`LocalStorageStore: dropping malformed pinned profile entry "{placeKey}"`)
+				value.pinnedProfileIdsByPlaceKey[placeKey] = nil
 			end
 		end
 	end

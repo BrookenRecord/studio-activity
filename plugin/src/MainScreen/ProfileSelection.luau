@@ -16,9 +16,12 @@ local Types = require(Plugin.Source.Telemetry.Types)
 local View = Foundation.View
 local Dropdown = Foundation.Dropdown
 local Button = Foundation.Button
+local IconButton = Foundation.IconButton
 local Tooltip = Foundation.Tooltip
+local ButtonVariant = Foundation.Enums.ButtonVariant
 local InputSize = Foundation.Enums.InputSize
 local IconName = Foundation.Enums.IconName
+local IconVariant = Foundation.Enums.IconVariant
 local PopoverSide = Foundation.Enums.PopoverSide
 local PopoverAlign = Foundation.Enums.PopoverAlign
 
@@ -116,13 +119,16 @@ local function ProfileSelection(props: Props)
 
 	local profileStore = ProfileStore.get()
 	local activeProfileId = useSignalState(profileStore.getActiveProfileId)
+	local currentPlaceKey = useSignalState(profileStore.getCurrentPlaceKey)
 	local items = useSignalState(profileDropdownItems)
+	local isPinned = useSignalState(profileStore.getIsCurrentPlacePinned)
 	local isPreset = useSignalState(isPresetProfile)
 
 	local editBtn = e(Button, {
 		text = "Edit",
 		icon = IconName.Pencil,
 		size = InputSize.Small,
+		variant = ButtonVariant.Standard,
 		isDisabled = isPreset,
 		onActivated = function()
 			ModalStore.get().open("customProfile", {
@@ -172,6 +178,26 @@ local function ProfileSelection(props: Props)
 						end
 					end,
 					LayoutOrder = nextOrder(),
+				}),
+			}),
+
+			PinBtn = e(Tooltip, {
+				title = if isPinned then "Unpin profile from this game" else "Pin profile to this game",
+				align = PopoverAlign.End,
+				side = PopoverSide.Top,
+				LayoutOrder = nextOrder(),
+			}, {
+				PinBtn = e(IconButton, {
+					icon = {
+						name = IconName.Pin,
+						variant = if isPinned then IconVariant.Filled else IconVariant.Regular,
+					},
+					size = InputSize.Small,
+					variant = ButtonVariant.Standard,
+					isDisabled = currentPlaceKey == nil,
+					onActivated = function()
+						profileStore.toggleCurrentPlacePin()
+					end,
 				}),
 			}),
 

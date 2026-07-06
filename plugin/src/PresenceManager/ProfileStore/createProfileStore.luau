@@ -20,6 +20,7 @@ local Logger = require(Plugin.Source.Logger)
 local NotificationStore = require(Plugin.Source.Notification.NotificationStore)
 local RetryBackoff = require(Plugin.Source.Api.RetryBackoff)
 local buildCustomActivity = require(script.Parent.buildCustomActivity)
+local getPlaceKey = require(script.Parent.getPlaceKey)
 local presets = require(script.Parent.presets)
 
 local IconName = Foundation.Enums.IconName
@@ -48,8 +49,14 @@ export type ProfileStore = {
 	getActiveProfile: () -> Profile?,
 	getAllProfiles: () -> { [string]: Profile },
 	getResolvedActivity: () -> ActivityConfig?,
+	getCurrentPlaceKey: () -> string?,
+	getPinnedProfileIdForCurrentPlace: () -> string?,
+	getIsCurrentPlacePinned: () -> boolean,
 
 	setActiveProfile: (id: string) -> (),
+	pinCurrentPlaceToProfile: (profileId: string) -> (),
+	unpinCurrentPlace: () -> (),
+	toggleCurrentPlacePin: () -> (),
 	setCustomProfile: (id: string, data: CustomProfileData) -> (),
 	removeCustomProfile: (id: string) -> (),
 
@@ -127,12 +134,97 @@ local function createProfileStore(): ProfileStore
 		return localStorage.getStorage().selectedProfileId or "default"
 	end)
 
-	local function setActiveProfile(id: string)
+	local getCurrentPlaceKey = computed(function(): string?
+		local placeContext = placeDetailsStore.getCurrentContext()
+		if placeContext == nil then
+			return nil
+		end
+
+		return getPlaceKey(placeContext)
+	end)
+
+	local getPinnedProfileIdForCurrentPlace = computed(function(): string?
+		local currentPlaceKey = getCurrentPlaceKey()
+		if currentPlaceKey == nil then
+			return nil
+		end
+
+		local pinnedProfileIdsByPlaceKey: { [string]: string } = localStorage.getStorage().pinnedProfileIdsByPlaceKey
+			or {}
+		return pinnedProfileIdsByPlaceKey[currentPlaceKey]
+	end)
+
+	local getIsCurrentPlacePinned = computed(function(): boolean
+		return getPinnedProfileIdForCurrentPlace() ~= nil
+	end)
+
+	local function setSelectedProfileId(id: string, shouldUpdateCurrentPlacePin: boolean)
+		local currentPlaceKey = if shouldUpdateCurrentPlacePin then peek(getCurrentPlaceKey) else nil
+
 		localStorage.setStorage(function(prev)
 			local new = table.clone(prev)
 			new.selectedProfileId = id
+
+			if currentPlaceKey then
+				local pinnedProfileIdsByPlaceKey: { [string]: string } = prev.pinnedProfileIdsByPlaceKey or {}
+				if pinnedProfileIdsByPlaceKey[currentPlaceKey] ~= nil then
+					local newPinnedProfileIdsByPlaceKey = table.clone(pinnedProfileIdsByPlaceKey)
+					newPinnedProfileIdsByPlaceKey[currentPlaceKey] = id
+					new.pinnedProfileIdsByPlaceKey = newPinnedProfileIdsByPlaceKey
+				end
+			end
+
 			return new
 		end)
+	end
+
+	local function setActiveProfile(id: string)
+		setSelectedProfileId(id, true)
+	end
+
+	local function pinCurrentPlaceToProfile(profileId: string)
+		local currentPlaceKey = peek(getCurrentPlaceKey)
+		if currentPlaceKey == nil then
+			return
+		end
+
+		localStorage.setStorage(function(prev)
+			local new = table.clone(prev)
+			local prevPinnedProfileIdsByPlaceKey: { [string]: string } = prev.pinnedProfileIdsByPlaceKey or {}
+			local pinnedProfileIdsByPlaceKey = table.clone(prevPinnedProfileIdsByPlaceKey)
+			pinnedProfileIdsByPlaceKey[currentPlaceKey] = profileId
+			new.pinnedProfileIdsByPlaceKey = pinnedProfileIdsByPlaceKey
+			new.selectedProfileId = profileId
+			return new
+		end)
+	end
+
+	local function unpinCurrentPlace()
+		local currentPlaceKey = peek(getCurrentPlaceKey)
+		if currentPlaceKey == nil then
+			return
+		end
+
+		localStorage.setStorage(function(prev)
+			local pinnedProfileIdsByPlaceKey: { [string]: string } = prev.pinnedProfileIdsByPlaceKey or {}
+			if pinnedProfileIdsByPlaceKey[currentPlaceKey] == nil then
+				return prev
+			end
+
+			local new = table.clone(prev)
+			local newPinnedProfileIdsByPlaceKey = table.clone(pinnedProfileIdsByPlaceKey)
+			newPinnedProfileIdsByPlaceKey[currentPlaceKey] = nil
+			new.pinnedProfileIdsByPlaceKey = newPinnedProfileIdsByPlaceKey
+			return new
+		end)
+	end
+
+	local function toggleCurrentPlacePin()
+		if peek(getIsCurrentPlacePinned) then
+			unpinCurrentPlace()
+		else
+			pinCurrentPlaceToProfile(peek(getActiveProfileId))
+		end
 	end
 
 	local getActiveProfile = computed(function(): Profile?
@@ -160,7 +252,42 @@ local function createProfileStore(): ProfileStore
 		local customProfiles = localStorage.getStorage().customProfiles or {}
 
 		if id ~= "default" and not presets[id] and not customProfiles[id] then
-			setActiveProfile("default")
+			setSelectedProfileId("default", false)
+		end
+	end)
+
+	local disposeApplyPinnedProfileEffect = effect(function()
+		local currentPlaceKey = getCurrentPlaceKey()
+		if currentPlaceKey == nil then
+			return
+		end
+
+		local storage = localStorage.getStorage()
+		local pinnedProfileIdsByPlaceKey: { [string]: string } = storage.pinnedProfileIdsByPlaceKey or {}
+		local pinnedProfileId = pinnedProfileIdsByPlaceKey[currentPlaceKey]
+		if pinnedProfileId == nil then
+			return
+		end
+
+		local customProfiles = storage.customProfiles or {}
+		if not presets[pinnedProfileId] and not customProfiles[pinnedProfileId] then
+			localStorage.setStorage(function(prev)
+				local latestPinnedProfileIdsByPlaceKey: { [string]: string } = prev.pinnedProfileIdsByPlaceKey or {}
+				if latestPinnedProfileIdsByPlaceKey[currentPlaceKey] ~= pinnedProfileId then
+					return prev
+				end
+
+				local new = table.clone(prev)
+				local newPinnedProfileIdsByPlaceKey = table.clone(latestPinnedProfileIdsByPlaceKey)
+				newPinnedProfileIdsByPlaceKey[currentPlaceKey] = nil
+				new.pinnedProfileIdsByPlaceKey = newPinnedProfileIdsByPlaceKey
+				return new
+			end)
+			return
+		end
+
+		if getActiveProfileId() ~= pinnedProfileId then
+			setSelectedProfileId(pinnedProfileId, false)
 		end
 	end)
 
@@ -268,7 +395,7 @@ local function createProfileStore(): ProfileStore
 	local function removeCustomProfile(id: string)
 		-- If the removed profile was active, fall back to default
 		if peek(getActiveProfileId) == id then
-			setActiveProfile("default")
+			setSelectedProfileId("default", false)
 		end
 
 		localStorage.setStorage(function(prev)
@@ -276,12 +403,28 @@ local function createProfileStore(): ProfileStore
 			local customProfiles = table.clone(prev.customProfiles or {})
 			customProfiles[id] = nil
 			new.customProfiles = customProfiles
+
+			local pinnedProfileIdsByPlaceKey: { [string]: string } = prev.pinnedProfileIdsByPlaceKey or {}
+			local newPinnedProfileIdsByPlaceKey = table.clone(pinnedProfileIdsByPlaceKey)
+			local didRemovePinnedProfile = false
+			for placeKey, pinnedProfileId in pinnedProfileIdsByPlaceKey do
+				if pinnedProfileId == id then
+					newPinnedProfileIdsByPlaceKey[placeKey] = nil
+					didRemovePinnedProfile = true
+				end
+			end
+
+			if didRemovePinnedProfile then
+				new.pinnedProfileIdsByPlaceKey = newPinnedProfileIdsByPlaceKey
+			end
+
 			return new
 		end)
 	end
 
 	local function destroy()
 		disposeProfileFallbackEffect()
+		disposeApplyPinnedProfileEffect()
 		disposeBuildEffect()
 		disposePrefetchEffect()
 
@@ -296,8 +439,14 @@ local function createProfileStore(): ProfileStore
 		getActiveProfile = getActiveProfile,
 		getAllProfiles = getAllProfiles,
 		getResolvedActivity = getResolvedActivity,
+		getCurrentPlaceKey = getCurrentPlaceKey,
+		getPinnedProfileIdForCurrentPlace = getPinnedProfileIdForCurrentPlace,
+		getIsCurrentPlacePinned = getIsCurrentPlacePinned,
 
 		setActiveProfile = setActiveProfile,
+		pinCurrentPlaceToProfile = pinCurrentPlaceToProfile,
+		unpinCurrentPlace = unpinCurrentPlace,
+		toggleCurrentPlacePin = toggleCurrentPlacePin,
 		setCustomProfile = setCustomProfile,
 		removeCustomProfile = removeCustomProfile,
 
