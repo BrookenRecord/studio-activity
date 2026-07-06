@@ -11,17 +11,17 @@ index 7844af0..ca25f6c 100644
  			})
  			else nil,
 diff --git a/Foundation/Components/Popover/Content/PopoverContent.lua b/Foundation/Components/Popover/Content/PopoverContent.lua
-index 709467c..c91e3fe 100644
+index 6fb2173..3b30c34 100644
 --- a/Foundation/Components/Popover/Content/PopoverContent.lua
 +++ b/Foundation/Components/Popover/Content/PopoverContent.lua
-@@ -205,6 +205,7 @@ local function PopoverContent(contentProps: PopoverContentProps, forwardedRef: R
- 					Position = position:map(function(value: Vector2)
- 						return UDim2.fromOffset(value.X, value.Y)
- 					end),
-+					InputSink = Enum.InputSink.All,
- 					selection = props.selection,
- 					selectionGroup = props.selectionGroup,
- 					sizeConstraint = {
+@@ -203,6 +203,7 @@ local function PopoverContent(contentProps: PopoverContentProps, forwardedRef: R
+ 				Position = position:map(function(value: Vector2)
+ 					return UDim2.fromOffset(value.X, value.Y)
+ 				end),
++				InputSink = Enum.InputSink.All,
+ 				selection = props.selection,
+ 				selectionGroup = props.selectionGroup,
+ 				sizeConstraint = {
 diff --git a/Foundation/Components/Sheet/BottomSheet.lua b/Foundation/Components/Sheet/BottomSheet.lua
 index b70c89d..f3fd8fa 100644
 --- a/Foundation/Components/Sheet/BottomSheet.lua
@@ -77,10 +77,29 @@ index 559fb7f..4a377b5 100644
  							affordance = StateLayerAffordance.None,
  						},
 diff --git a/Foundation/Components/Sheet/Sheet.lua b/Foundation/Components/Sheet/Sheet.lua
-index 1546095..95d05c4 100644
+index 1546095..5aaa8a9 100644
 --- a/Foundation/Components/Sheet/Sheet.lua
 +++ b/Foundation/Components/Sheet/Sheet.lua
-@@ -27,11 +27,27 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -1,17 +1,12 @@
+ local Foundation = script:FindFirstAncestor("Foundation")
+ local Packages = Foundation.Parent
+ local React = require(Packages.React)
+-local ReactUtils = require(Packages.ReactUtils)
+-
+-local Flags = require(Foundation.Utility.Flags)
+ 
+ local BottomSheet = require(script.Parent.BottomSheet)
+ local CenterSheet = require(script.Parent.CenterSheet)
++local DialogSize = require(Foundation.Enums.DialogSize)
+ local SideSheet = require(script.Parent.SideSheet)
+ local useOverlay = require(Foundation.Providers.Overlay.useOverlay)
+-local useScreen = require(Foundation.Providers.Overlay.useScreen)
+-local GuiService = require(Foundation.Utility.Wrappers).Services.GuiService
+-local DialogSize = require(Foundation.Enums.DialogSize)
+ local withDefaults = require(Foundation.Utility.withDefaults)
+ type DialogSize = DialogSize.DialogSize
+ 
+@@ -27,11 +22,27 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  	local props = withDefaults(sheetProps, defaultProps)
  	local isOpen, setIsOpen = React.useState(if props.isOpen == nil then true else props.isOpen)
  	local sheetRef = React.useRef(nil :: SheetRef?)
@@ -98,11 +117,11 @@ index 1546095..95d05c4 100644
 +		end
 +
 +		local function update()
-+			setSmallDisplay(screen.AbsoluteSize.X <= 500)
++			setSmallDisplay(screen.AbsoluteSize.X <= 640)
 +		end
 +		update()
 +
-+		local connection = GuiService:GetPropertyChangedSignal("ViewportDisplaySize"):Connect(update)
++		local connection = screen:GetPropertyChangedSignal("AbsoluteSize"):Connect(update)
 +		return function()
 +			connection:Disconnect()
 +		end
@@ -110,7 +129,7 @@ index 1546095..95d05c4 100644
  
  	React.useImperativeHandle(props.sheetRef, function()
  		return sheetRef.current
-@@ -51,10 +67,6 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -51,10 +62,6 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  		end
  	end, { isOpen })
  
@@ -121,7 +140,7 @@ index 1546095..95d05c4 100644
  	React.useLayoutEffect(function()
  		local connection
  		if screen then
-@@ -79,9 +91,9 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -79,9 +86,9 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  	childProps.isOpen = nil
  	childProps.ref = ref
  	childProps.sheetRef = sheetRef
@@ -134,7 +153,7 @@ index 1546095..95d05c4 100644
  	childProps.onClose = function()
  		if props.onClose then
  			props.onClose()
-@@ -89,7 +101,7 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
+@@ -89,7 +96,7 @@ local function Sheet(sheetProps: SheetProps, ref: React.Ref<GuiObject>): React.R
  		setIsOpen(false)
  	end
  
@@ -147,7 +166,7 @@ diff --git a/Foundation/Components/Sheet/SideSheet.lua b/Foundation/Components/S
 index 79ccd82..98b9ea0 100644
 --- a/Foundation/Components/Sheet/SideSheet.lua
 +++ b/Foundation/Components/Sheet/SideSheet.lua
-@@ -288,6 +288,7 @@ local function SideSheet(sideSheetProps: SideSheetProps, ref: React.Ref<GuiObjec
+@@ -288,6 +288,7 @@ local function SideSheet(sideSheetProps: SheetProps, ref: React.Ref<GuiObject>)
  					Size = UDim2.fromScale(2, 2),
  					Position = UDim2.fromScale(-0.5, -0.5),
  					ZIndex = 1,

@@ -7,13 +7,13 @@
 	The first index directory that contains a directory matching the
 	patch's basename wins.
 
-	Application is resilient to upstream drift:
+	Application detects upstream drift:
 	  1. First try a strict `git apply` -- the cheap, atomic happy path.
 	  2. On failure, retry with `git apply --reject` so the hunks that
 	     still match are applied and any drifted hunks are written to
-	     `<file>.rej` next to the source. The install then continues
-	     with a warning so the next step (`lune run patch <pkg>` to
-	     regenerate the patch) is obvious.
+	     `<file>.rej` next to the source. The install then fails so the
+	     next step (`lune run patch <pkg>` to regenerate the patch) is
+	     obvious.
 
 	Note: `git apply --3way` would be nicer (inline conflict markers)
 	but it requires the patch's recorded blob hashes to be present in
@@ -57,8 +57,8 @@ end
 
 --[[
 	Applies a single patch file to the target package directory, preferring
-	a clean apply but falling back to `--reject` so that drift is recoverable
-	rather than fatal.
+	a clean apply but falling back to `--reject` so that drift produces
+	useful sidecar files before being reported as fatal.
 
 	Returns:
 	  status: "clean" | "conflicts" | "failed"
@@ -141,8 +141,9 @@ end
 
 	@param quiet Whether to suppress output
 	@return True if all patches applied without unrecoverable failures.
-	        Patches that produced conflict markers or `.rej` files are
-	        reported as warnings but do not fail the install.
+	        Patches that produced `.rej` files are reported as failures
+	        after useful conflict artifacts are written, then the process
+	        exits non-zero.
 ]]
 local function applyPatches(quiet: boolean?): boolean
 	if not fs.isDir(PATCHES_DIR) then
@@ -170,9 +171,13 @@ local function applyPatches(quiet: boolean?): boolean
 		local targetPath = resolveTargetPath(baseName)
 
 		if targetPath == nil then
+			table.insert(failedPatches, {
+				patch = patchFile,
+				message = `Package directory not found. Searched: {table.concat(PACKAGE_INDEX_DIRS, ", ")}`,
+			})
 			if not quiet then
-				print(color.yellow(`  Warning: Package directory not found for patch: {patchFile}`))
-				print(color.yellow(`  Searched: {table.concat(PACKAGE_INDEX_DIRS, ", ")}`))
+				print(color.red(`  Failed to apply patch: {patchFile}`))
+				print(color.red(`  Package directory not found. Searched: {table.concat(PACKAGE_INDEX_DIRS, ", ")}`))
 			end
 			continue
 		end
@@ -213,7 +218,11 @@ local function applyPatches(quiet: boolean?): boolean
 		print(color.dim("  `lune run patch <packages>/_Index/<pkg>` twice to regenerate."))
 	end
 
-	return #failedPatches == 0
+	if #failedPatches > 0 or #conflictedPatches > 0 then
+		process.exit(1)
+	end
+
+	return true
 end
 
 return applyPatches
