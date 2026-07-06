@@ -1,20 +1,22 @@
-local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local json = require("@std/json")
 local path = require("@std/path")
 local process = require("@std/process")
-local toml = require("@batteries/toml")
 
 local project = require("@repo/project")
 
-local args = cli.parser()
-args:add("quiet", "flag", {
-	help = "Suppress output",
-	aliases = { "q" },
-})
-args:parse({ ... })
+local rawArgs = { ... }
 
-local quiet = args:has("quiet")
+local function hasArg(name: string, alias: string?): boolean
+	for _, arg in rawArgs do
+		if arg == name or (alias ~= nil and arg == alias) then
+			return true
+		end
+	end
+	return false
+end
+
+local quiet = hasArg("--quiet", "-q")
 
 local function log(message: string)
 	if not quiet then
@@ -51,8 +53,8 @@ local function ensureDir(filePath: string)
 end
 
 local function writeBuildVars()
-	local wallyToml = toml.deserialize(fs.readFileToString("plugin/wally.toml")) :: any
-	local version = wallyToml.package.version or "0.0.0"
+	local wallyToml = fs.readFileToString("plugin/wally.toml")
+	local version = wallyToml:match('version%s*=%s*"([^"]+)"') or "0.0.0"
 	local clientId = process.env.DISCORD_CLIENT_ID or "MISSING_CLIENT_ID"
 
 	local vars = {

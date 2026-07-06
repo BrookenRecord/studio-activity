@@ -26,7 +26,7 @@ local args = cli.parser()
 args:add("channel", "option", {
 	help = "Channel to build for",
 	aliases = { "c" },
-	default = "prod",
+	default = "dev",
 })
 args:add("target", "option", {
 	help = "Target to build for",

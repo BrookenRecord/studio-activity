@@ -1,17 +1,20 @@
-local cli = require("@batteries/cli")
 local fs = require("@std/fs")
 local process = require("@std/process")
 
 local project = require("@repo/project")
 
-local args = cli.parser()
-args:add("quiet", "flag", {
-	help = "Suppress output",
-	aliases = { "q" },
-})
-args:parse({ ... })
+local rawArgs = { ... }
 
-local quiet = args:has("quiet")
+local function hasArg(name: string, alias: string?): boolean
+	for _, arg in rawArgs do
+		if arg == name or (alias ~= nil and arg == alias) then
+			return true
+		end
+	end
+	return false
+end
+
+local quiet = hasArg("--quiet", "-q")
 
 local VERSION_PIN = "0.722.0.7221024"
 local PATCHES_DIR = "plugin/patches"
