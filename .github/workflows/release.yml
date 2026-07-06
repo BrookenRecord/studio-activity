@@ -1,6 +1,17 @@
 name: 🚀 Release Plugin
 
 on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and upload artifact without tagging or publishing"
+        required: true
+        type: boolean
+        default: true
+      version:
+        description: "Version to publish when dry_run is false, without the v prefix"
+        required: false
+        type: string
   pull_request:
     types: [closed]
     branches: [main]
@@ -11,8 +22,11 @@ permissions:
 jobs:
   release:
     if: >-
-      github.event.pull_request.merged == true &&
-      startsWith(github.event.pull_request.head.ref, 'release/v')
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'release/v')
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -20,12 +34,30 @@ jobs:
       - name: 🔍 Extract version
         id: meta
         run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DRY_RUN="${{ inputs.dry_run }}"
+            VERSION="${{ inputs.version }}"
+
+            if [ "$DRY_RUN" = "true" ]; then
+              VERSION="${VERSION:-dry-run}"
+            elif ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Manual publish requires a semver version input like 1.2.3"
+              exit 1
+            fi
+
+            echo "dry_run=$DRY_RUN" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           BRANCH="${{ github.event.pull_request.head.ref }}"
           VERSION="${BRANCH#release/v}"
           if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Could not parse version from branch '$BRANCH'"
             exit 1
           fi
+
+          echo "dry_run=false" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: 📥 Checkout repository
@@ -37,20 +69,62 @@ jobs:
           cache: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run Lune setup
-        run: lune setup
+      - name: 📋 Verify tools
+        run: rokit list
+
+      - name: Run Lute setup
+        run: lute setup
 
       - name: 📦 Setup project
-        run: lune run setup
+        run: lute run setup
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
 
       - name: 🛠️ Build plugin
-        run: lune run build --release
+        run: |
+          lute run build \
+            --channel prod \
+            --target creator-store \
+            --output StudioActivity.rbxm \
+            --skip-reload \
+            --clean
         env:
+          API_HOST: activity.brooke.sh
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
 
+      - name: ✅ Verify release artifact
+        run: |
+          test -f StudioActivity.rbxm
+          test -f plugin/build/prod/creator-store/src/BuildVars/BuildVars.json
+
+          forbidden="$(
+            {
+              find plugin/build/prod/creator-store -path '*/DevPackages/*' -print
+              find plugin/build/prod/creator-store -type f \( \
+                -name '*.test.lua*' -o \
+                -name '*.story.lua*' -o \
+                -name '*.storybook.lua*' -o \
+                -name 'jest.config.lua*' \
+              \) -print
+            } | sed -n '1,200p'
+          )"
+
+          if [ -n "$forbidden" ]; then
+            echo "::error::Release artifact contains forbidden files:"
+            echo "$forbidden"
+            exit 1
+          fi
+
+      - name: 📤 Upload dry-run artifact
+        if: steps.meta.outputs.dry_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: StudioActivity-dry-run
+          path: StudioActivity.rbxm
+          if-no-files-found: error
+
       - name: 🔖 Tag release
+        if: steps.meta.outputs.dry_run != 'true'
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
           git config user.name "github-actions[bot]"
@@ -59,6 +133,7 @@ jobs:
           git push origin "v$VERSION"
 
       - name: 🚀 Publish GitHub Release
+        if: steps.meta.outputs.dry_run != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

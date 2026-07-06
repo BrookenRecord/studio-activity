@@ -15,6 +15,7 @@ local run = require("@scripts/lib/run")
 local watch = require("@scripts/lib/watch")
 
 local WALLY_MANIFEST_PATH = path.resolve("plugin/wally.toml")
+local PROD_API_HOST = "activity.brooke.sh"
 
 type BuildContext = buildSystem.BuildContext
 
@@ -25,7 +26,7 @@ local args = cli.parser()
 args:add("channel", "option", {
 	help = "Channel to build for",
 	aliases = { "c" },
-	default = "prod",
+	default = "dev",
 })
 args:add("target", "option", {
 	help = "Target to build for",
@@ -74,6 +75,68 @@ local function getCommitHash()
 	return commitHash
 end
 
+local function fail(message: string): never
+	error(`[release preflight] {message}`, 0)
+end
+
+local function assertReleaseContext(context: BuildContext)
+	if context.channel ~= "prod" then
+		return
+	end
+
+	if context.target ~= "creator-store" then
+		fail(`prod builds must target creator-store, got "{context.target}"`)
+	end
+
+	if context.vars.api.host ~= PROD_API_HOST then
+		fail(`prod builds must use API_HOST={PROD_API_HOST}, got "{context.vars.api.host}"`)
+	end
+
+	if context.vars.api.secure ~= true then
+		fail("prod builds must use secure API requests")
+	end
+
+	if context.vars.build.isDev ~= false then
+		fail("prod builds must set BuildVars.build.isDev=false")
+	end
+
+	local clientId = context.vars.discord.clientId
+	if clientId == nil or clientId == "" or clientId == "MISSING_CLIENT_ID" then
+		fail("DISCORD_CLIENT_ID must be set for prod builds")
+	end
+end
+
+local function assertReleaseTree(context: BuildContext)
+	if context.channel ~= "prod" then
+		return
+	end
+
+	local forbidden = {}
+
+	for _, dir in project.PROD_CONFIG.prunedDirs do
+		local relativePath = path.relative(project.PLUGIN_PATH, dir)
+		local buildPath = path.join(context.dest, relativePath)
+		if fs.exists(buildPath) then
+			table.insert(forbidden, tostring(buildPath))
+		end
+	end
+
+	for _, pattern in project.PROD_CONFIG.prunedFiles do
+		local matches = run("find", { context.dest, "-type", "f", "-name", `"{pattern}"`, "-print" }, {
+			captureOutput = true,
+		})
+		if matches ~= nil and matches ~= "" then
+			for line in matches:gmatch("[^\n]+") do
+				table.insert(forbidden, line)
+			end
+		end
+	end
+
+	if #forbidden > 0 then
+		fail(`prod build contains forbidden files:\n{table.concat(forbidden, "\n")}`)
+	end
+end
+
 -- This environment variable comes from `.env` and is required to be set. This
 -- condition just makes sure if it's _not_ set that the user will then go and
 -- get their `.env` file in order
@@ -109,6 +172,8 @@ local context: BuildContext = {
 	},
 	cache = buildSystem.readBuildCacheAsync(),
 }
+
+assertReleaseContext(context)
 
 local function buildPluginBinary()
 	buildSystem.runBuildGroupAsync({
@@ -149,6 +214,7 @@ local function build()
 	print(richterm.dim(`build context: {pp(contextNoCache)}`))
 
 	buildSystem.compileAsync(context)
+	assertReleaseTree(context)
 	buildSystem.writeBuildCacheAsync(context.cache)
 
 	buildPluginBinary()

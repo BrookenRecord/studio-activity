@@ -18,7 +18,6 @@ return {
 	ROJO_TESTS_PROJECT = path.resolve("./plugin/tests.project.json"),
 
 	FOLDERS_TO_LINT = {
-		".lune",
 		".lute",
 		"plugin/bin",
 		"plugin/src",

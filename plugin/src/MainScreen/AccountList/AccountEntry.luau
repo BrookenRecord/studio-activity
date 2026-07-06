@@ -71,6 +71,30 @@ local function AccountEntry(props: Props)
 		elseif user.status == "error" then user.cachedDetails
 		else nil
 
+	local confirmDisconnect = useCallback(function(afterDisconnect: (() -> ())?)
+		local modalStore = ModalStore.get()
+		task.spawn(function()
+			local result = modalStore.openAsync("confirmation", {
+				props = {
+					title = "Are you sure?",
+					body = "If you disconnect the account, you'll have to re-link it.",
+				},
+			})
+
+			if result then
+				accountStore.removeUser(props.accountId)
+
+				local username = if details then details.username else nil
+				NotificationStore.get()
+					.push("info", if username then `Disconnected account {username}` else "Disconnected account")
+
+				if afterDisconnect then
+					afterDisconnect()
+				end
+			end
+		end)
+	end, { accountStore :: any, props.accountId, details })
+
 	local menuState = useToggleState(false)
 	local menuItems = useMemo(function(): Foundation.MenuItems
 		return {
@@ -80,29 +104,11 @@ local function AccountEntry(props: Props)
 				text = "Disconnect Account",
 				onActivated = function()
 					menuState.disable()
-
-					-- Get confirmation before disconnecting the account
-					local modalStore = ModalStore.get()
-					task.spawn(function()
-						local result = modalStore.openAsync("confirmation", {
-							props = {
-								title = "Are you sure?",
-								body = "If you disconnect the account, you'll have to re-link it.",
-							},
-						})
-
-						if result then
-							accountStore.removeUser(props.accountId)
-
-							local username = if details then details.username else nil
-							NotificationStore.get()
-								.push("info", if username then `Disconnected account {username}` else "Disconnected account")
-						end
-					end)
+					confirmDisconnect(nil)
 				end,
 			},
 		}
-	end, { menuState.disable :: any, details })
+	end, { menuState.disable :: any, confirmDisconnect })
 
 	local isDisabled = (not isPresenceEnabled) or user.status ~= "ready"
 	local isLoading = user.status == "loading"
@@ -211,8 +217,9 @@ local function AccountEntry(props: Props)
 				variant = ButtonVariant.Utility,
 				size = InputSize.Small,
 				onActivated = function()
-					accountStore.removeUser(props.accountId)
-					ModalStore.get().open("addAccount")
+					confirmDisconnect(function()
+						ModalStore.get().open("addAccount")
+					end)
 				end,
 				LayoutOrder = nextOrder(),
 			}),
@@ -222,7 +229,7 @@ local function AccountEntry(props: Props)
 				variant = ButtonVariant.Utility,
 				size = InputSize.Small,
 				onActivated = function()
-					accountStore.removeUser(props.accountId)
+					confirmDisconnect(nil)
 				end,
 				LayoutOrder = nextOrder(),
 			}),

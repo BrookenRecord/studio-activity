@@ -9,7 +9,7 @@
 <div align="center">
 
   [![Creator Store](./.github/assets/link-creator-store.svg)](https://create.roblox.com/store/asset/127703833967745/Studio-Activity)
-  [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/grilme99/studio-activity/releases/latest)
+  [![GitHub Releases](./.github/assets/link-github-releases.svg)](https://github.com/BrookenRecord/studio-activity/releases/latest)
 
 </div>
 
@@ -35,7 +35,7 @@ Studio Activity mirrors your current Roblox Studio session to Discord so your pr
 
 - Requires Roblox Studio and a Discord account.
 - Your Discord access token stays local in Studio; my backend never receives it.
-- Telemetry is anonymous and opt-in, and you can disable it anytime in plugin settings.
+- Telemetry is anonymous, the onboarding checkbox is checked by default, and you can disable it anytime in plugin settings.
 - Creator Store is recommended; local `.rbxm` installs have extra plugin-isolation risk.
 - You can inspect the exact Discord calls in [`plugin/src/Api/Discord.luau`](plugin/src/Api/Discord.luau) and [`plugin/src/PresenceManager/createPresenceManager.luau`](plugin/src/PresenceManager/createPresenceManager.luau).
 
@@ -50,7 +50,7 @@ The easiest way to install Studio Activity is from the Creator Store:
 
 ### Manual install (`.rbxm`)
 
-Prefer to sideload the latest build directly? Download `StudioActivity.rbxm` from the [latest GitHub release](https://github.com/grilme99/studio-activity/releases/latest) and add it to your Plugins folder.
+Prefer to sideload the latest build directly? Download `StudioActivity.rbxm` from the [latest GitHub release](https://github.com/BrookenRecord/studio-activity/releases/latest) and add it to your Plugins folder.
 
 <details>
 <summary>Manual install steps</summary>
@@ -71,7 +71,7 @@ To update later, download the newer `.rbxm` and replace the existing file in you
 
 ## Privacy & telemetry
 
-Studio Activity supports **anonymous, opt-in usage data**. You're asked during onboarding whether to enable it, and you can toggle it off anytime from plugin settings.
+Studio Activity supports **anonymous usage data**. You're asked during onboarding whether to enable it, and you can toggle it off anytime from plugin settings. The onboarding checkbox is enabled by default, but no telemetry is sent until that choice has been saved.
 
 **Why I collect it.** I maintain Studio Activity on my own in my spare time. Telemetry is my only way to find out when an OAuth flow breaks for some chunk of users, or when a Studio update regresses presence updates. Without it, bugs that break onboarding can sit in a release for weeks before anyone files an issue. I keep the event list narrow on purpose: only what I need to spot regressions and prioritize fixes.
 
@@ -80,8 +80,9 @@ Studio Activity supports **anonymous, opt-in usage data**. You're asked during o
 - Lifecycle: `pluginLoaded`, `pluginUnloaded`, `uiOpened`, `onboardingCompleted`
 - Account linking: `accountLinkStarted`, `accountLinked`, `deviceCodeFlowFailed`, `browserFlowFailed`, `accountRemoved`
 - Presence: `presenceToggled`, `profileSelected`, `sessionError`
-- Plugin version, channel, and build hash
-- A SHA-256 hash of your Roblox user ID, computed locally. It can't be reversed back to a username.
+- Plugin version, channel, build hash, and build target
+- A per-plugin-load session ID used to group events from the same Studio session
+- A random per-install telemetry ID, generated locally after telemetry consent exists. It is not based on your Roblox user ID.
 - Your IP address, forwarded to PostHog only for bot detection and country-level geo enrichment. PostHog is configured to discard IPs after processing them.
 
 **What is _not_ collected.** Roblox usernames, place names, place IDs, game content, file paths, system information, Discord usernames, Discord tokens, or any free-form text you type into the plugin.

@@ -15,7 +15,7 @@ local useCallback = React.useCallback
 local useEffect = React.useEffect
 local useRef = React.useRef
 
-export type NotificationType = "info" | "error"
+export type NotificationType = "info" | "warning" | "error"
 
 local TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 

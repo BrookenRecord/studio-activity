@@ -74,6 +74,7 @@ export type DeviceCodeExchangeProblem =
 	| UnexpectedProblem
 
 export type RefreshProblem = InvalidGrantProblem | NetworkProblem | UnexpectedProblem
+export type RevokeProblem = NetworkProblem | UnexpectedProblem
 
 export type AuthCodeExchangeProblem =
 	| InvalidGrantProblem
@@ -539,6 +540,31 @@ local function new(config: Config)
 		return Result.err(unexpected(res.value))
 	end
 
+	--[[
+		Revoke an OAuth token.
+
+		POST /oauth2/token/revoke
+	]]
+	local function revokeTokenAsync(
+		token: string,
+		tokenTypeHint: "access_token" | "refresh_token"
+	): Result.Result<nil, RevokeProblem>
+		local params = baseParams()
+		params.token = token
+		params.token_type_hint = tokenTypeHint
+
+		local res = postFormAsync(`{apiBase}/oauth2/token/revoke`, params)
+		if not res.ok then
+			return Result.err(res.error)
+		end
+
+		if res.value.ok then
+			return Result.ok(nil)
+		end
+
+		return Result.err(unexpected(res.value))
+	end
+
 	-- ────────────────────────────────────────────────────────
 	-- Users
 	-- ────────────────────────────────────────────────────────
@@ -813,6 +839,7 @@ local function new(config: Config)
 		exchangeDeviceCodeAsync = exchangeDeviceCodeAsync,
 		exchangeAuthorizationCodeAsync = exchangeAuthorizationCodeAsync,
 		refreshTokenAsync = refreshTokenAsync,
+		revokeTokenAsync = revokeTokenAsync,
 		getCurrentUserAsync = getCurrentUserAsync,
 		getUserAvatarAsync = getUserAvatarAsync,
 		getApplicationAssetsAsync = getApplicationAssetsAsync,

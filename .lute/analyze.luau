@@ -5,14 +5,14 @@ local project = require("@repo/project")
 local run = require("@scripts/lib/run")
 
 local globalDefsPath = path.resolve("./plugin/generated/globalTypes.d.luau")
+local globalDefsUrl = "https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/1.67.0/scripts/globalTypes.d.luau"
 
 if not fs.exists(globalDefsPath) then
 	run("curl", {
-		"-s",
+		"-sSL",
 		"-o",
 		globalDefsPath,
-		"-O",
-		"https://raw.githubusercontent.com/JohnnyMorganz/luau-lsp/master/scripts/globalTypes.d.lua",
+		globalDefsUrl,
 	})
 end
 

@@ -9,6 +9,15 @@ use crate::proto::TelemetryRequest;
 const DEFAULT_POSTHOG_HOST: &str = "https://us.i.posthog.com";
 const MAX_DISTINCT_IDS_PER_IP: usize = 3;
 const IDENTITY_WINDOW_TTL_SECS: u64 = 86_400;
+const MAX_DISTINCT_ID_LEN: usize = 64;
+
+pub fn is_valid_distinct_id(distinct_id: &str) -> bool {
+    !distinct_id.is_empty()
+        && distinct_id.len() <= MAX_DISTINCT_ID_LEN
+        && distinct_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
 
 /// Checks the per-IP and per-user Cloudflare rate limiters.
 /// Returns `Some(reason)` if the request should be silently dropped.
@@ -41,6 +50,8 @@ async fn check_rate_limits(
 }
 
 /// Checks whether this IP has exceeded its `distinct_id` budget using KV.
+/// Cloudflare KV is eventually consistent, so this is a best-effort abuse
+/// control rather than an atomic concurrency limit.
 /// Returns `Some("identity_spray")` if the request should be silently dropped.
 async fn check_identity_budget(
     env: &worker::Env,
@@ -77,11 +88,26 @@ async fn check_identity_budget(
     let mut updated = ids;
     updated.push(distinct_id.to_string());
 
-    if let Ok(serialized) = serde_json::to_string(&updated) {
-        let _ = kv
-            .put(&key, serialized)
-            .map(|p| p.expiration_ttl(IDENTITY_WINDOW_TTL_SECS))
-            .map(|fut| async { fut.execute().await });
+    let serialized = match serde_json::to_string(&updated) {
+        Ok(serialized) => serialized,
+        Err(e) => {
+            tracing::debug!(error = %e, "failed to serialize telemetry identity budget");
+            return None;
+        }
+    };
+
+    match kv
+        .put(&key, serialized)
+        .map(|p| p.expiration_ttl(IDENTITY_WINDOW_TTL_SECS))
+    {
+        Ok(write) => {
+            if let Err(e) = write.execute().await {
+                tracing::warn!(error = %e, "telemetry identity budget write failed");
+            }
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "telemetry identity budget write builder failed");
+        }
     }
 
     None
@@ -106,9 +132,11 @@ pub fn telemetry(
     SendFuture::new(async move {
         let client_ip = edge.client_ip.as_deref().unwrap_or("unknown");
 
-        if payload.distinct_id.is_empty() {
+        if !is_valid_distinct_id(&payload.distinct_id) {
             return Err(AppError::Validation {
-                message: "distinct_id is required".into(),
+                message: format!(
+                    "distinct_id must be 1-{MAX_DISTINCT_ID_LEN} ASCII letters, numbers, dashes, or underscores"
+                ),
                 field: Some("distinct_id".into()),
             });
         }
@@ -121,16 +149,16 @@ pub fn telemetry(
         let (event_name, _) = posthog::decompose_event(event);
 
         tracing::Span::current()
-            .record("distinct_id", &payload.distinct_id)
             .record("event_name", event_name.as_str())
-            .record("client_ip", client_ip);
+            .record(
+                "client_ip_known",
+                !client_ip.is_empty() && client_ip != "unknown",
+            );
 
         // Rate limiting (silent drop)
         if let Some(reason) = check_rate_limits(&env, client_ip, &payload.distinct_id).await {
             tracing::warn!(
                 drop_reason = reason,
-                client_ip,
-                distinct_id = %payload.distinct_id,
                 event_name = event_name.as_str(),
                 "telemetry event silently dropped",
             );
@@ -141,8 +169,6 @@ pub fn telemetry(
         if let Some(reason) = check_identity_budget(&env, client_ip, &payload.distinct_id).await {
             tracing::warn!(
                 drop_reason = reason,
-                client_ip,
-                distinct_id = %payload.distinct_id,
                 event_name = event_name.as_str(),
                 ids_threshold = MAX_DISTINCT_IDS_PER_IP,
                 "telemetry event silently dropped",

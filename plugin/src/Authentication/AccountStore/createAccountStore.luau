@@ -273,7 +273,7 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 		return true
 	end
 
-	local function removeUser(id: string)
+	local function clearLocalUser(id: string)
 		auth.setStorage(function(prev)
 			local new = table.clone(prev)
 			new.accounts = table.clone(prev.accounts)
@@ -289,6 +289,36 @@ local function createAccountStore(discord: DiscordApi.DiscordApi): AccountStore
 			type = "accountRemoved",
 			value = Types.AccountRemoved.new({ accountCount = accountCount }),
 		})
+	end
+
+	local function removeUser(id: string)
+		local account = auth.getStorage().accounts[id]
+		if account == nil then
+			return
+		end
+
+		clearLocalUser(id)
+
+		task.spawn(function()
+			local revocationFailed = false
+
+			local accessResult = discord.revokeTokenAsync(account.accessToken, "access_token")
+			if not accessResult.ok then
+				revocationFailed = true
+			end
+
+			if account.refreshToken ~= "" then
+				local refreshResult = discord.revokeTokenAsync(account.refreshToken, "refresh_token")
+				if not refreshResult.ok then
+					revocationFailed = true
+				end
+			end
+
+			if revocationFailed then
+				NotificationStore.get()
+					.push("warning", "Discord token revocation failed; local account data was cleared")
+			end
+		end)
 	end
 
 	local function destroy()

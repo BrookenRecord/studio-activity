@@ -5,6 +5,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 local BackendApi = require(Plugin.Source.Api.Backend)
 local BuildVars = require(Plugin.Source.BuildVars)
 local Debounce = require(Plugin.Source.Common.Debounce)
+local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local Logger = require(Plugin.Source.Logger)
 local Types = require(script.Parent.Types)
 local UserSettingsStore = require(Plugin.Source.UserSettings.UserSettingsStore)
@@ -37,9 +38,39 @@ local DEBOUNCE_EVENTS: { [string]: number } = {
 
 local debouncedSenders: { [string]: Debounce.DebouncedFn } = {}
 
+local function shouldSendTelemetry(): boolean
+	local userSettingsStore = UserSettingsStore.get()
+	local localStorageStore = LocalStorageStore.get()
+
+	if userSettingsStore.getIsLoading() or localStorageStore.getIsLoading() then
+		return false
+	end
+
+	if userSettingsStore.getErr() ~= nil or localStorageStore.getErr() ~= nil then
+		return false
+	end
+
+	local userSettings = userSettingsStore.getStorage()
+	if not userSettings.collectAnonymousUsageData then
+		return false
+	end
+
+	local localStorage = localStorageStore.getStorage()
+	if not localStorage.hasCompletedOnboarding then
+		return false
+	end
+
+	return true
+end
+
 local function sendEvent(event: TelemetryEvent)
 	ensureInitialized()
 	assert(backendApi and sessionId and distinctId)
+
+	local target = if BuildVars.build.target == "creator-store"
+		then "PLUGIN_BUILD_TARGET_CREATOR_STORE"
+		elseif BuildVars.build.target == "local" then "PLUGIN_BUILD_TARGET_LOCAL"
+		else "PLUGIN_BUILD_TARGET_UNSPECIFIED"
 
 	local request = api.TelemetryRequest.new({
 		distinctId = distinctId,
@@ -47,12 +78,19 @@ local function sendEvent(event: TelemetryEvent)
 		pluginVersion = BuildVars.build.version,
 		pluginChannel = BuildVars.build.channel,
 		pluginHash = BuildVars.build.hash,
+		pluginTarget = target,
 		event = event,
 	})
 
 	local result = backendApi.captureTelemetryAsync(request)
 	if not result.ok then
 		Logger:Warn(`telemetry send failed: {result.error.type}`)
+	end
+end
+
+local function sendEventIfAllowed(event: TelemetryEvent)
+	if shouldSendTelemetry() then
+		sendEvent(event)
 	end
 end
 
@@ -64,14 +102,11 @@ end
 	are debounced so only the final state is sent.
 ]]
 local function fireEvent(event: TelemetryEvent)
-	local userSettingsStore = UserSettingsStore.get()
-	local userSettings = userSettingsStore.getStorage()
-
-	if not userSettings.collectAnonymousUsageData then
+	if event == nil then
 		return
 	end
 
-	if event == nil then
+	if not shouldSendTelemetry() then
 		return
 	end
 
@@ -82,13 +117,13 @@ local function fireEvent(event: TelemetryEvent)
 		local debounced = debouncedSenders[eventType]
 		if not debounced then
 			debounced = Debounce.trailing(debounceSeconds, function(debouncedEvent: TelemetryEvent)
-				task.spawn(sendEvent, debouncedEvent)
+				task.spawn(sendEventIfAllowed, debouncedEvent)
 			end)
 			debouncedSenders[eventType] = debounced
 		end
 		debounced.call(event)
 	else
-		task.spawn(sendEvent, event)
+		task.spawn(sendEventIfAllowed, event)
 	end
 end
 
@@ -97,6 +132,10 @@ end
 	Call this during plugin teardown to ensure final state is sent.
 ]]
 local function flushAll()
+	if not shouldSendTelemetry() then
+		return
+	end
+
 	for _, debounced in debouncedSenders do
 		debounced.flush()
 	end

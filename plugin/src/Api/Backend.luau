@@ -31,10 +31,11 @@ local api = require(script.Parent.Protos.api.v1.api)
 
 export type NetworkProblem = { type: "network", message: string }
 export type ValidationProblem = { type: "validation", message: string? }
+export type RateLimitedProblem = { type: "rate_limited", retryAfter: number }
 export type UnexpectedProblem = { type: "unexpected", statusCode: number, body: string? }
 
 export type TelemetryProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
-export type BrowserFlowProblem = NetworkProblem | ValidationProblem | UnexpectedProblem
+export type BrowserFlowProblem = NetworkProblem | ValidationProblem | RateLimitedProblem | UnexpectedProblem
 export type LatestVersionProblem = NetworkProblem | UnexpectedProblem
 
 -- ────────────────────────────────────────────────────────────
@@ -54,7 +55,20 @@ type RawResponse = {
 	ok: boolean,
 	body: any,
 	statusCode: number,
+	headers: { [string]: string },
 }
+
+local function retryAfter(response: RawResponse): number
+	local value = response.headers["Retry-After"] or response.headers["retry-after"]
+	if value then
+		local seconds = tonumber(value)
+		if seconds and seconds > 0 then
+			return seconds
+		end
+	end
+
+	return 5
+end
 
 local function postJsonAsync(url: string, jsonBody: string): Result.Result<RawResponse, NetworkProblem>
 	local requestOk, result = pcall(HttpService.RequestAsync, HttpService, {
@@ -81,6 +95,7 @@ local function postJsonAsync(url: string, jsonBody: string): Result.Result<RawRe
 		ok = result.Success,
 		body = body,
 		statusCode = result.StatusCode,
+		headers = result.Headers or {},
 	})
 end
 
@@ -108,6 +123,7 @@ local function getJsonAsync(url: string): Result.Result<RawResponse, NetworkProb
 		ok = result.Success,
 		body = body,
 		statusCode = result.StatusCode,
+		headers = result.Headers or {},
 	})
 end
 
@@ -192,6 +208,13 @@ local function new(config: Config)
 			})
 		end
 
+		if res.value.statusCode == 429 then
+			return Result.err({
+				type = "rate_limited" :: "rate_limited",
+				retryAfter = retryAfter(res.value),
+			})
+		end
+
 		if res.value.ok and type(res.value.body) == "table" then
 			return Result.ok(api.BrowserFlowStartResponse.jsonDecode(res.value.body))
 		end
@@ -233,6 +256,13 @@ local function new(config: Config)
 			return Result.err({
 				type = "validation" :: "validation",
 				message = message,
+			})
+		end
+
+		if res.value.statusCode == 429 then
+			return Result.err({
+				type = "rate_limited" :: "rate_limited",
+				retryAfter = retryAfter(res.value),
 			})
 		end
 

@@ -1,4 +1,3 @@
-use axum::extract::rejection::BytesRejection;
 use axum::{
     extract::{FromRequest, Request},
     response::IntoResponse,
@@ -28,6 +27,10 @@ use crate::error::AppError;
 /// value — an empty `repeated` field is simply omitted.
 pub struct AppJson<T>(pub T);
 
+/// Default public JSON body cap. Telemetry's contract is 16 KiB; OAuth
+/// payloads are much smaller and stay under this shared limit.
+const MAX_JSON_BODY_BYTES: usize = 16 * 1024;
+
 /// Recursively replaces empty JSON arrays with empty objects to work
 /// around Luau's `jsonEncode` encoding empty tables as `[]`.
 fn normalize_empty_arrays(value: &mut Value) {
@@ -49,6 +52,8 @@ where
     type Rejection = AppError;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
+        let _ = state;
+
         // Validate content type
         let content_type = req
             .headers()
@@ -64,13 +69,12 @@ where
         }
 
         // Extract raw bytes
-        let bytes =
-            axum::body::Bytes::from_request(req, state)
-                .await
-                .map_err(|_: BytesRejection| AppError::Validation {
-                    message: "Failed to read request body".into(),
-                    field: None,
-                })?;
+        let (_, body) = req.into_parts();
+        let bytes = axum::body::to_bytes(body, MAX_JSON_BODY_BYTES)
+            .await
+            .map_err(|_| AppError::PayloadTooLarge {
+                limit_bytes: MAX_JSON_BODY_BYTES,
+            })?;
 
         // Parse into a generic Value, normalize, then deserialize into T
         let mut value: Value =

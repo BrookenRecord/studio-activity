@@ -9,9 +9,8 @@
 
 echo "🔍 Running pre-commit checks..."
 
-# Run the CI command
-lune run ci
+# Run the same local checks as CI
+lute run lint && lute run analyze
 
-# Exit with the same code as the CI command
+# Exit with the same code as the checks
 exit $?
-

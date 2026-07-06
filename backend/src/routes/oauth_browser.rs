@@ -49,6 +49,9 @@ const COMPLETED_TTL_SECS: u64 = 120;
 /// Recommended polling interval handed back to the plugin.
 const POLL_INTERVAL_SECS: i32 = 2;
 
+/// Backoff hint returned when Cloudflare rate limiters throttle OAuth traffic.
+const RATE_LIMIT_RETRY_AFTER_SECS: u64 = 5;
+
 /// PKCE method we always advertise.
 const CODE_CHALLENGE_METHOD: &str = "S256";
 
@@ -185,6 +188,7 @@ fn build_authorize_url(
 
 #[allow(clippy::must_use_candidate)]
 pub fn start_session(
+    Edge(edge): Edge,
     WorkerEnv(env): WorkerEnv,
     AppJson(payload): AppJson<BrowserFlowStartRequest>,
 ) -> SendFuture<
@@ -196,6 +200,21 @@ pub fn start_session(
                 message: "code_challenge must be 32-128 base64url characters".into(),
                 field: Some("code_challenge".into()),
             });
+        }
+
+        if let Ok(limiter) = env.rate_limiter("OAUTH_START_LIMITER") {
+            let client_ip = edge.client_ip.as_deref().unwrap_or("unknown");
+            match limiter.limit(format!("ip:{client_ip}")).await {
+                Ok(res) if res.success => {}
+                Ok(_) => {
+                    return Err(AppError::TooManyRequests {
+                        retry_after_seconds: RATE_LIMIT_RETRY_AFTER_SECS,
+                    });
+                }
+                Err(e) => {
+                    tracing::debug!(error = %e, "oauth start limiter unavailable, skipping");
+                }
+            }
         }
 
         let public_url = read_var(&env, "BACKEND_PUBLIC_URL")?;
@@ -212,7 +231,7 @@ pub fn start_session(
 
         store_session(&env, &token, &session, SESSION_TTL_SECS).await?;
 
-        tracing::info!(session_token = %token, "browser oauth session created");
+        tracing::info!("browser oauth session created");
 
         Ok(axum::Json(BrowserFlowStartResponse {
             session_token: token.clone(),
@@ -302,7 +321,7 @@ pub fn discord_callback(
         };
 
         if let Some(error_kind) = params.error.as_deref() {
-            tracing::warn!(error = error_kind, state, "discord callback returned error");
+            tracing::warn!(error = error_kind, "discord callback returned error");
             session.status = if error_kind == "access_denied" {
                 SessionStatus::Denied
             } else {
@@ -362,9 +381,8 @@ pub fn poll_session(
             match limiter.limit(format!("ip:{client_ip}")).await {
                 Ok(res) if res.success => {}
                 Ok(_) => {
-                    return Err(AppError::Validation {
-                        message: "Too many polls. Slow down.".into(),
-                        field: None,
+                    return Err(AppError::TooManyRequests {
+                        retry_after_seconds: RATE_LIMIT_RETRY_AFTER_SECS,
                     });
                 }
                 Err(e) => {

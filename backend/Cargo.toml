@@ -33,6 +33,7 @@ uuid = { version = "1.23.0", features = ["js", "v4", "v5"] }
 nanoid = "0.4"
 url = "2"
 getrandom = { version = "0.2", features = ["js"] }
+wasm-bindgen = "0.2.125"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3"

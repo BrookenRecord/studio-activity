@@ -2,6 +2,7 @@ local Plugin = script:FindFirstAncestor("StudioActivity")
 
 local Packages = Plugin.Packages
 local React = require(Packages.React)
+local ReactCharm = require(Packages.ReactCharm)
 
 local LocalStorageStore = require(Plugin.Source.Plugin.LocalStorageStore)
 local MainScreen = require(Plugin.Source.MainScreen)
@@ -15,6 +16,8 @@ local e = React.createElement
 local useCallback = React.useCallback
 local useState = React.useState
 local useEffect = React.useEffect
+local useRef = React.useRef
+local useSignalState = ReactCharm.useSignalState
 
 type Props = {
 	pluginLoaderContext: createPluginLoader.PluginLoaderContext,
@@ -22,6 +25,10 @@ type Props = {
 
 local function PluginApp(props: Props)
 	local enabled, setEnabled = useState(true)
+	local didOpenWelcome = useRef(false)
+	local localStorageStore = LocalStorageStore.get()
+	local localStorage = useSignalState(localStorageStore.getStorage)
+	local isLocalStorageLoading = useSignalState(localStorageStore.getIsLoading)
 
 	local toggleEnabled = useCallback(function()
 		setEnabled(function(prev)
@@ -49,11 +56,11 @@ local function PluginApp(props: Props)
 	end, { props.pluginLoaderContext })
 
 	useEffect(function()
-		local storage = LocalStorageStore.get().getStorage()
-		if not storage.hasCompletedOnboarding then
+		if not isLocalStorageLoading and not localStorage.hasCompletedOnboarding and not didOpenWelcome.current then
+			didOpenWelcome.current = true
 			ModalStore.get().open("welcome")
 		end
-	end, {})
+	end, { isLocalStorageLoading, localStorage.hasCompletedOnboarding })
 
 	return e(PluginWidget, {
 		dockWidget = props.pluginLoaderContext.mainDockWidget :: DockWidgetPluginGui,

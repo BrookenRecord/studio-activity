@@ -11,10 +11,11 @@ message TelemetryRequest {
   string plugin_version = 2;
   string plugin_channel = 3;
   string plugin_hash = 4;
+  PluginBuildTarget plugin_target = 6;
 
   // Client-generated UUID v4, created once per plugin load. Groups all
   // events from the same Studio session in PostHog's session view.
-  string session_id = 5;
+  string session_id = 7;
 
   oneof event {
     PluginLoaded plugin_loaded = 10;
@@ -30,6 +31,15 @@ message TelemetryRequest {
     SessionError session_error = 19;
     PluginUnloaded plugin_unloaded = 20;
   }
+}
+
+/// Identifies if this build of the plugin came from a Creator Store deployment
+// or local rbxm build. Allows us to attribute where users are finding and
+// installing the plugin.
+enum PluginBuildTarget {
+  PLUGIN_BUILD_TARGET_UNSPECIFIED = 0;
+  PLUGIN_BUILD_TARGET_LOCAL = 1;
+  PLUGIN_BUILD_TARGET_CREATOR_STORE = 2;
 }
 
 // Fired on plugin init (before UI). Carries current user state

@@ -34,5 +34,5 @@ async fn root_redirect_points_to_github() {
 
     let resp = app.oneshot(req).await.unwrap();
     let location = resp.headers().get("location").unwrap().to_str().unwrap();
-    assert_eq!(location, "https://github.com/grilme99/studio-activity");
+    assert_eq!(location, "https://github.com/BrookenRecord/studio-activity");
 }

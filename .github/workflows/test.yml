@@ -29,15 +29,31 @@ jobs:
       - name: 📋 Verify tools
         run: rokit list
 
-      - name: Run runtime setup
-        run: |
-          lune setup
-          lute setup
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+
+      - uses: arduino/setup-protoc@v3
+
+      - name: Install wasm-bindgen test runner
+        run: cargo install wasm-bindgen-cli --version 0.2.125
+
+      - name: Run Lute setup
+        run: lute setup
 
       - name: 📦 Setup project
-        run: lune run setup
+        run: lute run setup
         env:
           ROBLOX_API_KEY: ${{ secrets.ROBLOX_API_KEY }}
+
+      - name: 🧪 Run backend tests
+        run: |
+          cd backend
+          cargo test
 
       - name: 🔎 Run tests
         run: lute run test
